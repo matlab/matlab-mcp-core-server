@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
+	"time"
 )
 
 type HttpClient interface {
@@ -31,6 +32,56 @@ func (f *HTTPClientFactory) NewClientForSelfSignedTLSServer(certificatePEM []byt
 		TLSClientConfig: &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			RootCAs:    caCertPool,
+			// Custom verification to allow clock skew tolerance
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				// Allow up to 24 hours of clock skew for self-signed certificates
+				// This handles cases where system clocks are slightly out of sync
+				const clockSkewTolerance = 24 * time.Hour
+				
+				opts := x509.VerifyOptions{
+					Roots:         caCertPool,
+					Intermediates: x509.NewCertPool(),
+				}
+
+				// Verify each certificate in the chain with clock skew tolerance
+				for _, rawCert := range rawCerts {
+					cert, err := x509.ParseCertificate(rawCert)
+					if err != nil {
+						continue
+					}
+					
+					// Check certificate validity with clock skew tolerance
+					now := time.Now()
+					if cert.NotBefore.After(now.Add(clockSkewTolerance)) {
+						// Certificate is too far in the future, reject it
+						return fmt.Errorf("certificate not valid yet: notBefore is %v, current time is %v (skew tolerance: %v)", 
+							cert.NotBefore, now, clockSkewTolerance)
+					}
+					if cert.NotAfter.Before(now.Add(-clockSkewTolerance)) {
+						// Certificate is too far expired, reject it
+						return fmt.Errorf("certificate expired: notAfter is %v, current time is %v (skew tolerance: %v)", 
+							cert.NotAfter, now, clockSkewTolerance)
+					}
+					
+					// Try verification with current time
+					opts.CurrentTime = now
+					_, err = cert.Verify(opts)
+					if err != nil {
+						// Try with positive clock skew (certificate is in the future)
+						opts.CurrentTime = now.Add(clockSkewTolerance)
+						_, err = cert.Verify(opts)
+						if err != nil {
+							// Try with negative clock skew (certificate is in the past)
+							opts.CurrentTime = now.Add(-clockSkewTolerance)
+							_, err = cert.Verify(opts)
+							if err != nil {
+								return err
+							}
+						}
+					}
+				}
+				return nil
+			},
 		},
 	}
 
