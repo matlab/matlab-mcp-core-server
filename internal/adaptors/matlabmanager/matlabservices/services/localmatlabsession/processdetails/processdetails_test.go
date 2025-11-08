@@ -190,6 +190,7 @@ func TestProcessDetails_StartupFlag_HappyPath(t *testing.T) {
 				"-nosplash",
 				"-softwareopengl",
 				"-nodesktop",
+				"-minimize",
 			},
 		},
 		{
@@ -209,6 +210,7 @@ func TestProcessDetails_StartupFlag_HappyPath(t *testing.T) {
 				"-noDisplayDesktop",
 				"-wait",
 				"-log",
+				"/minimize",
 			},
 		},
 		{
@@ -225,6 +227,7 @@ func TestProcessDetails_StartupFlag_HappyPath(t *testing.T) {
 				"-nosplash",
 				"-softwareopengl",
 				"-nodesktop",
+				"-minimize",
 			},
 		},
 	} {

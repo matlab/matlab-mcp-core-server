@@ -56,6 +56,11 @@ func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, a
 	si.StdOutput = windows.Handle(stdIO.stdOut.Fd())
 	si.StdErr = windows.Handle(stdIO.stdErr.Fd())
 
+	// Set window to start minimized to reduce visual impact
+	// STARTF_USESHOWWINDOW = 0x00000001, SW_MINIMIZE = 6
+	si.Flags = 0x00000001 // STARTF_USESHOWWINDOW
+	si.ShowWindow = 6     // SW_MINIMIZE
+
 	creationFlags := uint32(windows.CREATE_NEW_PROCESS_GROUP | windows.DETACHED_PROCESS | windows.CREATE_UNICODE_ENVIRONMENT)
 
 	err = windows.CreateProcess(
@@ -85,9 +90,14 @@ func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, a
 		return nil, fmt.Errorf("error finding MATLAB launcher process: %w", err)
 	}
 
-	// On Windows, the process we launch is a launcher process that then launches the actual MATLAB process.
-	// Therefore, we need to find the child process of the launcher process.
-	// THere should be only one process, and that would be the actual MATLAB process.
+	// On Windows, MATLAB uses a launcher architecture:
+	// - The MCP launches matlab.exe (launcher process)
+	// - The launcher then spawns MATLAB.exe (actual MATLAB process)
+	// - This is expected Windows behavior, not a bug
+	// - We need to find the child process of the launcher process to track the actual MATLAB instance
+	// - There should be only one child process, which is the actual MATLAB process
+	// Note: If you see TWO FULL MATLAB instances (not just matlab.exe + MATLAB.exe), this suggests
+	// multiple MCP server processes are running, which would cause duplicate session initialization.
 	matlabProcess, err := waitForMATLABProcess(logger, matlabLauncherProcess)
 	if err != nil {
 		return nil, err

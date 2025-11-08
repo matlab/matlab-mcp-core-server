@@ -94,6 +94,12 @@ func (*ProcessDetails) StartupFlag(os string, showMATLAB bool, startupCode strin
 				"-noDisplayDesktop",
 				"-wait",
 				"-log",
+				"/minimize",
+			)
+		} else {
+			// Unix platforms (Linux/macOS)
+			startupFlags = append(startupFlags,
+				"-minimize",
 			)
 		}
 	}

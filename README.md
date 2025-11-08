@@ -10,6 +10,7 @@ Run MATLAB® using AI applications. The MATLAB MCP Core Server allows your AI ap
   - [Setup](#setup)
     - [Claude Code](#claude-code) 
     - [Claude Desktop](#claude-desktop)
+    - [Cursor](#cursor)
     - [GitHub Copilot in Visual Studio Code](#github-copilot-in-visual-studio-code)
   - [Arguments](#arguments)
   - [Tools](#tools)
@@ -20,7 +21,7 @@ Run MATLAB® using AI applications. The MATLAB MCP Core Server allows your AI ap
 
 1. Install [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) 2020b or later and add it to the system PATH.
 2. Download the [Latest Release](https://github.com/matlab/matlab-mcp-core-server/releases/latest) from GitHub®. Alternatively, you can install [Go](https://go.dev/doc/install) and build the binary from source using `go install github.com/matlab/matlab-mcp-core-server/cmd/matlab-mcp-core-server`. 
-3. Add the MATLAB MCP Core Server to your AI application. You can find instructions for adding MCP servers in the documentation of your AI application. For example instructions on using Claude Code®, Claude Desktop®, and GitHub Copilot in Visual Studio® Code, see below. Note that you can customize the server by specifying optional [arguments](#arguments).
+3. Add the MATLAB MCP Core Server to your AI application. You can find instructions for adding MCP servers in the documentation of your AI application. For example instructions on using Claude Code®, Claude Desktop®, Cursor, and GitHub Copilot in Visual Studio® Code, see below. Note that you can customize the server by specifying optional [arguments](#arguments).
 
 #### Download on macOS
 
@@ -85,6 +86,27 @@ Follow the instructions on the page [Connect to local MCP servers (MCP)](https:/
 }
 ```
 After saving the configuration file, quit and restart Claude Desktop. 
+
+### Cursor
+
+Configure the MATLAB MCP Core Server in Cursor by creating an `mcp.json` file. You can create a project-specific configuration in `.cursor/mcp.json` within your project directory, or a global configuration in `~/.cursor/mcp.json` in your home directory. In the configuration file, add the following, remembering to insert the full path to the server binary you acquired in the setup, as well as any other arguments:
+
+```json
+{
+   "mcpServers": {
+      "matlab": {
+         "command": "fullpath/to/matlab-mcp-core-server-binary",
+         "args": [
+            "--initial-working-folder=/home/username/Documents"
+         ]
+      }
+   }
+}
+```
+
+After saving the configuration file, restart Cursor to apply the changes.
+
+For details on adding MCP servers in Cursor, see [Model Context Protocol (Cursor)](https://cursor.com/docs/context/mcp#model-context-protocol).
 
 ### GitHub Copilot in Visual Studio Code
 
