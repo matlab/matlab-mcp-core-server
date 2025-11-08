@@ -4,6 +4,7 @@ package globalmatlab
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -49,6 +50,9 @@ func New(
 }
 
 func (g *GlobalMATLAB) Initialize(ctx context.Context, logger entities.Logger) error {
+	logger = logger.With("mcp_server_pid", os.Getpid())
+	logger.Debug("GlobalMATLAB.Initialize called")
+
 	var err error
 	g.matlabRoot, err = g.matlabRootSelector.SelectFirstMATLABVersionOnPath(ctx, logger)
 	if err != nil {
@@ -65,6 +69,7 @@ func (g *GlobalMATLAB) Initialize(ctx context.Context, logger entities.Logger) e
 		return err
 	}
 
+	logger.Debug("GlobalMATLAB.Initialize completed successfully")
 	return nil
 }
 
@@ -86,11 +91,13 @@ func (g *GlobalMATLAB) ensureMATLABClientIsValid(ctx context.Context, logger ent
 	defer g.lock.Unlock()
 
 	if g.cachedStartErr != nil {
+		logger.Debug("ensureMATLABClientIsValid: returning cached error")
 		return g.cachedStartErr
 	}
 
 	var sessionIDZeroValue entities.SessionID
 	if g.sessionID == sessionIDZeroValue {
+		logger.With("matlab_root", g.matlabRoot).Debug("ensureMATLABClientIsValid: starting new MATLAB session")
 		sessionID, err := g.matlabManager.StartMATLABSession(ctx, logger, entities.LocalSessionDetails{
 			MATLABRoot:        g.matlabRoot,
 			StartingDirectory: g.matlabStartingDir,
@@ -98,10 +105,14 @@ func (g *GlobalMATLAB) ensureMATLABClientIsValid(ctx context.Context, logger ent
 		})
 		if err != nil {
 			g.cachedStartErr = err
+			logger.WithError(err).Error("ensureMATLABClientIsValid: failed to start MATLAB session")
 			return err
 		}
 
 		g.sessionID = sessionID
+		logger.With("session_id", sessionID).Debug("ensureMATLABClientIsValid: MATLAB session started")
+	} else {
+		logger.With("session_id", g.sessionID).Debug("ensureMATLABClientIsValid: reusing existing MATLAB session")
 	}
 
 	return nil

@@ -3,6 +3,7 @@
 package localmatlabsession
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
@@ -51,7 +52,8 @@ func NewStarter(
 }
 
 func (m *Starter) StartLocalMATLABSession(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
-	logger.Debug("Starting a local MATLAB session")
+	logger = logger.With("mcp_server_pid", os.Getpid())
+	logger.With("matlab_root", request.MATLABRoot).With("show_desktop", request.ShowMATLABDesktop).Debug("StartLocalMATLABSession called")
 
 	sessionDir, err := m.directoryFactory.Create(logger)
 	if err != nil {
@@ -79,11 +81,15 @@ func (m *Starter) StartLocalMATLABSession(logger entities.Logger, request dataty
 	startupCode := "sessionPath = '" + sessionDirPath + "';addpath(sessionPath);matlab_mcp.initializeMCP();clear sessionPath;"
 
 	startupFlags := m.processDetails.StartupFlag(runtime.GOOS, request.ShowMATLABDesktop, startupCode)
+	logger.With("flags", startupFlags).Debug("MATLAB startup flags")
 
 	processID, processCleanup, err := m.matlabProcessLauncher.Launch(logger, sessionDirPath, request.MATLABRoot, request.StartingDirectory, startupFlags, env)
 	if err != nil {
+		logger.WithError(err).Error("Failed to launch MATLAB process")
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}
+
+	logger.With("matlab_process_id", processID).Debug("MATLAB process launched")
 
 	if err = m.watchdog.RegisterProcessPIDWithWatchdog(processID); err != nil {
 		logger.WithError(err).Warn("Failed to register process with watchdog")
