@@ -31,7 +31,7 @@ type Config struct {
 func New(
 	osLayer OSLayer,
 ) (*Config, error) {
-	flagSet := pflag.NewFlagSet(pflag.CommandLine.Name(), pflag.ContinueOnError)
+	flagSet := pflag.NewFlagSet(pflag.CommandLine.Name(), pflag.ExitOnError)
 	err := setupFlags(flagSet)
 	if err != nil {
 		return nil, err
