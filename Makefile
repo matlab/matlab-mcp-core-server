@@ -35,12 +35,36 @@ else
 	BIN_PATH = $(CURDIR)/.bin/glnxa64
 endif
 
+# Capture CLI Environment variables
+CLI_MATLAB_MCP_CORE_SERVER_BUILD_DIR := $(MATLAB_MCP_CORE_SERVER_BUILD_DIR)
+CLI_MCP_MATLAB_PATH := $(MCP_MATLAB_PATH)
+
+# Include .env file if it exists
+ifneq (,$(wildcard .env))
+    include .env
+endif
+
+# Set MATLAB_MCP_CORE_SERVER_BUILD_DIR with precendence CLI > .env > default
+ifdef CLI_MATLAB_MCP_CORE_SERVER_BUILD_DIR
+	MATLAB_MCP_CORE_SERVER_BUILD_DIR = $(CLI_MATLAB_MCP_CORE_SERVER_BUILD_DIR)
+endif
+ifndef MATLAB_MCP_CORE_SERVER_BUILD_DIR
+	MATLAB_MCP_CORE_SERVER_BUILD_DIR = $(CURDIR)/.bin
+endif
+export MATLAB_MCP_CORE_SERVER_BUILD_DIR
+
+# Set MCP_MATLAB_PATH with precendence CLI > .env > default (empty)
+ifdef CLI_MCP_MATLAB_PATH
+	MCP_MATLAB_PATH = $(CLI_MCP_MATLAB_PATH)
+endif
+export MCP_MATLAB_PATH
+
+# Variables for MCP Inspector
 export HOST = localhost
 export PATH := $(BIN_PATH)$(PATHSEP)$(PATH)
 
 # Go build flags
 LDFLAGS := -ldflags "-X 'github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config.version=$(VERSION)'"
-
 
 all: install wire mockery lint unit-tests build
 
@@ -63,6 +87,7 @@ wire:
 
 mockery:
 	@$(call RM_DIR,./mocks)
+	@$(call RM_DIR,./tests/mocks)
 	mockery
 
 lint:
@@ -106,10 +131,36 @@ endif
 # Testing
 
 unit-tests:
-	gotestsum --packages ./internal/... -- -race -coverprofile cover.out
+	gotestsum --packages="./internal/... ./tests/testutils/..." -- -race -coverprofile cover.out
+
+system-tests:
+	gotestsum --packages="./tests/system/..." -- -race -count=1 -timeout 30m
+	@$(MAKE) --no-print-directory check-matlab-leaks
 
 ci-unit-tests:
-	go test $(RACE_FLAG) -json -count=1 -coverprofile cover.out ./internal/...
+	go test $(RACE_FLAG) -json -count=1 -coverprofile cover.out ./internal/... ./tests/testutils/...
 
 ci-system-tests:
-	go test $(RACE_FLAG) -timeout 120m -json -count=1 ./tests/system/
+	go test $(RACE_FLAG) -timeout 120m -json -count=1 ./tests/system/...
+	@$(MAKE) --no-print-directory check-matlab-leaks
+
+# Check for leaked MATLAB processes after system tests
+# Tests should clean up all MATLAB sessions they create
+check-matlab-leaks:
+	@echo "Waiting for processes to settle..."
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "Start-Sleep -Seconds 5"
+	@echo "Checking for leaked MATLAB processes..."
+	@powershell -Command "$$procs = Get-Process -Name MATLAB -ErrorAction SilentlyContinue | Where-Object { $$_.CommandLine -like '*matlab-mcp-core-server*' }; if ($$procs) { Write-Host 'WARNING: Found leaked MATLAB processes:'; $$procs | Format-Table Id,ProcessName,StartTime; exit 1 } else { Write-Host 'No leaked MATLAB processes found.' }"
+else
+	@sleep 5
+	@echo "Checking for leaked MATLAB processes..."
+	@leaked=$$(pgrep -a -f 'matlab.*matlab-mcp-core-server' | grep -v 'make\|grep' || true); \
+	if [ -n "$$leaked" ]; then \
+		echo "WARNING: Found leaked MATLAB processes:"; \
+		echo "$$leaked"; \
+		exit 1; \
+	else \
+		echo "No leaked MATLAB processes found."; \
+	fi
+endif

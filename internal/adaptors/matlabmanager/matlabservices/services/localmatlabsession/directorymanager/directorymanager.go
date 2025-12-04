@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const defaultEmbeddedConnectorDetailsTimeout = 2 * time.Minute
+const defaultEmbeddedConnectorDetailsTimeout = 5 * time.Minute
 const defaultEmbeddedConnectorDetailsRetry = 500 * time.Millisecond
 
 const defaultCleanupTimeout = 2 * time.Minute

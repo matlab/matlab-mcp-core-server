@@ -4,45 +4,45 @@ package system_test
 
 import (
 	"os"
-	"path/filepath"
+	"os/exec"
 	"testing"
 
-	"github.com/matlab/matlab-mcp-core-server/tests/system/config"
-	"github.com/matlab/matlab-mcp-core-server/tests/system/execsuite"
-	"github.com/stretchr/testify/require"
+	"github.com/matlab/matlab-mcp-core-server/tests/testutils/pathcontrol"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestSystem(t *testing.T) {
-	matlabMCPServerBinariesPath := getMATLABMCPCoreServerPath(t)
-
-	suite.Run(t, execsuite.NewSuite(matlabMCPServerBinariesPath))
+// CLITestSuite tests command-line flags and basic server functionality
+type CLITestSuite struct {
+	SystemTestSuite
 }
 
-const matlabMCPCoreServerBinaryPathEnvironmentVariable = "MATLAB_MCP_CORE_SERVER_BINARY_PATH"
+// TestVersionFlag validates the --version CLI flag
+func (s *CLITestSuite) TestVersionFlag() {
+	cmd := exec.Command(s.mcpServerPath, "--version") //nolint:gosec // Trusted test path
+	output, err := cmd.CombinedOutput()
+	s.Require().NoError(err, "version flag should execute successfully")
+	s.Contains(string(output), "github.com/matlab/matlab-mcp-core-server", "should display server package path")
+}
 
-// getMATLABMCPCoreServerPath retrieves the absolute path of the matlab-mcp-sever binaries.
-// It requires `make` to have been run, or at a minimum `make build` to generate the binaries.
-//
-// For CI, we allow overrides, by using MATLAB_MCP_CORE_SERVER_BINARY_PATH environment variable
-func getMATLABMCPCoreServerPath(t *testing.T) string {
-	path := filepath.Join(
-		"..",
-		"..",
-		".bin",
-		config.OSDescriptor,
-		config.MATLABMCPCoreServerBinariesFilename,
-	)
+func (s *CLITestSuite) TestMATLABRootFlag() {
+	// Remove MATLABs from the path to directly test the --matlab-root flag
+	newPath := pathcontrol.RemoveAllMATLABsFromPath(os.Getenv("PATH"))
+	env := pathcontrol.UpdateEnvEntry(os.Environ(), "PATH", newPath)
 
-	if value := os.Getenv(matlabMCPCoreServerBinaryPathEnvironmentVariable); value != "" {
-		path = value
-	}
+	ctx := s.T().Context()
+	session, dumpLogs := s.CreateMCPSession(ctx, env, "--matlab-root="+s.matlabRoot())
+	defer dumpLogs(s.T())
+	defer func() {
+		s.Require().NoError(session.Close(), "closing session should not error")
+	}()
 
-	path, err := filepath.Abs(path)
+	output, err := session.EvaluateCode(ctx, "disp('Server functional'); 2+2", s.testDataDir)
+	s.Require().NoError(err, "evaluating MATLAB code should not error")
+	s.Contains(output, "Server functional")
+	s.Contains(output, "4")
+}
 
-	require.NoError(t, err, "Failed to get absolute path")
-	require.NotEmpty(t, path, "matlab-mcp-core-server binary path cannot be empty")
-	require.FileExists(t, path, "matlab-mcp-core-server binary does not exist")
-
-	return path
+// TestCLISuite runs the CLI test suite
+func TestCLISuite(t *testing.T) {
+	suite.Run(t, new(CLITestSuite))
 }
