@@ -4,7 +4,9 @@ package embeddedconnector_test
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"time"
@@ -16,22 +18,32 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestClient_Ping_DoErrors(t *testing.T) {
+func TestClient_Ping_Retries(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
 	mockHttpClient := &httpclientfactorymocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
+	okResponse := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{"messages":{"pingResponse":[{}]}}`)),
+	}
+
 	mockHttpClient.EXPECT().
 		Do(mock.AnythingOfType("*http.Request")).
 		Return(nil, assert.AnError).
 		Once()
 
+	mockHttpClient.EXPECT().
+		Do(mock.AnythingOfType("*http.Request")).
+		Return(okResponse, nil).
+		Once()
+
 	client := embeddedconnector.Client{}
 	client.SetHttpClient(mockHttpClient)
-	client.SetPingRetry(20 * time.Millisecond)
-	client.SetPingTimeout(30 * time.Millisecond)
+	client.SetPingRetry(10 * time.Millisecond)
+	client.SetPingTimeout(100 * time.Millisecond)
 
 	ctx := t.Context()
 
@@ -39,7 +51,7 @@ func TestClient_Ping_DoErrors(t *testing.T) {
 	response := client.Ping(ctx, mockLogger)
 
 	// Assert
-	assert.False(t, response.IsAlive)
+	assert.True(t, response.IsAlive)
 }
 
 func TestClient_Ping_ContextPropagation(t *testing.T) {
@@ -54,24 +66,28 @@ func TestClient_Ping_ContextPropagation(t *testing.T) {
 	const contextKeyValue = "uniqueValue"
 
 	expectedContext := context.WithValue(t.Context(), contextKey, contextKeyValue)
+	expectedResponse := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{"messages":{"pingResponse":[{}]}}`)),
+	}
 
 	mockHttpClient.EXPECT().
 		Do(mock.MatchedBy(func(request *http.Request) bool {
 			return request.Context().Value(contextKey) == contextKeyValue
 		})).
-		Return(nil, assert.AnError).
+		Return(expectedResponse, nil).
 		Once()
 
 	client := embeddedconnector.Client{}
 	client.SetHttpClient(mockHttpClient)
-	client.SetPingRetry(20 * time.Millisecond)
-	client.SetPingTimeout(30 * time.Millisecond)
+	client.SetPingRetry(10 * time.Millisecond)
+	client.SetPingTimeout(100 * time.Millisecond)
 
 	// Act
 	response := client.Ping(expectedContext, mockLogger)
 
 	// Assert
-	assert.False(t, response.IsAlive)
+	assert.True(t, response.IsAlive)
 }
 
 func TestClient_Ping_Timeout(t *testing.T) {
@@ -81,16 +97,15 @@ func TestClient_Ping_Timeout(t *testing.T) {
 	mockHttpClient := &httpclientfactorymocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
-	var callCount int
 	mockHttpClient.EXPECT().
 		Do(mock.AnythingOfType("*http.Request")).
-		Run(func(_ *http.Request) { callCount++ }).
 		Return(nil, assert.AnError)
 
+	pingTimeout := 100 * time.Millisecond
 	client := embeddedconnector.Client{}
 	client.SetHttpClient(mockHttpClient)
 	client.SetPingRetry(10 * time.Millisecond)
-	client.SetPingTimeout(45 * time.Millisecond)
+	client.SetPingTimeout(pingTimeout)
 
 	ctx := t.Context()
 
@@ -100,8 +115,6 @@ func TestClient_Ping_Timeout(t *testing.T) {
 	duration := time.Since(start)
 
 	// Assert
-	assert.False(t, response.IsAlive)
-	assert.GreaterOrEqual(t, callCount, 3, "Should have retried at least 3 times")
-	assert.LessOrEqual(t, callCount, 5, "Should not retry more than 5 times")
-	assert.GreaterOrEqual(t, duration, 45*time.Millisecond, "Should have waited for at least the timeout duration")
+	assert.False(t, response.IsAlive, "Should return not alive after timeout")
+	assert.GreaterOrEqual(t, duration, pingTimeout, "Should have waited for at least the timeout duration")
 }

@@ -169,6 +169,17 @@ func (m *Client) Ping(ctx context.Context, sessionLogger entities.Logger) entiti
 	tick := time.Tick(m.pingRetry)
 
 	for {
+		status, err := m.pingMATLAB(ctx, sessionLogger)
+		if err != nil {
+			sessionLogger.WithError(err).Debug("Ping to MATLAB session failed")
+		}
+
+		if status {
+			return entities.PingResponse{
+				IsAlive: true,
+			}
+		}
+
 		select {
 		case <-timeout:
 			sessionLogger.Warn("timeout waiting for matlab to be ready")
@@ -176,18 +187,6 @@ func (m *Client) Ping(ctx context.Context, sessionLogger entities.Logger) entiti
 				IsAlive: false,
 			}
 		case <-tick:
-			status, err := m.pingMATLAB(ctx, sessionLogger)
-			if err != nil {
-				sessionLogger.WithError(err).Warn("Ping to MATLAB session failed")
-			}
-
-			if !status {
-				continue
-			}
-
-			return entities.PingResponse{
-				IsAlive: true,
-			}
 		}
 	}
 }
