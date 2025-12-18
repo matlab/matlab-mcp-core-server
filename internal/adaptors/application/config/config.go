@@ -4,7 +4,6 @@ package config
 
 import (
 	"runtime/debug"
-	"strings"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/inputs/flags"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -42,19 +41,19 @@ func New(
 	return createConfigWithFlagValues(osLayer, flagSet, osLayer.Args()[1:])
 }
 
-// Version will return the application version string.
-// The version returned will be `version` if set, using ldflags during build.
-// Otherwise, it will return the version from the build info.
+// Version returns the application version string from Go's build info.
 func (c *Config) Version() string {
 	buildInfo, ok := c.osLayer.ReadBuildInfo()
-
-	finalVersion := strings.TrimSpace(version)
-
-	if ok && version == unsetVersion {
-		finalVersion = buildInfo.Main.Version
+	if !ok {
+		return "(unknown)"
 	}
 
-	return buildInfo.Main.Path + " " + finalVersion
+	version := buildInfo.Main.Version
+	if version == "" {
+		version = "(devel)"
+	}
+
+	return buildInfo.Main.Path + " " + version
 }
 
 func (c *Config) VersionMode() bool {

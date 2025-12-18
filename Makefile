@@ -15,15 +15,7 @@ else
     RACE_FLAG = -race
 endif
 
-SEMANTIC_VERSION=v0.3.0
-COMMIT_HASH := $(shell git rev-parse HEAD)
 
-# Append Git commit hash to version unless building a release
-ifeq ($(RELEASE),true)
-	VERSION := $(SEMANTIC_VERSION)
-else
-	VERSION := $(SEMANTIC_VERSION).$(COMMIT_HASH)
-endif
 
 ifeq ($(OS),Windows_NT)
     RM_DIR = if (Test-Path "$(1)") { Remove-Item -Recurse -Force "$(1)" }
@@ -65,19 +57,15 @@ export PATH := $(BIN_PATH)$(PATHSEP)$(PATH)
 
 # Go build flags
 BUILD_FLAGS := -trimpath
-LDVARS := -X=github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config.version=$(VERSION)
 
 # Strip symbol table and debug info for release builds only
 ifeq ($(RELEASE),true)
-	LDFLAGS := -s -w $(LDVARS)
+	LDFLAGS := -s -w
 else
-	LDFLAGS := $(LDVARS)
+	LDFLAGS :=
 endif
 
 all: install wire mockery lint unit-tests integration-tests build
-
-version:
-	@echo $(VERSION)
 
 mcp-inspector: build
 	npx @modelcontextprotocol/inspector matlab-mcp-core-server

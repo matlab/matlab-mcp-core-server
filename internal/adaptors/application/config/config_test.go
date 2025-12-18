@@ -132,112 +132,74 @@ func TestNew_HappyPath(t *testing.T) {
 	}
 }
 
-func TestConfig_Version_VersionSetByLDFLAGS(t *testing.T) {
-	// Arrange
-	expectedVersion := "v1.2.3"
-	config.SetVersionLikeLDFLAGSWould(t, expectedVersion)
+func TestConfig_Version(t *testing.T) {
+	modulePath := "github.com/matlab/matlab-mcp-core-server"
 
-	mockOSLayer := &configmocks.MockOSLayer{}
-	defer mockOSLayer.AssertExpectations(t)
+	testCases := []struct {
+		name            string
+		buildInfoOK     bool
+		moduleVersion   string
+		expectedVersion string
+	}{
+		{
+			name:            "version from build info",
+			buildInfoOK:     true,
+			moduleVersion:   "v1.2.3",
+			expectedVersion: modulePath + " v1.2.3",
+		},
+		{
+			name:            "devel fallback",
+			buildInfoOK:     true,
+			moduleVersion:   "(devel)",
+			expectedVersion: modulePath + " (devel)",
+		},
+		{
+			name:            "build info unavailable",
+			buildInfoOK:     false,
+			moduleVersion:   "",
+			expectedVersion: "(unknown)",
+		},
+		{
+			name:            "empty version string",
+			buildInfoOK:     true,
+			moduleVersion:   "",
+			expectedVersion: modulePath + " (devel)",
+		},
+	}
 
-	programName := "testprocess"
-	modulePath := "server.com/some/path/to/module"
-	ignoredVersion := "v0.0.0"
-	expectedFullVersion := modulePath + " " + expectedVersion
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockOSLayer := &configmocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
 
-	mockOSLayer.EXPECT().
-		Args().
-		Return([]string{programName}).
-		Once()
+			mockOSLayer.EXPECT().
+				Args().
+				Return([]string{"testprocess"}).
+				Once()
 
-	mockOSLayer.EXPECT().
-		ReadBuildInfo().
-		Return(&debug.BuildInfo{
-			Main: debug.Module{
-				Path:    modulePath,
-				Version: ignoredVersion,
-			},
-		}, true).
-		Once()
+			var buildInfo *debug.BuildInfo
+			if tc.buildInfoOK {
+				buildInfo = &debug.BuildInfo{
+					Main: debug.Module{
+						Path:    modulePath,
+						Version: tc.moduleVersion,
+					},
+				}
+			}
 
-	cfg, err := config.New(mockOSLayer)
-	require.NoError(t, err)
+			mockOSLayer.EXPECT().
+				ReadBuildInfo().
+				Return(buildInfo, tc.buildInfoOK).
+				Once()
 
-	// Act
-	version := cfg.Version()
+			cfg, err := config.New(mockOSLayer)
+			require.NoError(t, err)
 
-	// Assert
-	require.Equal(t, expectedFullVersion, version)
-}
+			version := cfg.Version()
 
-func TestConfig_Version_VersionUnsetByLDFLAGS(t *testing.T) {
-	// Arrange
-	mockOSLayer := &configmocks.MockOSLayer{}
-	defer mockOSLayer.AssertExpectations(t)
-
-	programName := "testprocess"
-	modulePath := "server.com/some/path/to/module"
-	moduleVersion := "v1.2.3"
-	expectedFullVersion := modulePath + " " + moduleVersion
-
-	mockOSLayer.EXPECT().
-		Args().
-		Return([]string{programName}).
-		Once()
-
-	mockOSLayer.EXPECT().
-		ReadBuildInfo().
-		Return(&debug.BuildInfo{
-			Main: debug.Module{
-				Path:    modulePath,
-				Version: moduleVersion,
-			},
-		}, true).
-		Once()
-
-	cfg, err := config.New(mockOSLayer)
-	require.NoError(t, err)
-
-	// Act
-	version := cfg.Version()
-
-	// Assert
-	require.Equal(t, expectedFullVersion, version)
-}
-
-func TestConfig_Version_VersionUnsetByLDFLAGS_ButReadBuildInfoNotOK(t *testing.T) {
-	// Arrange
-	mockOSLayer := &configmocks.MockOSLayer{}
-	defer mockOSLayer.AssertExpectations(t)
-
-	programName := "testprocess"
-	modulePath := "server.com/some/path/to/module"
-	moduleVersion := "v1.2.3"
-	expectedFullVersion := modulePath + " (devel)"
-
-	mockOSLayer.EXPECT().
-		Args().
-		Return([]string{programName}).
-		Once()
-
-	mockOSLayer.EXPECT().
-		ReadBuildInfo().
-		Return(&debug.BuildInfo{
-			Main: debug.Module{
-				Path:    modulePath,
-				Version: moduleVersion,
-			},
-		}, false).
-		Once()
-
-	cfg, err := config.New(mockOSLayer)
-	require.NoError(t, err)
-
-	// Act
-	version := cfg.Version()
-
-	// Assert
-	require.Equal(t, expectedFullVersion, version)
+			require.Equal(t, tc.expectedVersion, version)
+		})
+	}
 }
 
 func TestConfig_DisableTelemetry_HappyPath(t *testing.T) {
