@@ -1,6 +1,7 @@
 internal/adaptors/application/config/assets/version
 internal/adaptors/mcp/resources/**/*.md
 internal/adaptors/mcp/server/assets/**
+internal/messages/**
 internal/wire/wire_gen.go
 licenses/**
 mocks/**

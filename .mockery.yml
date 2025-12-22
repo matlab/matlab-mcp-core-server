@@ -9,6 +9,9 @@ packages:
       dir: 'mocks/{{.InterfaceDirRelative | trimPrefix "internal" }}'
       recursive: true
       all: true
+  github.com/matlab/matlab-mcp-core-server/internal/messages:
+    config:
+      all: false
   github.com/matlab/matlab-mcp-core-server/tests/testutils:
     config:
       dir: 'tests/mocks/{{.InterfaceDirRelative | trimPrefix "tests" }}'

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copyright 2025 The MathWorks, Inc. -->
+<rsccat version="1.0" locale="en_US" product="matlab-batch">
+     <message>
+         <entry key="BadFlag" context="error">Error with supplied arguments: non-existent option {0}.{1}{2}</entry>
+         <entry key="BadSyntax" context="error">Error with supplied arguments: invalid syntax {0}.{1}{2}</entry>
+         <entry key="BadValue" context="error">Error with supplied arguments: invalid value {0} for option {1}.</entry>
+         <entry key="GenericInitializeFailure">Failed to initialize MCP Core Server. Error: {0}.</entry>
+         <entry key="InvalidLogLevel" context="error">Error with supplied arguments: invalid log level {0}.</entry>
+         <entry key="MissingValue" context="error">Error with supplied arguments: value required for option {0}.</entry>
+         <entry key="ParseFailed" context="error">Error with supplied arguments: parse failed.{0}{1}</entry>
+     </message>
+</rsccat>

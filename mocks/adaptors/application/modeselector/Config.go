@@ -35,6 +35,50 @@ func (_m *MockConfig) EXPECT() *MockConfig_Expecter {
 	return &MockConfig_Expecter{mock: &_m.Mock}
 }
 
+// HelpMode provides a mock function for the type MockConfig
+func (_mock *MockConfig) HelpMode() bool {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HelpMode")
+	}
+
+	var r0 bool
+	if returnFunc, ok := ret.Get(0).(func() bool); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	return r0
+}
+
+// MockConfig_HelpMode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HelpMode'
+type MockConfig_HelpMode_Call struct {
+	*mock.Call
+}
+
+// HelpMode is a helper method to define mock.On call
+func (_e *MockConfig_Expecter) HelpMode() *MockConfig_HelpMode_Call {
+	return &MockConfig_HelpMode_Call{Call: _e.mock.On("HelpMode")}
+}
+
+func (_c *MockConfig_HelpMode_Call) Run(run func()) *MockConfig_HelpMode_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockConfig_HelpMode_Call) Return(b bool) *MockConfig_HelpMode_Call {
+	_c.Call.Return(b)
+	return _c
+}
+
+func (_c *MockConfig_HelpMode_Call) RunAndReturn(run func() bool) *MockConfig_HelpMode_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Version provides a mock function for the type MockConfig
 func (_mock *MockConfig) Version() string {
 	ret := _mock.Called()

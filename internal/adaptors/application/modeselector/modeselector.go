@@ -12,8 +12,13 @@ import (
 
 type Config interface {
 	Version() string
+	HelpMode() bool
 	VersionMode() bool
 	WatchdogMode() bool
+}
+
+type Parser interface {
+	Usage() string
 }
 
 type WatchdogProcessFactory interface { //nolint:iface // Intentional interface for deps injection
@@ -36,16 +41,19 @@ type ModeSelector struct {
 	watchdogProcessFactory WatchdogProcessFactory
 	orchestratorFactory    OrchestratorFactory
 	osLayer                OSLayer
+	parser                 Parser
 }
 
 func New(
 	config Config,
+	parser Parser,
 	watchdogProcessFactory WatchdogProcessFactory,
 	orchestratorFactory OrchestratorFactory,
 	osLayer OSLayer,
 ) *ModeSelector {
 	return &ModeSelector{
 		config:                 config,
+		parser:                 parser,
 		watchdogProcessFactory: watchdogProcessFactory,
 		orchestratorFactory:    orchestratorFactory,
 		osLayer:                osLayer,
@@ -54,6 +62,9 @@ func New(
 
 func (a *ModeSelector) StartAndWaitForCompletion(ctx context.Context) error {
 	switch {
+	case a.config.HelpMode():
+		_, err := fmt.Fprintf(a.osLayer.Stdout(), "%s\n", a.parser.Usage())
+		return err
 	case a.config.VersionMode():
 		_, err := fmt.Fprintf(a.osLayer.Stdout(), "%s\n", a.config.Version())
 		return err

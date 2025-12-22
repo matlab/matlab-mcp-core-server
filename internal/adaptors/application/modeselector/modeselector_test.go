@@ -27,9 +27,13 @@ func TestNew_HappyPath(t *testing.T) {
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	// Act
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -53,10 +57,18 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	mockStdout := &entitiesmocks.MockWriter{}
 	defer mockStdout.AssertExpectations(t)
 
 	expectedVersion := "25.6.68"
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -80,6 +92,7 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -109,8 +122,16 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 	mockStdout := &entitiesmocks.MockWriter{}
 	defer mockStdout.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	expectedVersion := "25.6.68"
 	expectedError := assert.AnError
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -134,6 +155,7 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -163,7 +185,15 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 	mockWatchdogProcess := &entitiesmocks.MockMode{}
 	defer mockWatchdogProcess.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -187,6 +217,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -213,7 +244,15 @@ func TestStartAndWaitForCompletion_WatchdogMode_CreateError(t *testing.T) {
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	expectedError := assert.AnError
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -232,6 +271,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_CreateError(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -261,8 +301,16 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 	mockWatchdogProcess := &entitiesmocks.MockMode{}
 	defer mockWatchdogProcess.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	expectedError := assert.AnError
 	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -286,6 +334,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -315,7 +364,15 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 	mockOrchestrator := &entitiesmocks.MockMode{}
 	defer mockOrchestrator.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -339,6 +396,7 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -365,7 +423,15 @@ func TestStartAndWaitForCompletion_DefaultMode_CreateError(t *testing.T) {
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	expectedError := assert.AnError
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -384,6 +450,7 @@ func TestStartAndWaitForCompletion_DefaultMode_CreateError(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -413,8 +480,16 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 	mockOrchestrator := &entitiesmocks.MockMode{}
 	defer mockOrchestrator.AssertExpectations(t)
 
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
 	expectedError := assert.AnError
 	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
 
 	mockConfig.EXPECT().
 		VersionMode().
@@ -438,6 +513,7 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 
 	modeSelectorInstance := modeselector.New(
 		mockConfig,
+		mockParser,
 		mockWatchdogProcessFactory,
 		mockOrchestratorFactory,
 		mockOsLayer,
@@ -448,4 +524,127 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from StartAndWaitForCompletion")
+}
+
+func TestStartAndWaitForCompletion_HelpMode_StartAndWaitHappyPath(t *testing.T) {
+	// Arrange
+	mockConfig := &modeselectormocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
+	defer mockWatchdogProcessFactory.AssertExpectations(t)
+
+	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
+	defer mockOrchestratorFactory.AssertExpectations(t)
+
+	mockOsLayer := &modeselectormocks.MockOSLayer{}
+	defer mockOsLayer.AssertExpectations(t)
+
+	mockOrchestrator := &entitiesmocks.MockMode{}
+	defer mockOrchestrator.AssertExpectations(t)
+
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockStdout := &entitiesmocks.MockWriter{}
+	defer mockStdout.AssertExpectations(t)
+
+	dummyHelpText := "Help me get my feet back on the ground."
+	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(true).
+		Once()
+
+	mockParser.EXPECT().
+		Usage().
+		Return(dummyHelpText).
+		Once()
+
+	modeSelectorInstance := modeselector.New(
+		mockConfig,
+		mockParser,
+		mockWatchdogProcessFactory,
+		mockOrchestratorFactory,
+		mockOsLayer,
+	)
+
+	mockOsLayer.EXPECT().
+		Stdout().
+		Return(mockStdout).
+		Once()
+
+	mockStdout.EXPECT().
+		Write([]byte(fmt.Sprintf("%s\n", dummyHelpText))).
+		Return(len(dummyHelpText)+1, nil).
+		Once()
+
+	// Act
+	err := modeSelectorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+func TestStartAndWaitForCompletion_HelpMode_StartAndWaitWriteError(t *testing.T) {
+	// Arrange
+	mockConfig := &modeselectormocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
+	defer mockWatchdogProcessFactory.AssertExpectations(t)
+
+	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
+	defer mockOrchestratorFactory.AssertExpectations(t)
+
+	mockOsLayer := &modeselectormocks.MockOSLayer{}
+	defer mockOsLayer.AssertExpectations(t)
+
+	mockOrchestrator := &entitiesmocks.MockMode{}
+	defer mockOrchestrator.AssertExpectations(t)
+
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockStdout := &entitiesmocks.MockWriter{}
+	defer mockStdout.AssertExpectations(t)
+
+	dummyHelpText := "Help me get my feet back on the ground."
+	dummyError := assert.AnError
+	ctx := t.Context()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(true).
+		Once()
+
+	mockParser.EXPECT().
+		Usage().
+		Return(dummyHelpText).
+		Once()
+
+	modeSelectorInstance := modeselector.New(
+		mockConfig,
+		mockParser,
+		mockWatchdogProcessFactory,
+		mockOrchestratorFactory,
+		mockOsLayer,
+	)
+
+	mockOsLayer.EXPECT().
+		Stdout().
+		Return(mockStdout).
+		Once()
+
+	mockStdout.EXPECT().
+		Write([]byte(fmt.Sprintf("%s\n", dummyHelpText))).
+		Return(0, dummyError).
+		Once()
+
+	// Act
+	err := modeSelectorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.ErrorIs(t, err, dummyError)
 }

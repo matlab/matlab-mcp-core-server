@@ -8,6 +8,7 @@ import (
 	"github.com/google/wire"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/inputs/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
@@ -43,6 +44,7 @@ import (
 	evalmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	watchdogclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog/process"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -80,6 +82,11 @@ func (f *orchestratorFactory) Create() (entities.Mode, error) {
 	return initializeOrchestrator()
 }
 
+func NewConfig(oslayer config.OSLayer, parser config.Parser) (*config.Config, error) {
+	config, err := config.New(oslayer, parser)
+	return config, error(err)
+}
+
 type watchdogProcessFactory struct{}
 
 func newWatchdogProcessFactory() *watchdogProcessFactory {
@@ -95,6 +102,7 @@ func InitializeModeSelector() (*modeselector.ModeSelector, error) {
 		// Application
 		modeselector.New,
 		wire.Bind(new(modeselector.Config), new(*config.Config)),
+		wire.Bind(new(modeselector.Parser), new(*parser.Parser)),
 		wire.Bind(new(modeselector.WatchdogProcessFactory), new(*watchdogProcessFactory)),
 		wire.Bind(new(modeselector.OrchestratorFactory), new(*orchestratorFactory)),
 		wire.Bind(new(modeselector.OSLayer), new(*osfacade.OsFacade)),
@@ -104,8 +112,12 @@ func InitializeModeSelector() (*modeselector.ModeSelector, error) {
 		newOrchestratorFactory,
 
 		// Low-level Interfaces
-		config.New,
+		NewConfig,
 		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(config.Parser), new(*parser.Parser)),
+		parser.New,
+		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		messagecatalog.New,
 		osfacade.New,
 	)
 
@@ -279,45 +291,43 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		// Local MATLAB Process Launcher
 		processlauncher.New,
 
-		wire.NewSet(
-			// MATLAB Root Getter
-			matlabroot.New,
-			wire.Bind(new(matlabroot.OSLayer), new(*osfacade.OsFacade)),
-			wire.Bind(new(matlabroot.FileLayer), new(*filefacade.FileFacade)),
+		// MATLAB Root Getter
+		matlabroot.New,
+		wire.Bind(new(matlabroot.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(matlabroot.FileLayer), new(*filefacade.FileFacade)),
 
-			// MATLAB Version Getter
-			matlabversion.New,
-			wire.Bind(new(matlabversion.OSLayer), new(*osfacade.OsFacade)),
-			wire.Bind(new(matlabversion.IOLayer), new(*iofacade.IoFacade)),
+		// MATLAB Version Getter
+		matlabversion.New,
+		wire.Bind(new(matlabversion.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(matlabversion.IOLayer), new(*iofacade.IoFacade)),
 
-			// MATLAB Files Provider
-			matlabfiles.New,
+		// MATLAB Files Provider
+		matlabfiles.New,
 
-			wire.NewSet(
-				// Low-level Interfaces
-				logger.NewFactory,
-				wire.Bind(new(logger.Config), new(*config.Config)),
-				wire.Bind(new(logger.Directory), new(*directory.Directory)),
-				wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
-				wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
-				oswrapper.New,
-				wire.Bind(new(oswrapper.OSLayer), new(*osfacade.OsFacade)),
-				directory.New,
-				wire.Bind(new(directory.Config), new(*config.Config)),
-				wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
-				wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
-				lifecyclesignaler.New,
-				config.New,
-				wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
-				files.NewFactory,
-				wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
-				osfacade.New,
-				iofacade.New,
-				filefacade.New,
-				ossignaler.New,
-				httpclientfactory.New,
-			),
-		),
+		// Low-level Interfaces
+		logger.NewFactory,
+		wire.Bind(new(logger.Config), new(*config.Config)),
+		wire.Bind(new(logger.Directory), new(*directory.Directory)),
+		wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
+		wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
+		directory.New,
+		wire.Bind(new(directory.Config), new(*config.Config)),
+		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
+		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
+		lifecyclesignaler.New,
+		NewConfig,
+		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(config.Parser), new(*parser.Parser)),
+		parser.New,
+		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		messagecatalog.New,
+		files.NewFactory,
+		wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
+		osfacade.New,
+		iofacade.New,
+		filefacade.New,
+		ossignaler.New,
+		httpclientfactory.New,
 	)
 
 	return nil, nil
@@ -368,8 +378,12 @@ func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
 		wire.Bind(new(directory.Config), new(*config.Config)),
 		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
-		config.New,
+		NewConfig,
 		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(config.Parser), new(*parser.Parser)),
+		parser.New,
+		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		messagecatalog.New,
 		files.NewFactory,
 		wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
 		oswrapper.New,

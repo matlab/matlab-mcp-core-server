@@ -9,6 +9,7 @@ package wire
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/inputs/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
@@ -42,6 +43,7 @@ import (
 	evalmatlabcode3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog/process"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -73,30 +75,34 @@ import (
 
 func InitializeModeSelector() (*modeselector.ModeSelector, error) {
 	osFacade := osfacade.New()
-	configConfig, err := config.New(osFacade)
+	messageCatalog := messagecatalog.New()
+	parserParser := parser.New(messageCatalog)
+	config, err := NewConfig(osFacade, parserParser)
 	if err != nil {
 		return nil, err
 	}
 	wireWatchdogProcessFactory := newWatchdogProcessFactory()
 	wireOrchestratorFactory := newOrchestratorFactory()
-	modeSelector := modeselector.New(configConfig, wireWatchdogProcessFactory, wireOrchestratorFactory, osFacade)
+	modeSelector := modeselector.New(config, parserParser, wireWatchdogProcessFactory, wireOrchestratorFactory, osFacade)
 	return modeSelector, nil
 }
 
 func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	lifecycleSignaler := lifecyclesignaler.New()
 	osFacade := osfacade.New()
-	configConfig, err := config.New(osFacade)
+	messageCatalog := messagecatalog.New()
+	parserParser := parser.New(messageCatalog)
+	config, err := NewConfig(osFacade, parserParser)
 	if err != nil {
 		return nil, err
 	}
-	mcpServer := server.NewMCPSDKServer(configConfig)
+	mcpServer := server.NewMCPSDKServer(config)
 	factory := files.NewFactory(osFacade)
-	directoryDirectory, err := directory.New(configConfig, factory, osFacade)
+	directoryDirectory, err := directory.New(config, factory, osFacade)
 	if err != nil {
 		return nil, err
 	}
-	loggerFactory, err := logger.NewFactory(configConfig, directoryDirectory, factory, osFacade)
+	loggerFactory, err := logger.NewFactory(config, directoryDirectory, factory, osFacade)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +115,7 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	directoryFactory := directorymanager.NewFactory(osFacade, directoryDirectory, matlabFiles)
 	processDetails := processdetails.New(osFacade)
 	matlabProcessLauncher := processlauncher.New()
-	processProcess, err := process.New(osFacade, loggerFactory, directoryDirectory, configConfig)
+	processProcess, err := process.New(osFacade, loggerFactory, directoryDirectory, config)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +137,8 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	pathValidator := pathvalidator.New(osFacade)
 	evalmatlabcodeUsecase := evalmatlabcode.New(pathValidator)
 	evalmatlabcodeTool := evalmatlabcode2.New(loggerFactory, evalmatlabcodeUsecase, matlabManager)
-	matlabRootSelector := matlabrootselector.New(configConfig, matlabManager)
-	matlabStartingDirSelector := matlabstartingdirselector.New(configConfig, osFacade)
+	matlabRootSelector := matlabrootselector.New(config, matlabManager)
+	matlabStartingDirSelector := matlabstartingdirselector.New(config, osFacade)
 	globalMATLAB := globalmatlab.New(matlabManager, matlabRootSelector, matlabStartingDirSelector)
 	tool2 := evalmatlabcode3.New(loggerFactory, evalmatlabcodeUsecase, globalMATLAB)
 	checkmatlabcodeUsecase := checkmatlabcode.New(pathValidator)
@@ -151,28 +157,30 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	if err != nil {
 		return nil, err
 	}
-	configuratorConfigurator := configurator.New(configConfig, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
+	configuratorConfigurator := configurator.New(config, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
 	serverServer, err := server.New(mcpServer, loggerFactory, lifecycleSignaler, configuratorConfigurator)
 	if err != nil {
 		return nil, err
 	}
 	osSignaler := ossignaler.New()
-	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, configConfig, serverServer, watchdogWatchdog, loggerFactory, osSignaler, globalMATLAB, directoryDirectory)
+	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, config, serverServer, watchdogWatchdog, loggerFactory, osSignaler, globalMATLAB, directoryDirectory)
 	return orchestratorOrchestrator, nil
 }
 
 func initializeWatchdog() (*watchdog2.Watchdog, error) {
 	osFacade := osfacade.New()
-	configConfig, err := config.New(osFacade)
+	messageCatalog := messagecatalog.New()
+	parserParser := parser.New(messageCatalog)
+	config, err := NewConfig(osFacade, parserParser)
 	if err != nil {
 		return nil, err
 	}
 	factory := files.NewFactory(osFacade)
-	directoryDirectory, err := directory.New(configConfig, factory, osFacade)
+	directoryDirectory, err := directory.New(config, factory, osFacade)
 	if err != nil {
 		return nil, err
 	}
-	loggerFactory, err := logger.NewFactory(configConfig, directoryDirectory, factory, osFacade)
+	loggerFactory, err := logger.NewFactory(config, directoryDirectory, factory, osFacade)
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +205,11 @@ func newOrchestratorFactory() *orchestratorFactory {
 
 func (f *orchestratorFactory) Create() (entities.Mode, error) {
 	return initializeOrchestrator()
+}
+
+func NewConfig(oslayer config.OSLayer, parser2 config.Parser) (*config.Config, error) {
+	config2, err := config.New(oslayer, parser2)
+	return config2, error(err)
 }
 
 type watchdogProcessFactory struct{}

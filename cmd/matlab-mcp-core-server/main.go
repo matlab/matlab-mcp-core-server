@@ -4,19 +4,27 @@ package main
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 	"os"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire"
 )
 
 func main() {
 	modeSelector, err := wire.InitializeModeSelector()
 	if err != nil {
-		// As we failed to even initialize, we cannot use a LoggerFactory,
-		// and we can't assume whatever failed had a logger factory to log the error either.
-		// In this case, we use the default slog.
-		slog.With("error", err).Error("Failed to initialize MATLAB MCP Core Server.")
+		globalMessageCatalog := messagecatalog.New()
+		errorMessage, ok := globalMessageCatalog.GetFromGeneralError(err)
+		if ok {
+			fmt.Fprintf(os.Stderr, "%s\n", errorMessage)
+			os.Exit(1)
+		}
+
+		// As we failed to even initialize, we cannot use a LoggerFactory. Output error to stderr
+		fallbackMessage := globalMessageCatalog.Get(messages.StartupErrors_GenericInitializeFailure)
+		fmt.Fprintf(os.Stderr, fallbackMessage, err)
 		os.Exit(1)
 	}
 
