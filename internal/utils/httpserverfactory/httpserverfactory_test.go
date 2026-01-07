@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package httpserverfactory_test
 
@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
 	httpserverfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpserverfactory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,7 +91,26 @@ func TestUDSServer_Serve_Shutdown_HappyPath(t *testing.T) {
 	require.NoError(t, <-errC)
 }
 
-func TestUDSServer_Serve_RemoveError(t *testing.T) {
+func TestUDSServer_Serve_PathTooLong(t *testing.T) {
+	// Arrange
+	mockOSLayer := &httpserverfactorymocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	socketPath := filepath.Join("tmp", strings.Repeat("a", 200)+".sock")
+	handlers := map[string]http.HandlerFunc{}
+
+	factory := httpserverfactory.New(mockOSLayer)
+	server, err := factory.NewServerOverUDS(handlers)
+	require.NoError(t, err)
+
+	// Act
+	err = server.Serve(socketPath)
+
+	// Assert
+	require.ErrorIs(t, err, socket.ErrSocketPathTooLong)
+}
+
+func TestUDSServer_Serve_RemoveAllError(t *testing.T) {
 	// Arrange
 	mockOSLayer := &httpserverfactorymocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)

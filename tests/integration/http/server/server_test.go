@@ -1,9 +1,11 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package server_test
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -22,7 +24,13 @@ func TestHTTPServerFactory_NewServerOverUDS_HappyPath(t *testing.T) {
 	// Arrange
 	factory := newServerFactory()
 
-	socketPath := filepath.Join(t.TempDir(), "test.sock")
+	testDataDir, err := os.MkdirTemp("", "mcp_test") //nolint:usetesting // We can't use t.TempDir() here, as it sometimes creates path that are too long for socket paths
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, os.RemoveAll(testDataDir))
+	}()
+
+	socketPath := filepath.Join(testDataDir, "test.sock")
 
 	expectedStatusCode := http.StatusOK
 	expectedFirstBody := "first hello world"
@@ -48,7 +56,17 @@ func TestHTTPServerFactory_NewServerOverUDS_HappyPath(t *testing.T) {
 		require.NoError(t, server.Shutdown(t.Context()))
 	}()
 
-	waitForSocketFile(t, socketPath)
+	socketFileExists := make(chan error, 1)
+	go func() {
+		socketFileExists <- waitForSocketFile(socketPath)
+	}()
+
+	select {
+	case err := <-serverStopped:
+		t.Fatalf("Server stopped unexpectedly: %v", err)
+	case err := <-socketFileExists:
+		require.NoError(t, err)
+	}
 
 	client := newUDSClient(socketPath)
 
@@ -95,23 +113,23 @@ func newUDSClient(socketPath string) *http.Client {
 	}
 }
 
-func waitForSocketFile(t *testing.T, socketPath string) {
-	t.Helper()
-
+func waitForSocketFile(socketPath string) error {
 	timeout := time.After(1 * time.Second)
 	tick := time.Tick(100 * time.Millisecond)
 
 	for {
 		_, err := os.Stat(socketPath)
 		if err == nil {
-			return
+			return nil
 		}
 
-		require.ErrorIs(t, err, os.ErrNotExist)
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
 
 		select {
 		case <-timeout:
-			t.Fatalf("Failed to wait for socket file: %v", err)
+			return fmt.Errorf("Failed to wait for socket file: %v", err)
 		case <-tick:
 		}
 	}

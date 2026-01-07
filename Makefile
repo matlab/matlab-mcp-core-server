@@ -1,4 +1,4 @@
-# Copyright 2025 The MathWorks, Inc.
+# Copyright 2025-2026 The MathWorks, Inc.
 
 # Set shell based on OS
 ifeq ($(OS),Windows_NT)
@@ -14,8 +14,6 @@ ifeq ($(OS),Windows_NT)
 else
     RACE_FLAG = -race
 endif
-
-
 
 ifeq ($(OS),Windows_NT)
     RM_DIR = if (Test-Path "$(1)") { Remove-Item -Recurse -Force "$(1)" }
@@ -60,9 +58,9 @@ BUILD_FLAGS := -trimpath
 
 # Strip symbol table and debug info for release builds only
 ifeq ($(RELEASE),true)
-	LDFLAGS := -s -w
+	LDFLAGS_ARG := -ldflags "-s -w"
 else
-	LDFLAGS :=
+	LDFLAGS_ARG :=
 endif
 
 all: install wire mockery lint unit-tests integration-tests build
@@ -120,30 +118,30 @@ build: build-for-windows build-for-glnxa64 build-for-maci64 build-for-maca64
 
 build-for-windows:
 ifeq ($(OS),Windows_NT)
-	$$env:GOOS='windows'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/win64/matlab-mcp-core-server.exe ./cmd/matlab-mcp-core-server
+	$$env:GOOS='windows'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/win64/matlab-mcp-core-server.exe ./cmd/matlab-mcp-core-server
 else
-	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/win64/matlab-mcp-core-server.exe ./cmd/matlab-mcp-core-server
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/win64/matlab-mcp-core-server.exe ./cmd/matlab-mcp-core-server
 endif
 
 build-for-glnxa64:
 ifeq ($(OS),Windows_NT)
-	$$env:GOOS='linux'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/glnxa64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	$$env:GOOS='linux'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/glnxa64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 else
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/glnxa64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/glnxa64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 endif
 
 build-for-maci64:
 ifeq ($(OS),Windows_NT)
-	$$env:GOOS='darwin'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/maci64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	$$env:GOOS='darwin'; $$env:GOARCH='amd64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/maci64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 else
-	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/maci64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/maci64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 endif
 
 build-for-maca64:
 ifeq ($(OS),Windows_NT)
-	$$env:GOOS='darwin'; $$env:GOARCH='arm64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/maca64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	$$env:GOOS='darwin'; $$env:GOARCH='arm64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/maca64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 else
-	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags "$(LDFLAGS)" -o ./.bin/maca64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o ./.bin/maca64/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 endif
 
 # Testing
