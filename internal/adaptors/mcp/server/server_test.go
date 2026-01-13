@@ -52,7 +52,7 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -88,6 +88,35 @@ func TestNew_HappyPath(t *testing.T) {
 	assert.NotNil(t, svr, "Server should not be nil")
 }
 
+func TestNew_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
+	defer mockMCPSDKServerFactory.AssertExpectations(t)
+
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockLifecycleSignaler := &mocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockConfigurator := &mocks.MockMCPServerConfigurator{}
+	defer mockConfigurator.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	// Act
+	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "New should return the error from GetGlobalLogger")
+	assert.Nil(t, svr, "Server should be nil when error occurs")
+}
+
 func TestNew_MCPSDKServerFactoryError(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
@@ -107,7 +136,7 @@ func TestNew_MCPSDKServerFactoryError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
@@ -151,7 +180,7 @@ func TestNew_AddToServerReturnsError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -197,7 +226,7 @@ func TestNew_HandlesNoToolsOrResources(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -242,7 +271,7 @@ func TestServer_Run_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigurator.EXPECT().

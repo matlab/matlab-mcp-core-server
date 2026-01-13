@@ -1,14 +1,15 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package processhandler
 
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type OSWrapper interface {
@@ -17,8 +18,8 @@ type OSWrapper interface {
 }
 
 type ProcessHandler struct {
-	logger    entities.Logger
-	osWrapper OSWrapper
+	loggerFactory LoggerFactory
+	osWrapper     OSWrapper
 }
 
 func New(
@@ -26,13 +27,18 @@ func New(
 	osWrapper OSWrapper,
 ) *ProcessHandler {
 	return &ProcessHandler{
-		logger:    loggerFactory.GetGlobalLogger(),
-		osWrapper: osWrapper,
+		loggerFactory: loggerFactory,
+		osWrapper:     osWrapper,
 	}
 }
 
-func (f *ProcessHandler) WatchProcessAndGetTerminationChan(processPid int) <-chan struct{} {
-	logger := f.logger.With("process-pid", processPid)
+func (f *ProcessHandler) WatchProcessAndGetTerminationChan(processPid int) (<-chan struct{}, error) {
+	logger, err := f.loggerFactory.GetGlobalLogger()
+	if err != nil {
+		return nil, err
+	}
+
+	logger = logger.With("process-pid", processPid)
 	logger.Debug("Watching process and notifying if it terminates")
 
 	parentTerminatedC := make(chan struct{})
@@ -43,7 +49,7 @@ func (f *ProcessHandler) WatchProcessAndGetTerminationChan(processPid int) <-cha
 		close(parentTerminatedC)
 	}()
 
-	return parentTerminatedC
+	return parentTerminatedC, nil
 }
 
 func (f *ProcessHandler) KillProcess(processPid int) error {

@@ -3,7 +3,6 @@
 package logger
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -43,10 +42,18 @@ type OSLayer interface {
 }
 
 type Factory struct {
-	globalLoggerOnce     *sync.Once
-	globalLogger         *slogLogger
-	globalLoggerLogLevel slog.Level
-	globalLoggerFile     entities.Writer
+	configFactory   ConfigFactory
+	directory       Directory
+	filenameFactory FilenameFactory
+	osLayer         OSLayer
+
+	initOnce       sync.Once
+	initError      messages.Error
+	parsedLogLevel slog.Level
+	logFile        entities.Writer
+
+	globalLoggerOnce sync.Once
+	globalLogger     *slogLogger
 }
 
 func NewFactory(
@@ -54,40 +61,18 @@ func NewFactory(
 	directory Directory,
 	filenameFactory FilenameFactory,
 	osLayer OSLayer,
-) (*Factory, error) {
-	config, configErr := configFactory.Config()
-	if configErr != nil {
-		return nil, configErr
-	}
-
-	logLevel, err := parseLogLevel(config.LogLevel())
-	if err != nil {
-		return nil, err
-	}
-
-	baseDir := directory.BaseDir()
-	id := directory.ID()
-
-	logFileBase := filepath.Join(baseDir, logFileName)
-	if config.WatchdogMode() {
-		logFileBase = filepath.Join(baseDir, watchdogLogFileName)
-	}
-
-	logFilePath := filenameFactory.FilenameWithSuffix(logFileBase, logFileExt, id)
-
-	logFile, err := osLayer.Create(logFilePath)
-	if err != nil {
-		return nil, err
-	}
-
+) *Factory {
 	return &Factory{
-		globalLoggerOnce:     new(sync.Once),
-		globalLoggerLogLevel: logLevel,
-		globalLoggerFile:     logFile,
-	}, nil
+		configFactory:   configFactory,
+		directory:       directory,
+		filenameFactory: filenameFactory,
+		osLayer:         osLayer,
+
+		parsedLogLevel: defaultGlobalLogLevel,
+	}
 }
 
-func (f *Factory) NewMCPSessionLogger(session *mcp.ServerSession) entities.Logger {
+func (f *Factory) NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error) {
 	// In MCP Server development, special care should be given to logging:
 	//
 	// https://modelcontextprotocol.io/quickstart/server#logging-in-mcp-servers
@@ -95,46 +80,87 @@ func (f *Factory) NewMCPSessionLogger(session *mcp.ServerSession) entities.Logge
 	// In essence, you can't log to standard `stdout`, and while you may log to `stderr`, you should log to the client:
 	//
 	// https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/logging
+	if err := f.initialize(); err != nil {
+		return nil, err
+	}
+
 	sessionHandler := mcp.NewLoggingHandler(session, &mcp.LoggingHandlerOptions{})
 
-	handler := slog.NewJSONHandler(f.globalLoggerFile, &slog.HandlerOptions{
-		Level: f.globalLoggerLogLevel,
+	handler := slog.NewJSONHandler(f.logFile, &slog.HandlerOptions{
+		Level: f.parsedLogLevel,
 	})
 
 	return &slogLogger{
 		logger: slog.New(NewMultiHandler(sessionHandler, handler)),
-	}
+	}, nil
 }
 
-func (f *Factory) GetGlobalLogger() entities.Logger {
+func (f *Factory) GetGlobalLogger() (entities.Logger, messages.Error) {
 	// There are cases where we want to log, but wo don't have an MCP session yet.
 	// In those cases, we must log to stderr, to not affect the stdio transport:
 	//
 	// https://modelcontextprotocol.io/docs/develop/build-server#best-practices
+	if err := f.initialize(); err != nil {
+		return nil, err
+	}
+
 	f.globalLoggerOnce.Do(func() {
-		multiWriter := io.MultiWriter(os.Stderr, f.globalLoggerFile)
+		multiWriter := io.MultiWriter(os.Stderr, f.logFile)
 
 		handler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
-			Level: f.globalLoggerLogLevel,
+			Level: f.parsedLogLevel,
 		})
 		f.globalLogger = &slogLogger{
 			logger: slog.New(handler),
 		}
 	})
-	return f.globalLogger
+
+	return f.globalLogger, nil
 }
 
-func parseLogLevel(logLevel entities.LogLevel) (slog.Level, error) {
-	switch logLevel {
-	case entities.LogLevelDebug:
-		return slog.LevelDebug, nil
-	case entities.LogLevelInfo:
-		return slog.LevelInfo, nil
-	case entities.LogLevelWarn:
-		return slog.LevelWarn, nil
-	case entities.LogLevelError:
-		return slog.LevelError, nil
-	default:
-		return defaultGlobalLogLevel, fmt.Errorf("unknown log level: %s", logLevel)
-	}
+func (f *Factory) initialize() messages.Error {
+	f.initOnce.Do(func() {
+		config, configErr := f.configFactory.Config()
+		if configErr != nil {
+			f.initError = configErr
+			return
+		}
+
+		var parsedLogLevel slog.Level
+		logLevel := config.LogLevel()
+		switch logLevel {
+		case entities.LogLevelDebug:
+			parsedLogLevel = slog.LevelDebug
+		case entities.LogLevelInfo:
+			parsedLogLevel = slog.LevelInfo
+		case entities.LogLevelWarn:
+			parsedLogLevel = slog.LevelWarn
+		case entities.LogLevelError:
+			parsedLogLevel = slog.LevelError
+		default:
+			f.initError = messages.New_StartupErrors_InvalidLogLevel_Error(string(logLevel))
+			return
+		}
+		f.parsedLogLevel = parsedLogLevel
+
+		baseDir := f.directory.BaseDir()
+		id := f.directory.ID()
+
+		logFileBase := filepath.Join(baseDir, logFileName)
+		if config.WatchdogMode() {
+			logFileBase = filepath.Join(baseDir, watchdogLogFileName)
+		}
+
+		logFilePath := f.filenameFactory.FilenameWithSuffix(logFileBase, logFileExt, id)
+
+		logFile, err := f.osLayer.Create(logFilePath)
+		if err != nil {
+			f.initError = messages.New_StartupErrors_FailedToCreateLogFile_Error(logFilePath)
+			return
+		}
+
+		f.logFile = logFile
+	})
+
+	return f.initError
 }

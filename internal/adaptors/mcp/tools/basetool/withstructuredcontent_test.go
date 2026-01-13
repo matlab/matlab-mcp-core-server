@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package basetool_test
 
@@ -10,6 +10,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/annotations"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/basetool"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/mcp/tools/basetool"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,16 +38,9 @@ func TestNewToolWithStructuredContent_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
-
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := basetool.NewToolWithStructuredContent(
@@ -84,18 +78,11 @@ func TestToolWithStructuredContentOutput_AddToServer_HappyPath(t *testing.T) {
 	mockAdder := &mocks.MockToolAdder[TestInput, TestOutput]{}
 	defer mockAdder.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
-
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
 
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	tool := basetool.NewToolWithStructuredContent(
 		testToolName,
@@ -141,7 +128,6 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockGlobalLogger := testutils.NewInspectableLogger()
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
 	expectedOutput := TestOutput{Result: "processed: test message"}
@@ -152,13 +138,8 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	}
 
 	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockGlobalLogger).
-		Once()
-
-	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(expectedSession).
-		Return(mockSessionLogger).
+		Return(mockSessionLogger, nil).
 		Once()
 
 	tool := basetool.NewToolWithStructuredContent(
@@ -188,7 +169,6 @@ func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testi
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockGlobalLogger := testutils.NewInspectableLogger()
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
 	expectedError := assert.AnError
@@ -199,13 +179,8 @@ func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testi
 	}
 
 	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockGlobalLogger).
-		Once()
-
-	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(expectedSession).
-		Return(mockSessionLogger).
+		Return(mockSessionLogger, nil).
 		Once()
 
 	tool := basetool.NewToolWithStructuredContent(
@@ -230,12 +205,51 @@ func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testi
 	assert.Empty(t, output, "Output should be zero value when error occurs")
 }
 
+func TestToolWithStructuredContentOutput_Handler_NewMCPSessionLoggerError(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	expectedSession := &mcp.ServerSession{}
+	expectedInput := TestInput{Message: "test message"}
+	expectedError := messages.AnError
+
+	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
+		return TestOutput{Result: "should not be called"}, nil
+	}
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(expectedSession).
+		Return(nil, expectedError).
+		Once()
+
+	tool := basetool.NewToolWithStructuredContent(
+		"test-tool",
+		"Test Tool",
+		"A test tool",
+		annotations.NewReadOnlyAnnotations(),
+		mockLoggerFactory,
+		handler,
+	)
+
+	req := &mcp.CallToolRequest{
+		Session: expectedSession,
+	}
+
+	// Act
+	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "Handler should return the NewMCPSessionLogger error")
+	assert.Nil(t, result, "Result should be nil when error occurs")
+	assert.Empty(t, output, "Output should be zero value when error occurs")
+}
+
 func TestToolWithStructuredContentOutput_Handler_ContextPropagation(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockGlobalLogger := testutils.NewInspectableLogger()
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
 	expectedOutput := TestOutput{Result: "success"}
@@ -248,13 +262,8 @@ func TestToolWithStructuredContentOutput_Handler_ContextPropagation(t *testing.T
 	}
 
 	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockGlobalLogger).
-		Once()
-
-	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(expectedSession).
-		Return(mockSessionLogger).
+		Return(mockSessionLogger, nil).
 		Once()
 
 	tool := basetool.NewToolWithStructuredContent(
@@ -283,18 +292,11 @@ func TestToolWithStructuredContent_Annotations(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
-
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
 
 	expectedAnnotations := annotations.NewDestructiveAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := basetool.NewToolWithStructuredContent(
@@ -315,16 +317,9 @@ func TestToolWithStructuredContentOutput_AddToServer_NilAnnotationInterface(t *t
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
-
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	tool := basetool.NewToolWithStructuredContent(
 		testToolName,

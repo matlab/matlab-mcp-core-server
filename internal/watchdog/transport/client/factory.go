@@ -1,10 +1,11 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client
 
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport"
 )
@@ -14,7 +15,7 @@ type OSLayer interface {
 }
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type HTTPClientFactory interface {
@@ -43,6 +44,6 @@ func (f *Factory) New() transport.Client {
 	return newClient(
 		f.osLayer,
 		f.httpClientFactory,
-		f.loggerFactory.GetGlobalLogger(),
+		f.loggerFactory,
 	)
 }

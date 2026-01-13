@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -38,7 +39,7 @@ func (_m *MockLoggerFactory) EXPECT() *MockLoggerFactory_Expecter {
 }
 
 // GetGlobalLogger provides a mock function for the type MockLoggerFactory
-func (_mock *MockLoggerFactory) GetGlobalLogger() entities.Logger {
+func (_mock *MockLoggerFactory) GetGlobalLogger() (entities.Logger, messages.Error) {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
@@ -46,6 +47,10 @@ func (_mock *MockLoggerFactory) GetGlobalLogger() entities.Logger {
 	}
 
 	var r0 entities.Logger
+	var r1 messages.Error
+	if returnFunc, ok := ret.Get(0).(func() (entities.Logger, messages.Error)); ok {
+		return returnFunc()
+	}
 	if returnFunc, ok := ret.Get(0).(func() entities.Logger); ok {
 		r0 = returnFunc()
 	} else {
@@ -53,7 +58,14 @@ func (_mock *MockLoggerFactory) GetGlobalLogger() entities.Logger {
 			r0 = ret.Get(0).(entities.Logger)
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func() messages.Error); ok {
+		r1 = returnFunc()
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(messages.Error)
+		}
+	}
+	return r0, r1
 }
 
 // MockLoggerFactory_GetGlobalLogger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGlobalLogger'
@@ -73,18 +85,18 @@ func (_c *MockLoggerFactory_GetGlobalLogger_Call) Run(run func()) *MockLoggerFac
 	return _c
 }
 
-func (_c *MockLoggerFactory_GetGlobalLogger_Call) Return(logger entities.Logger) *MockLoggerFactory_GetGlobalLogger_Call {
-	_c.Call.Return(logger)
+func (_c *MockLoggerFactory_GetGlobalLogger_Call) Return(logger entities.Logger, error messages.Error) *MockLoggerFactory_GetGlobalLogger_Call {
+	_c.Call.Return(logger, error)
 	return _c
 }
 
-func (_c *MockLoggerFactory_GetGlobalLogger_Call) RunAndReturn(run func() entities.Logger) *MockLoggerFactory_GetGlobalLogger_Call {
+func (_c *MockLoggerFactory_GetGlobalLogger_Call) RunAndReturn(run func() (entities.Logger, messages.Error)) *MockLoggerFactory_GetGlobalLogger_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // NewMCPSessionLogger provides a mock function for the type MockLoggerFactory
-func (_mock *MockLoggerFactory) NewMCPSessionLogger(session *mcp.ServerSession) entities.Logger {
+func (_mock *MockLoggerFactory) NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error) {
 	ret := _mock.Called(session)
 
 	if len(ret) == 0 {
@@ -92,6 +104,10 @@ func (_mock *MockLoggerFactory) NewMCPSessionLogger(session *mcp.ServerSession) 
 	}
 
 	var r0 entities.Logger
+	var r1 messages.Error
+	if returnFunc, ok := ret.Get(0).(func(*mcp.ServerSession) (entities.Logger, messages.Error)); ok {
+		return returnFunc(session)
+	}
 	if returnFunc, ok := ret.Get(0).(func(*mcp.ServerSession) entities.Logger); ok {
 		r0 = returnFunc(session)
 	} else {
@@ -99,7 +115,14 @@ func (_mock *MockLoggerFactory) NewMCPSessionLogger(session *mcp.ServerSession) 
 			r0 = ret.Get(0).(entities.Logger)
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(*mcp.ServerSession) messages.Error); ok {
+		r1 = returnFunc(session)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(messages.Error)
+		}
+	}
+	return r0, r1
 }
 
 // MockLoggerFactory_NewMCPSessionLogger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewMCPSessionLogger'
@@ -126,12 +149,12 @@ func (_c *MockLoggerFactory_NewMCPSessionLogger_Call) Run(run func(session *mcp.
 	return _c
 }
 
-func (_c *MockLoggerFactory_NewMCPSessionLogger_Call) Return(logger entities.Logger) *MockLoggerFactory_NewMCPSessionLogger_Call {
-	_c.Call.Return(logger)
+func (_c *MockLoggerFactory_NewMCPSessionLogger_Call) Return(logger entities.Logger, error messages.Error) *MockLoggerFactory_NewMCPSessionLogger_Call {
+	_c.Call.Return(logger, error)
 	return _c
 }
 
-func (_c *MockLoggerFactory_NewMCPSessionLogger_Call) RunAndReturn(run func(session *mcp.ServerSession) entities.Logger) *MockLoggerFactory_NewMCPSessionLogger_Call {
+func (_c *MockLoggerFactory_NewMCPSessionLogger_Call) RunAndReturn(run func(session *mcp.ServerSession) (entities.Logger, messages.Error)) *MockLoggerFactory_NewMCPSessionLogger_Call {
 	_c.Call.Return(run)
 	return _c
 }

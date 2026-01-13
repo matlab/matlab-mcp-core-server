@@ -1,14 +1,16 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package server_test
 
 import (
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
 	httpserverfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpserverfactory"
 	servermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server"
+	handlermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,14 +24,14 @@ func TestNewFactory_HappyPath(t *testing.T) {
 	mockLoggerFactory := &servermocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
-	defer mockHandler.AssertExpectations(t)
+	mockHandlerFactory := &servermocks.MockHandlerFactory{}
+	defer mockHandlerFactory.AssertExpectations(t)
 
 	// Act
 	factory := server.NewFactory(
 		mockHTTPServerFactory,
 		mockLoggerFactory,
-		mockHandler,
+		mockHandlerFactory,
 	)
 
 	// Assert
@@ -44,17 +46,25 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockLoggerFactory := &servermocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
-	defer mockHandler.AssertExpectations(t)
+	mockHandlerFactory := &servermocks.MockHandlerFactory{}
+	defer mockHandlerFactory.AssertExpectations(t)
 
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
+
+	mockHandler := &handlermocks.MockHandler{}
+	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockHandlerFactory.EXPECT().
+		Handler().
+		Return(mockHandler, nil).
 		Once()
 
 	mockHTTPServerFactory.EXPECT().
@@ -65,7 +75,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	factory := server.NewFactory(
 		mockHTTPServerFactory,
 		mockLoggerFactory,
-		mockHandler,
+		mockHandlerFactory,
 	)
 
 	// Act
@@ -84,7 +94,10 @@ func TestFactory_New_HTTPServerFactoryError(t *testing.T) {
 	mockLoggerFactory := &servermocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandlerFactory := &servermocks.MockHandlerFactory{}
+	defer mockHandlerFactory.AssertExpectations(t)
+
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -92,7 +105,12 @@ func TestFactory_New_HTTPServerFactoryError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockHandlerFactory.EXPECT().
+		Handler().
+		Return(mockHandler, nil).
 		Once()
 
 	mockHTTPServerFactory.EXPECT().
@@ -103,7 +121,39 @@ func TestFactory_New_HTTPServerFactoryError(t *testing.T) {
 	factory := server.NewFactory(
 		mockHTTPServerFactory,
 		mockLoggerFactory,
-		mockHandler,
+		mockHandlerFactory,
+	)
+
+	// Act
+	serverInstance, err := factory.New()
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+	assert.Nil(t, serverInstance)
+}
+
+func TestFactory_New_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
+	defer mockHTTPServerFactory.AssertExpectations(t)
+
+	mockLoggerFactory := &servermocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockHandlerFactory := &servermocks.MockHandlerFactory{}
+	defer mockHandlerFactory.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	factory := server.NewFactory(
+		mockHTTPServerFactory,
+		mockLoggerFactory,
+		mockHandlerFactory,
 	)
 
 	// Act

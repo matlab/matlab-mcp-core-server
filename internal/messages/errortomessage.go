@@ -35,6 +35,12 @@ func FromError(catalog LocaleSpecificCatalog, err Error) string {
 			e.Attr0,
 			e.Attr1,
 		)
+	case *StartupErrors_FailedToCreateLogFile_Error:
+		msg := catalog.Get(StartupErrors_FailedToCreateLogFile)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+		)
 	case *StartupErrors_InvalidLogLevel_Error:
 		msg := catalog.Get(StartupErrors_InvalidLogLevel)
 		return fmt.Sprintf(

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package basetool
 
@@ -15,7 +15,6 @@ import (
 type ToolWithStructuredContentOutput[ToolInput, ToolOutput any] struct {
 	tool[ToolInput, ToolOutput]
 	structuredContentHandler HandlerWithStructuredContentOutput[ToolInput, ToolOutput]
-	logger                   entities.Logger
 }
 type HandlerWithStructuredContentOutput[ToolInput, ToolOutput any] func(context.Context, entities.Logger, ToolInput) (ToolOutput, error)
 
@@ -38,7 +37,6 @@ func NewToolWithStructuredContent[ToolInput, ToolOutput any](
 			toolAdder: mcpfacade.NewToolAdder[ToolInput, ToolOutput](),
 		},
 		structuredContentHandler: handler,
-		logger:                   loggerFactory.GetGlobalLogger().With("name", "tool with structured content"),
 	}
 }
 
@@ -75,12 +73,16 @@ func (t ToolWithStructuredContentOutput[_, _]) AddToServer(server *mcp.Server) e
 
 func (t ToolWithStructuredContentOutput[ToolInput, ToolOutput]) Handler() mcp.ToolHandlerFor[ToolInput, ToolOutput] {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (*mcp.CallToolResult, ToolOutput, error) {
-		logger := t.loggerFactory.NewMCPSessionLogger(req.Session).
-			With("tool-name", t.name)
+		var toolOutputZeroValue ToolOutput
+
+		logger, messagesErr := t.loggerFactory.NewMCPSessionLogger(req.Session)
+		if messagesErr != nil {
+			return nil, toolOutputZeroValue, messagesErr
+		}
+
+		logger = logger.With("tool-name", t.name)
 		logger.Debug("Handling tool call request")
 		defer logger.Debug("Handled tool call request")
-
-		var toolOutputZeroValue ToolOutput
 
 		if t.structuredContentHandler == nil {
 			err := fmt.Errorf(UnexpectedErrorPrefixForLLM + "no structured handler available")

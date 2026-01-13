@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package watchdog_test
 
@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog"
 	transportmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport"
+	handlermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server/handler"
 	socketmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/socket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,8 +21,6 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
-	mockLogger := testutils.NewInspectableLogger()
-
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
@@ -33,8 +33,8 @@ func TestNew_HappyPath(t *testing.T) {
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
-	defer mockServerHandler.AssertExpectations(t)
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
 	defer mockServerFactory.AssertExpectations(t)
@@ -42,18 +42,13 @@ func TestNew_HappyPath(t *testing.T) {
 	mockSocketFactory := &mocks.MockSocketFactory{}
 	defer mockSocketFactory.AssertExpectations(t)
 
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
-
 	// Act
 	watchdogInstance := watchdog.New(
 		mockLoggerFactory,
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -78,7 +73,10 @@ func TestWatchdog_StartAndWaitForCompletion_GracefulShutdown(t *testing.T) {
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerHandler := &handlermocks.MockHandler{}
 	defer mockServerHandler.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
@@ -102,7 +100,12 @@ func TestWatchdog_StartAndWaitForCompletion_GracefulShutdown(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(mockServerHandler, nil).
 		Once()
 
 	mockSocketFactory.EXPECT().
@@ -147,7 +150,7 @@ func TestWatchdog_StartAndWaitForCompletion_GracefulShutdown(t *testing.T) {
 
 	mockProcessHandler.EXPECT().
 		WatchProcessAndGetTerminationChan(expectedParentPID).
-		Return(parentTerminationC).
+		Return(parentTerminationC, nil).
 		Once()
 
 	mockOSSignaler.EXPECT().
@@ -157,6 +160,7 @@ func TestWatchdog_StartAndWaitForCompletion_GracefulShutdown(t *testing.T) {
 
 	mockServerHandler.EXPECT().
 		TerminateAllProcesses().
+		Return().
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -164,7 +168,7 @@ func TestWatchdog_StartAndWaitForCompletion_GracefulShutdown(t *testing.T) {
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -200,7 +204,10 @@ func TestWatchdog_StartAndWaitForCompletion_ParentProcessTermination(t *testing.
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerHandler := &handlermocks.MockHandler{}
 	defer mockServerHandler.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
@@ -223,7 +230,12 @@ func TestWatchdog_StartAndWaitForCompletion_ParentProcessTermination(t *testing.
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(mockServerHandler, nil).
 		Once()
 
 	mockSocketFactory.EXPECT().
@@ -265,7 +277,7 @@ func TestWatchdog_StartAndWaitForCompletion_ParentProcessTermination(t *testing.
 
 	mockProcessHandler.EXPECT().
 		WatchProcessAndGetTerminationChan(expectedParentPID).
-		Return(parentTerminationC).
+		Return(parentTerminationC, nil).
 		Once()
 
 	mockOSSignaler.EXPECT().
@@ -275,6 +287,7 @@ func TestWatchdog_StartAndWaitForCompletion_ParentProcessTermination(t *testing.
 
 	mockServerHandler.EXPECT().
 		TerminateAllProcesses().
+		Return().
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -282,7 +295,7 @@ func TestWatchdog_StartAndWaitForCompletion_ParentProcessTermination(t *testing.
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -316,7 +329,10 @@ func TestWatchdog_StartAndWaitForCompletion_OSSignalInterrupt(t *testing.T) {
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerHandler := &handlermocks.MockHandler{}
 	defer mockServerHandler.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
@@ -339,7 +355,12 @@ func TestWatchdog_StartAndWaitForCompletion_OSSignalInterrupt(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(mockServerHandler, nil).
 		Once()
 
 	mockSocketFactory.EXPECT().
@@ -381,7 +402,7 @@ func TestWatchdog_StartAndWaitForCompletion_OSSignalInterrupt(t *testing.T) {
 
 	mockProcessHandler.EXPECT().
 		WatchProcessAndGetTerminationChan(expectedParentPID).
-		Return(parentTerminationC).
+		Return(parentTerminationC, nil).
 		Once()
 
 	mockOSSignaler.EXPECT().
@@ -391,6 +412,7 @@ func TestWatchdog_StartAndWaitForCompletion_OSSignalInterrupt(t *testing.T) {
 
 	mockServerHandler.EXPECT().
 		TerminateAllProcesses().
+		Return().
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -398,7 +420,7 @@ func TestWatchdog_StartAndWaitForCompletion_OSSignalInterrupt(t *testing.T) {
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -432,8 +454,8 @@ func TestWatchdog_StartAndWaitForCompletion_SocketFactoryError(t *testing.T) {
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
-	defer mockServerHandler.AssertExpectations(t)
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
 	defer mockServerFactory.AssertExpectations(t)
@@ -445,7 +467,7 @@ func TestWatchdog_StartAndWaitForCompletion_SocketFactoryError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockSocketFactory.EXPECT().
@@ -458,7 +480,7 @@ func TestWatchdog_StartAndWaitForCompletion_SocketFactoryError(t *testing.T) {
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -486,7 +508,10 @@ func TestWatchdog_StartAndWaitForCompletion_ServerFactoryError(t *testing.T) {
 	mockOSSignaler := &mocks.MockOSSignaler{}
 	defer mockOSSignaler.AssertExpectations(t)
 
-	mockServerHandler := &mocks.MockServerHandler{}
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerHandler := &handlermocks.MockHandler{}
 	defer mockServerHandler.AssertExpectations(t)
 
 	mockServerFactory := &mocks.MockServerFactory{}
@@ -502,7 +527,12 @@ func TestWatchdog_StartAndWaitForCompletion_ServerFactoryError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(mockServerHandler, nil).
 		Once()
 
 	mockSocketFactory.EXPECT().
@@ -520,7 +550,7 @@ func TestWatchdog_StartAndWaitForCompletion_ServerFactoryError(t *testing.T) {
 		mockOSLayer,
 		mockProcessHandler,
 		mockOSSignaler,
-		mockServerHandler,
+		mockServerHandlerFactory,
 		mockServerFactory,
 		mockSocketFactory,
 	)
@@ -530,4 +560,224 @@ func TestWatchdog_StartAndWaitForCompletion_ServerFactoryError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
+}
+
+func TestWatchdog_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockProcessHandler := &mocks.MockProcessHandler{}
+	defer mockProcessHandler.AssertExpectations(t)
+
+	mockOSSignaler := &mocks.MockOSSignaler{}
+	defer mockOSSignaler.AssertExpectations(t)
+
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerFactory := &mocks.MockServerFactory{}
+	defer mockServerFactory.AssertExpectations(t)
+
+	mockSocketFactory := &mocks.MockSocketFactory{}
+	defer mockSocketFactory.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	watchdogInstance := watchdog.New(
+		mockLoggerFactory,
+		mockOSLayer,
+		mockProcessHandler,
+		mockOSSignaler,
+		mockServerHandlerFactory,
+		mockServerFactory,
+		mockSocketFactory,
+	)
+
+	// Act
+	err := watchdogInstance.StartAndWaitForCompletion(t.Context())
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+}
+
+func TestWatchdog_StartAndWaitForCompletion_ServerHandlerFactoryError(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockProcessHandler := &mocks.MockProcessHandler{}
+	defer mockProcessHandler.AssertExpectations(t)
+
+	mockOSSignaler := &mocks.MockOSSignaler{}
+	defer mockOSSignaler.AssertExpectations(t)
+
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerFactory := &mocks.MockServerFactory{}
+	defer mockServerFactory.AssertExpectations(t)
+
+	mockSocketFactory := &mocks.MockSocketFactory{}
+	defer mockSocketFactory.AssertExpectations(t)
+
+	mockSocket := &socketmocks.MockSocket{}
+	defer mockSocket.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockSocketFactory.EXPECT().
+		Socket().
+		Return(mockSocket, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(nil, expectedError).
+		Once()
+
+	watchdogInstance := watchdog.New(
+		mockLoggerFactory,
+		mockOSLayer,
+		mockProcessHandler,
+		mockOSSignaler,
+		mockServerHandlerFactory,
+		mockServerFactory,
+		mockSocketFactory,
+	)
+
+	// Act
+	err := watchdogInstance.StartAndWaitForCompletion(t.Context())
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+}
+
+func TestWatchdog_StartAndWaitForCompletion_WatchProcessAndGetTerminationChanError(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockProcessHandler := &mocks.MockProcessHandler{}
+	defer mockProcessHandler.AssertExpectations(t)
+
+	mockOSSignaler := &mocks.MockOSSignaler{}
+	defer mockOSSignaler.AssertExpectations(t)
+
+	mockServerHandlerFactory := &mocks.MockServerHandlerFactory{}
+	defer mockServerHandlerFactory.AssertExpectations(t)
+
+	mockServerHandler := &handlermocks.MockHandler{}
+	defer mockServerHandler.AssertExpectations(t)
+
+	mockServerFactory := &mocks.MockServerFactory{}
+	defer mockServerFactory.AssertExpectations(t)
+
+	mockSocketFactory := &mocks.MockSocketFactory{}
+	defer mockSocketFactory.AssertExpectations(t)
+
+	mockServer := &transportmocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockSocket := &socketmocks.MockSocket{}
+	defer mockSocket.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	socketPath := filepath.Join(t.TempDir(), "test.sock")
+	serverStarted := make(chan struct{})
+	expectedParentPID := 1234
+	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockServerHandlerFactory.EXPECT().
+		Handler().
+		Return(mockServerHandler, nil).
+		Once()
+
+	mockSocketFactory.EXPECT().
+		Socket().
+		Return(mockSocket, nil).
+		Once()
+
+	mockSocket.EXPECT().
+		Path().
+		Return(socketPath).
+		Once()
+
+	mockServerFactory.EXPECT().
+		New().
+		Return(mockServer, nil).
+		Once()
+
+	mockServer.EXPECT().
+		Start(socketPath).
+		Run(func(_ string) {
+			close(serverStarted)
+		}).
+		Return(nil).
+		Once()
+
+	mockServer.EXPECT().
+		Stop().
+		Return(nil).
+		Once()
+
+	mockOSLayer.EXPECT().
+		Getppid().
+		Return(expectedParentPID).
+		Once()
+
+	mockServerHandler.EXPECT().
+		RegisterShutdownFunction(mock.AnythingOfType("func()")).
+		Once()
+
+	mockProcessHandler.EXPECT().
+		WatchProcessAndGetTerminationChan(expectedParentPID).
+		Return(nil, expectedError).
+		Once()
+
+	watchdogInstance := watchdog.New(
+		mockLoggerFactory,
+		mockOSLayer,
+		mockProcessHandler,
+		mockOSSignaler,
+		mockServerHandlerFactory,
+		mockServerFactory,
+		mockSocketFactory,
+	)
+
+	// Act
+	errC := make(chan error)
+	go func() {
+		errC <- watchdogInstance.StartAndWaitForCompletion(t.Context())
+	}()
+
+	<-serverStarted
+
+	// Assert
+	require.ErrorIs(t, <-errC, expectedError)
 }

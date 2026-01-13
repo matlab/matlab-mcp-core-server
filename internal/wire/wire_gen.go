@@ -97,10 +97,7 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	if err != nil {
 		return nil, err
 	}
-	loggerFactory, err := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
-	if err != nil {
-		return nil, err
-	}
+	loggerFactory := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
 	fileFacade := filefacade.New()
 	getter := matlabroot.New(osFacade, fileFacade)
 	ioFacade := iofacade.New()
@@ -172,18 +169,15 @@ func initializeWatchdog() (*watchdog2.Watchdog, error) {
 	if err != nil {
 		return nil, err
 	}
-	loggerFactory, err := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
-	if err != nil {
-		return nil, err
-	}
+	loggerFactory := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
 	osWrapper := oswrapper.New(osFacade)
 	processHandler := processhandler.New(loggerFactory, osWrapper)
 	osSignaler := ossignaler.New()
-	handlerHandler := handler.New(loggerFactory, processHandler)
+	handlerFactory := handler.NewFactory(loggerFactory, processHandler)
 	httpServerFactory := httpserverfactory.New(osFacade)
-	serverFactory := server2.NewFactory(httpServerFactory, loggerFactory, handlerHandler)
+	serverFactory := server2.NewFactory(httpServerFactory, loggerFactory, handlerFactory)
 	socketFactory := socket.NewFactory(directoryDirectory, osFacade)
-	watchdogWatchdog := watchdog2.New(loggerFactory, osFacade, processHandler, osSignaler, handlerHandler, serverFactory, socketFactory)
+	watchdogWatchdog := watchdog2.New(loggerFactory, osFacade, processHandler, osSignaler, handlerFactory, serverFactory, socketFactory)
 	return watchdogWatchdog, nil
 }
 

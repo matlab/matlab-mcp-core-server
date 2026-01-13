@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabsessionstore
 
@@ -8,11 +8,12 @@ import (
 	"sync"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"golang.org/x/sync/errgroup"
 )
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type MATLABSessionClientWithCleanup interface {
@@ -44,7 +45,11 @@ func New(
 		store.l.Lock()
 		defer store.l.Unlock()
 
-		logger := loggerFactory.GetGlobalLogger()
+		logger, err := loggerFactory.GetGlobalLogger()
+		if err != nil {
+			return err
+		}
+
 		wg := new(errgroup.Group)
 
 		for sessionID, client := range store.clients {

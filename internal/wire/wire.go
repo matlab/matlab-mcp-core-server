@@ -340,14 +340,9 @@ func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
 		wire.Bind(new(watchdogprocess.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(watchdogprocess.ProcessHandler), new(*processhandler.ProcessHandler)),
 		wire.Bind(new(watchdogprocess.OSSignaler), new(*ossignaler.OSSignaler)),
-		wire.Bind(new(watchdogprocess.ServerHandler), new(*handler.Handler)),
+		wire.Bind(new(watchdogprocess.ServerHandlerFactory), new(*handler.Factory)),
 		wire.Bind(new(watchdogprocess.ServerFactory), new(*transportserver.Factory)),
 		wire.Bind(new(watchdogprocess.SocketFactory), new(*socket.Factory)),
-
-		// Socket Path Factory
-		socket.NewFactory,
-		wire.Bind(new(socket.Directory), new(*directory.Directory)),
-		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
 
 		// Process Handler for Watchdog Process
 		processhandler.New,
@@ -358,16 +353,21 @@ func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
 		transportserver.NewFactory,
 		wire.Bind(new(transportserver.HTTPServerFactory), new(*httpserverfactory.HTTPServerFactory)),
 		wire.Bind(new(transportserver.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(transportserver.Handler), new(*handler.Handler)),
+		wire.Bind(new(transportserver.HandlerFactory), new(*handler.Factory)),
 
 		// HTTP Server Factory
 		httpserverfactory.New,
 		wire.Bind(new(httpserverfactory.OSLayer), new(*osfacade.OsFacade)),
 
 		// HTTP Server Handler
-		handler.New,
+		handler.NewFactory,
 		wire.Bind(new(handler.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(handler.ProcessHandler), new(*processhandler.ProcessHandler)),
+
+		// Socket Factory
+		socket.NewFactory,
+		wire.Bind(new(socket.Directory), new(*directory.Directory)),
+		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
 
 		// Low-level Interfaces
 		logger.NewFactory,

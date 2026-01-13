@@ -85,6 +85,27 @@ func New_StartupErrors_BadValue_Error(
 	}
 }
 
+// StartupErrors_FailedToCreateLogFile_Error defines an error corresponding to the "StartupErrors_FailedToCreateLogFile" message catalog message
+type StartupErrors_FailedToCreateLogFile_Error struct {
+	Attr0 string
+}
+
+// Error makes StartupErrors_FailedToCreateLogFile_Error satisfy the error interface.
+func (e *StartupErrors_FailedToCreateLogFile_Error) Error() string {
+	return "StartupErrors_FailedToCreateLogFile_Error"
+}
+
+func (*StartupErrors_FailedToCreateLogFile_Error) marker() {}
+
+// New_StartupErrors_FailedToCreateLogFile_Error makes a new StartupErrors_FailedToCreateLogFile_Error error.
+func New_StartupErrors_FailedToCreateLogFile_Error(
+	attr0 string,
+) *StartupErrors_FailedToCreateLogFile_Error {
+	return &StartupErrors_FailedToCreateLogFile_Error{
+		Attr0: attr0,
+	}
+}
+
 // StartupErrors_InvalidLogLevel_Error defines an error corresponding to the "StartupErrors_InvalidLogLevel" message catalog message
 type StartupErrors_InvalidLogLevel_Error struct {
 	Attr0 string

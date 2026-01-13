@@ -155,3 +155,76 @@ func (_c *MockHandler_HandleShutdown_Call) RunAndReturn(run func(req messages.Sh
 	_c.Call.Return(run)
 	return _c
 }
+
+// RegisterShutdownFunction provides a mock function for the type MockHandler
+func (_mock *MockHandler) RegisterShutdownFunction(fn func()) {
+	_mock.Called(fn)
+	return
+}
+
+// MockHandler_RegisterShutdownFunction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterShutdownFunction'
+type MockHandler_RegisterShutdownFunction_Call struct {
+	*mock.Call
+}
+
+// RegisterShutdownFunction is a helper method to define mock.On call
+//   - fn func()
+func (_e *MockHandler_Expecter) RegisterShutdownFunction(fn interface{}) *MockHandler_RegisterShutdownFunction_Call {
+	return &MockHandler_RegisterShutdownFunction_Call{Call: _e.mock.On("RegisterShutdownFunction", fn)}
+}
+
+func (_c *MockHandler_RegisterShutdownFunction_Call) Run(run func(fn func())) *MockHandler_RegisterShutdownFunction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 func()
+		if args[0] != nil {
+			arg0 = args[0].(func())
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockHandler_RegisterShutdownFunction_Call) Return() *MockHandler_RegisterShutdownFunction_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockHandler_RegisterShutdownFunction_Call) RunAndReturn(run func(fn func())) *MockHandler_RegisterShutdownFunction_Call {
+	_c.Run(run)
+	return _c
+}
+
+// TerminateAllProcesses provides a mock function for the type MockHandler
+func (_mock *MockHandler) TerminateAllProcesses() {
+	_mock.Called()
+	return
+}
+
+// MockHandler_TerminateAllProcesses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TerminateAllProcesses'
+type MockHandler_TerminateAllProcesses_Call struct {
+	*mock.Call
+}
+
+// TerminateAllProcesses is a helper method to define mock.On call
+func (_e *MockHandler_Expecter) TerminateAllProcesses() *MockHandler_TerminateAllProcesses_Call {
+	return &MockHandler_TerminateAllProcesses_Call{Call: _e.mock.On("TerminateAllProcesses")}
+}
+
+func (_c *MockHandler_TerminateAllProcesses_Call) Run(run func()) *MockHandler_TerminateAllProcesses_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockHandler_TerminateAllProcesses_Call) Return() *MockHandler_TerminateAllProcesses_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockHandler_TerminateAllProcesses_Call) RunAndReturn(run func()) *MockHandler_TerminateAllProcesses_Call {
+	_c.Run(run)
+	return _c
+}

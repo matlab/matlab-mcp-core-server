@@ -20,6 +20,7 @@ var messages_en_US = messageMap{
 	StartupErrors_BadFlag:                                   `Error with supplied arguments: non-existent option %[1]s.%[2]s%[3]s`,
 	StartupErrors_BadSyntax:                                 `Error with supplied arguments: invalid syntax %[1]s.%[2]s%[3]s`,
 	StartupErrors_BadValue:                                  `Error with supplied arguments: invalid value %[1]s for option %[2]s.`,
+	StartupErrors_FailedToCreateLogFile:                     `Failed to create the log file "%[1]s".`,
 	StartupErrors_GenericInitializeFailure:                  `Failed to initialize MCP Core Server. Error: %[1]s.`,
 	StartupErrors_InvalidLogLevel:                           `Error with supplied arguments: invalid log level %[1]s.`,
 	StartupErrors_MissingValue:                              `Error with supplied arguments: value required for option %[1]s.`,

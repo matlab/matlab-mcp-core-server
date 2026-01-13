@@ -30,7 +30,7 @@ type WatchdogClient interface {
 }
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type OSSignaler interface {
@@ -81,11 +81,14 @@ func New(
 }
 
 func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
-	logger := o.loggerFactory.GetGlobalLogger()
+	config, messagesErr := o.configFactory.Config()
+	if messagesErr != nil {
+		return messagesErr
+	}
 
-	config, messageErr := o.configFactory.Config()
-	if messageErr != nil {
-		return messageErr
+	logger, messagesErr := o.loggerFactory.GetGlobalLogger()
+	if messagesErr != nil {
+		return messagesErr
 	}
 
 	defer func() {
@@ -121,7 +124,7 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 	}()
 
 	if config.UseSingleMATLABSession() && config.InitializeMATLABOnStartup() {
-		_, err := o.globalMATLAB.Client(ctx, o.loggerFactory.GetGlobalLogger())
+		_, err := o.globalMATLAB.Client(ctx, logger)
 		if err != nil {
 			logger.WithError(err).Warn("MATLAB global initialization failed")
 		}

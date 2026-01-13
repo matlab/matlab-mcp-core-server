@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabsessionstore_test
 
@@ -7,6 +7,7 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionstore"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabsessionstore"
 	"github.com/stretchr/testify/assert"
@@ -65,7 +66,7 @@ func TestNew_ShutdownFunctionCallsStopSessionOnAllClients(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockClient1.EXPECT().
@@ -91,6 +92,40 @@ func TestNew_ShutdownFunctionCallsStopSessionOnAllClients(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestNew_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockLifecycleSignaler := &mocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	expectedError := messages.AnError
+	var capturedShutdownFunc func() error
+
+	mockLifecycleSignaler.EXPECT().
+		AddShutdownFunction(mock.AnythingOfType("func() error")).
+		Run(func(shutdownFcn func() error) {
+			capturedShutdownFunc = shutdownFcn
+		}).
+		Return().
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	matlabsessionstore.New(mockLoggerFactory, mockLifecycleSignaler)
+	require.NotNil(t, capturedShutdownFunc)
+
+	// Act
+	err := capturedShutdownFunc()
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+}
+
 func TestNew_ShutdownFunctionHandlesEmptyStore(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
@@ -113,7 +148,7 @@ func TestNew_ShutdownFunctionHandlesEmptyStore(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	matlabsessionstore.New(mockLoggerFactory, mockLifecycleSignaler)
@@ -155,7 +190,7 @@ func TestNew_ShutdownFunctionReturnsErrorWhenStopSessionFails(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockClient1.EXPECT().

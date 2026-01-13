@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package detectmatlabtoolboxes_test
 
@@ -26,13 +26,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockGlobalMATLAB := &entitiesmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := detectmatlabtoolboxes.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)
@@ -151,13 +144,7 @@ func TestDetectMATLABToolboxes_Annotations(t *testing.T) {
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := detectmatlabtoolboxes.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)

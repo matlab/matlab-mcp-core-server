@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package server_test
 
@@ -15,6 +15,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
 	httpserverfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpserverfactory"
 	servermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server"
+	handlermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func TestServer_Start_HappyPath(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	makeHTTPServerServeReturn := make(chan struct{})
@@ -82,7 +83,7 @@ func TestServer_Stop_HappyPath(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -119,7 +120,7 @@ func TestServer_HandleProcessToKill(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -168,7 +169,7 @@ func TestServer_HandleProcessToKill_Error(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -217,7 +218,7 @@ func TestServer_HandleShutdown(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -263,7 +264,7 @@ func TestServer_HandleShutdown_Error(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -309,7 +310,7 @@ func TestServer_AnyHandler_IOReadAllError(t *testing.T) {
 	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
-	mockHandler := &servermocks.MockHandler{}
+	mockHandler := &handlermocks.MockHandler{}
 	defer mockHandler.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()

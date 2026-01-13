@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package startmatlabsession_test
 
@@ -23,13 +23,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := startmatlabsession.New(mockLoggerFactory, mockUsecase)
@@ -117,13 +110,7 @@ func TestStartMATLABSession_Annotations(t *testing.T) {
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := startmatlabsession.New(mockLoggerFactory, mockUsecase)

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package server
 
@@ -11,6 +11,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
+	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server/handler"
 )
 
 type Server struct {
@@ -21,7 +22,7 @@ type Server struct {
 func newServer(
 	httpServerFactory HTTPServerFactory,
 	logger entities.Logger,
-	handler Handler,
+	handler handler.Handler,
 ) (*Server, error) {
 	handlers := map[string]http.HandlerFunc{
 		"POST " + messages.ProcessToKillPath: processToKillHandler(logger, handler),
@@ -54,13 +55,13 @@ func (s *Server) Stop() error {
 	return s.httpServer.Shutdown(context.Background())
 }
 
-func processToKillHandler(logger entities.Logger, handler Handler) http.HandlerFunc {
+func processToKillHandler(logger entities.Logger, handler handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handleMessage(w, r, logger, handler.HandleProcessToKill)
 	}
 }
 
-func shutdownHandler(logger entities.Logger, handler Handler) http.HandlerFunc {
+func shutdownHandler(logger entities.Logger, handler handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handleMessage(w, r, logger, handler.HandleShutdown)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package baseresource_test
 
@@ -8,6 +8,7 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/baseresource"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/mcp/resources"
 	baseresourcemocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/mcp/resources/baseresource"
@@ -163,7 +164,7 @@ func TestResource_ResourceHandler_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(mock.Anything).
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	expectedContents := []baseresource.ResourceContents{
@@ -225,7 +226,7 @@ func TestResource_ResourceHandler_HandlerError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(mock.Anything).
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	expectedError := assert.AnError
@@ -280,7 +281,7 @@ func TestResource_ResourceHandler_NilHandler(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		NewMCPSessionLogger(mock.Anything).
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, nil)
@@ -309,5 +310,58 @@ func TestResource_ResourceHandler_NilHandler(t *testing.T) {
 	// Assert
 	require.Error(t, handlerErr)
 	assert.Contains(t, handlerErr.Error(), baseresource.UnexpectedErrorPrefix)
+	assert.Nil(t, result)
+}
+
+func TestResource_ResourceHandler_NewMCPSessionLoggerError(t *testing.T) {
+	// Arrange
+	const (
+		name        = "test_resource"
+		title       = "Test Resource"
+		description = "A test resource"
+		mimeType    = "text/plain"
+		size        = 100
+		uri         = "test://resource"
+	)
+
+	mockLoggerFactory := &baseresourcemocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(mock.Anything).
+		Return(nil, expectedError).
+		Once()
+
+	handler := func(ctx context.Context, logger entities.Logger) (*baseresource.ReadResourceResult, error) {
+		return &baseresource.ReadResourceResult{}, nil
+	}
+
+	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
+	require.NoError(t, err)
+
+	var capturedHandler mcp.ResourceHandler
+	mockServer := &mocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockServer.EXPECT().AddResource(
+		mock.Anything,
+		mock.AnythingOfType("mcp.ResourceHandler"),
+	).Run(func(resource *mcp.Resource, h mcp.ResourceHandler) {
+		capturedHandler = h
+	}).Return()
+
+	r.AddToServer(mockServer)
+
+	// Act
+	result, handlerErr := capturedHandler(t.Context(), &mcp.ReadResourceRequest{
+		Params: &mcp.ReadResourceParams{
+			URI: uri,
+		},
+	})
+
+	// Assert
+	require.ErrorIs(t, handlerErr, expectedError)
 	assert.Nil(t, result)
 }

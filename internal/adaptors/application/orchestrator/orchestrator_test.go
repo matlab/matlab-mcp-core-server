@@ -60,8 +60,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 	// Arrange
-	mockLogger := testutils.NewInspectableLogger()
-
 	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
 
@@ -89,11 +87,6 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 	ctx := t.Context()
 	expectedError := &messages.StartupErrors_BadFlag_Error{}
 
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
-
 	mockConfigFactory.EXPECT().
 		Config().
 		Return(nil, expectedError).
@@ -115,6 +108,66 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from Config")
+}
+
+func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockConfigFactory := &orchestratormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockServer := &orchestratormocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockWatchdogClient := &orchestratormocks.MockWatchdogClient{}
+	defer mockWatchdogClient.AssertExpectations(t)
+
+	mockLoggerFactory := &orchestratormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockSignalLayer := &orchestratormocks.MockOSSignaler{}
+	defer mockSignalLayer.AssertExpectations(t)
+
+	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLABManager.AssertExpectations(t)
+
+	mockDirectory := &orchestratormocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
+	ctx := t.Context()
+	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	orchestratorInstance := orchestrator.New(
+		mockLifecycleSignaler,
+		mockConfigFactory,
+		mockServer,
+		mockWatchdogClient,
+		mockLoggerFactory,
+		mockSignalLayer,
+		mockGlobalMATLABManager,
+		mockDirectory,
+	)
+
+	// Act
+	err := orchestratorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from GetGlobalLogger")
 }
 
 func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
@@ -155,8 +208,8 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
-		Twice()
+		Return(mockLogger, nil).
+		Once()
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -284,7 +337,7 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABOnStartup_False(
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().
@@ -410,8 +463,8 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
-		Twice()
+		Return(mockLogger, nil).
+		Once()
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -528,8 +581,8 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABErrorDoesNotTrig
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
-		Twice()
+		Return(mockLogger, nil).
+		Once()
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -662,8 +715,8 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
-		Twice()
+		Return(mockLogger, nil).
+		Once()
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -796,8 +849,8 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
-		Twice()
+		Return(mockLogger, nil).
+		Once()
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -930,7 +983,7 @@ func TestOrchestrator_runMATLABMCPServerMain_MultipleSession_HappyPath(t *testin
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().

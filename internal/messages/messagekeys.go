@@ -18,6 +18,7 @@ const (
 	StartupErrors_BadFlag                                   messageKey = "StartupErrors_BadFlag"
 	StartupErrors_BadSyntax                                 messageKey = "StartupErrors_BadSyntax"
 	StartupErrors_BadValue                                  messageKey = "StartupErrors_BadValue"
+	StartupErrors_FailedToCreateLogFile                     messageKey = "StartupErrors_FailedToCreateLogFile"
 	StartupErrors_GenericInitializeFailure                  messageKey = "StartupErrors_GenericInitializeFailure"
 	StartupErrors_InvalidLogLevel                           messageKey = "StartupErrors_InvalidLogLevel"
 	StartupErrors_MissingValue                              messageKey = "StartupErrors_MissingValue"

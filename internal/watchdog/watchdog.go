@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package watchdog
 
@@ -7,12 +7,14 @@ import (
 	"os"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport"
+	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server/handler"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
 )
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type OSLayer interface {
@@ -20,7 +22,7 @@ type OSLayer interface {
 }
 
 type ProcessHandler interface {
-	WatchProcessAndGetTerminationChan(processPid int) <-chan struct{}
+	WatchProcessAndGetTerminationChan(processPid int) (<-chan struct{}, error)
 	KillProcess(processPid int) error
 }
 
@@ -28,9 +30,8 @@ type OSSignaler interface {
 	InterruptSignalChan() <-chan os.Signal
 }
 
-type ServerHandler interface {
-	RegisterShutdownFunction(fn func())
-	TerminateAllProcesses()
+type ServerHandlerFactory interface {
+	Handler() (handler.Handler, error)
 }
 
 type ServerFactory interface {
@@ -42,13 +43,13 @@ type SocketFactory interface {
 }
 
 type Watchdog struct {
-	logger         entities.Logger
-	osLayer        OSLayer
-	processHandler ProcessHandler
-	osSignaler     OSSignaler
-	serverHandler  ServerHandler
-	serverFactory  ServerFactory
-	socketFactory  SocketFactory
+	loggerFactory        LoggerFactory
+	osLayer              OSLayer
+	processHandler       ProcessHandler
+	osSignaler           OSSignaler
+	serverHandlerFactory ServerHandlerFactory
+	serverFactory        ServerFactory
+	socketFactory        SocketFactory
 
 	parentPID         int
 	shutdownRequestC  chan struct{}
@@ -60,18 +61,18 @@ func New(
 	osLayer OSLayer,
 	processHandler ProcessHandler,
 	osSignaler OSSignaler,
-	serverHandler ServerHandler,
+	serverHandlerFactory ServerHandlerFactory,
 	serverFactory ServerFactory,
 	socketFactory SocketFactory,
 ) *Watchdog {
 	return &Watchdog{
-		logger:         loggerFactory.GetGlobalLogger(),
-		osLayer:        osLayer,
-		processHandler: processHandler,
-		osSignaler:     osSignaler,
-		serverHandler:  serverHandler,
-		serverFactory:  serverFactory,
-		socketFactory:  socketFactory,
+		loggerFactory:        loggerFactory,
+		osLayer:              osLayer,
+		processHandler:       processHandler,
+		osSignaler:           osSignaler,
+		serverHandlerFactory: serverHandlerFactory,
+		serverFactory:        serverFactory,
+		socketFactory:        socketFactory,
 
 		shutdownRequestC:  make(chan struct{}),
 		shutdownResponseC: make(chan struct{}),
@@ -79,7 +80,17 @@ func New(
 }
 
 func (w *Watchdog) StartAndWaitForCompletion(_ context.Context) error {
+	logger, messagesErr := w.loggerFactory.GetGlobalLogger()
+	if messagesErr != nil {
+		return messagesErr
+	}
+
 	socket, err := w.socketFactory.Socket()
+	if err != nil {
+		return err
+	}
+
+	serverHandler, err := w.serverHandlerFactory.Handler()
 	if err != nil {
 		return err
 	}
@@ -91,41 +102,46 @@ func (w *Watchdog) StartAndWaitForCompletion(_ context.Context) error {
 
 	go func() {
 		if err := server.Start(socket.Path()); err != nil {
-			w.logger.WithError(err).Error("Server Start method returned an error")
+			logger.WithError(err).Error("Server Start method returned an error")
 		}
 	}()
 
 	defer func() {
 		if err := server.Stop(); err != nil {
-			w.logger.WithError(err).Error("Failed to stop server")
+			logger.WithError(err).Error("Failed to stop server")
 		}
 	}()
 
-	w.logger.Info("Watchdog process has started")
-	defer w.logger.Info("Watchdog process has exited")
+	logger.Info("Watchdog process has started")
+	defer logger.Info("Watchdog process has exited")
 
 	w.parentPID = w.osLayer.Getppid()
 
-	w.serverHandler.RegisterShutdownFunction(func() {
+	serverHandler.RegisterShutdownFunction(func() {
 		close(w.shutdownRequestC)
 		// Make sure we broke out of the select, before returning
 		<-w.shutdownResponseC
 	})
 
+	parentTerminatedC, err := w.processHandler.WatchProcessAndGetTerminationChan(w.parentPID)
+	if err != nil {
+		return err
+	}
+
 	select {
 	case <-w.shutdownRequestC:
-		w.logger.Debug("Graceful shutdown signal received")
+		logger.Debug("Graceful shutdown signal received")
 		// Ackownledge shutdown
 		close(w.shutdownResponseC)
 
-	case <-w.processHandler.WatchProcessAndGetTerminationChan(w.parentPID):
-		w.logger.Debug("Lost connection to parent, shutting down")
+	case <-parentTerminatedC:
+		logger.Debug("Lost connection to parent, shutting down")
 
 	case <-w.osSignaler.InterruptSignalChan():
-		w.logger.Debug("Received unexpected graceful shutdown OS signal")
+		logger.Debug("Received unexpected graceful shutdown OS signal")
 	}
 
-	w.serverHandler.TerminateAllProcesses()
+	serverHandler.TerminateAllProcesses()
 
 	return nil
 }

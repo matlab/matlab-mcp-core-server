@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client_test
 
@@ -12,9 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
-	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
+	transportmessages "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
 	httpmocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpclientfactory"
 	clientmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/client"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +31,19 @@ func TestClient_Connect_HappyPath(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -49,7 +58,7 @@ func TestClient_Connect_HappyPath(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 
 	// Act
@@ -67,8 +76,16 @@ func TestClient_Connect_Timeout(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -78,7 +95,7 @@ func TestClient_Connect_Timeout(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	clientInstance.SetSocketWaitTimeout(50 * time.Millisecond)
 	clientInstance.SetSocketRetryInterval(10 * time.Millisecond)
@@ -98,9 +115,17 @@ func TestClient_Connect_StatError(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
 	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -110,7 +135,7 @@ func TestClient_Connect_StatError(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 
 	// Act
@@ -118,6 +143,38 @@ func TestClient_Connect_StatError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, client.ErrSocketFileInaccessible)
+}
+
+func TestClient_Connect_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &clientmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
+	defer mockHTTPClientFactory.AssertExpectations(t)
+
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	expectedSocketPath := filepath.Join("tmp", "test.sock")
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	clientInstance := client.NewClient(
+		mockOSLayer,
+		mockHTTPClientFactory,
+		mockLoggerFactory,
+	)
+
+	// Act
+	err := clientInstance.Connect(expectedSocketPath)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
 }
 
 func TestClient_SendProcessPID_HappyPath(t *testing.T) {
@@ -128,12 +185,20 @@ func TestClient_SendProcessPID_HappyPath(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
 	expectedPID := 12345
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -150,7 +215,7 @@ func TestClient_SendProcessPID_HappyPath(t *testing.T) {
 			if req.Method != "POST" {
 				return false
 			}
-			if req.URL.Path != messages.ProcessToKillPath {
+			if req.URL.Path != transportmessages.ProcessToKillPath {
 				return false
 			}
 			if req.Header.Get("Content-Type") != "application/json" {
@@ -161,7 +226,7 @@ func TestClient_SendProcessPID_HappyPath(t *testing.T) {
 			if err != nil {
 				return false
 			}
-			var reqBody messages.ProcessToKillRequest
+			var reqBody transportmessages.ProcessToKillRequest
 			if err := json.Unmarshal(body, &reqBody); err != nil {
 				return false
 			}
@@ -176,7 +241,7 @@ func TestClient_SendProcessPID_HappyPath(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)
@@ -196,13 +261,15 @@ func TestClient_SendProcessPID_ClientNotConnected(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	expectedPID := 12345
 
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 
 	// Act
@@ -220,6 +287,9 @@ func TestClient_SendProcessPID_HTTPError(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
@@ -227,6 +297,11 @@ func TestClient_SendProcessPID_HTTPError(t *testing.T) {
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
 	expectedPID := 12345
 	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -246,7 +321,7 @@ func TestClient_SendProcessPID_HTTPError(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)
@@ -266,12 +341,20 @@ func TestClient_SendProcessPID_UnexpectedStatus(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
 	expectedPID := 12345
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -295,7 +378,7 @@ func TestClient_SendProcessPID_UnexpectedStatus(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)
@@ -315,11 +398,19 @@ func TestClient_SendStop_HappyPath(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -336,7 +427,7 @@ func TestClient_SendStop_HappyPath(t *testing.T) {
 			if req.Method != "POST" {
 				return false
 			}
-			if req.URL.Path != messages.ShutdownPath {
+			if req.URL.Path != transportmessages.ShutdownPath {
 				return false
 			}
 			if req.Header.Get("Content-Type") != "application/json" {
@@ -353,7 +444,7 @@ func TestClient_SendStop_HappyPath(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)
@@ -373,12 +464,13 @@ func TestClient_SendStop_ClientNotConnected(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
 
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 
 	// Act
@@ -396,12 +488,20 @@ func TestClient_SendStop_HTTPError(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
 	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -421,7 +521,7 @@ func TestClient_SendStop_HTTPError(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)
@@ -441,11 +541,19 @@ func TestClient_Close_HappyPath(t *testing.T) {
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
+	mockLoggerFactory := &clientmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockHttpClient := &httpmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedSocketPath := filepath.Join("tmp", "test.sock")
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(expectedSocketPath).
@@ -465,7 +573,7 @@ func TestClient_Close_HappyPath(t *testing.T) {
 	clientInstance := client.NewClient(
 		mockOSLayer,
 		mockHTTPClientFactory,
-		mockLogger,
+		mockLoggerFactory,
 	)
 	err := clientInstance.Connect(expectedSocketPath)
 	require.NoError(t, err)

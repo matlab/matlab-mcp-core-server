@@ -16,7 +16,7 @@ type OSLayer interface {
 }
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type Directory interface {
@@ -40,7 +40,10 @@ func New(
 	directory Directory,
 	configFactory ConfigFactory,
 ) (*Process, error) {
-	logger := loggerFactory.GetGlobalLogger()
+	logger, err := loggerFactory.GetGlobalLogger()
+	if err != nil {
+		return nil, err
+	}
 
 	config, err := configFactory.Config()
 	if err != nil {

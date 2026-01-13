@@ -1,22 +1,20 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client
 
 import (
 	"time"
-
-	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
 func NewClient(
 	osLayer OSLayer,
 	httpClientFactory HTTPClientFactory,
-	logger entities.Logger,
+	loggerFactory LoggerFactory,
 ) *Client {
 	return newClient(
 		osLayer,
 		httpClientFactory,
-		logger,
+		loggerFactory,
 	)
 }
 

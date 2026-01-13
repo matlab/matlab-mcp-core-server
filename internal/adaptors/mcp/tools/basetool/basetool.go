@@ -1,10 +1,11 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package basetool
 
 import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -16,8 +17,8 @@ type AnnotationProvider interface {
 }
 
 type LoggerFactory interface {
-	NewMCPSessionLogger(session *mcp.ServerSession) entities.Logger
-	GetGlobalLogger() entities.Logger
+	NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error)
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type ToolAdder[ToolInput, ToolOutput any] interface {

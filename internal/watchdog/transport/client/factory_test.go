@@ -1,11 +1,10 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client_test
 
 import (
 	"testing"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
 	clientmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/client"
 	"github.com/stretchr/testify/assert"
@@ -43,13 +42,6 @@ func TestFactory_New_HappyPath(t *testing.T) {
 
 	mockHTTPClientFactory := &clientmocks.MockHTTPClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	factory := client.NewFactory(
 		mockOSLayer,

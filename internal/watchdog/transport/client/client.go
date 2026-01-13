@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client
 
@@ -32,6 +32,7 @@ type Client struct {
 	httpClient          httpclientfactory.HttpClient
 	osLayer             OSLayer
 	httpClientFactory   HTTPClientFactory
+	loggerFactory       LoggerFactory
 	logger              entities.Logger
 	socketWaitTimeout   time.Duration
 	socketRetryInterval time.Duration
@@ -40,18 +41,24 @@ type Client struct {
 func newClient(
 	osLayer OSLayer,
 	httpClientFactory HTTPClientFactory,
-	logger entities.Logger,
+	loggerFactory LoggerFactory,
 ) *Client {
 	return &Client{
 		osLayer:             osLayer,
 		httpClientFactory:   httpClientFactory,
-		logger:              logger,
+		loggerFactory:       loggerFactory,
 		socketWaitTimeout:   defaultSocketWaitTimeout,
 		socketRetryInterval: defaultSocketRetryInterval,
 	}
 }
 
 func (c *Client) Connect(socketPath string) error {
+	logger, err := c.loggerFactory.GetGlobalLogger()
+	if err != nil {
+		return err
+	}
+	c.logger = logger
+
 	c.logger.
 		With("socketPath", socketPath).
 		Debug("Connecting to socket")

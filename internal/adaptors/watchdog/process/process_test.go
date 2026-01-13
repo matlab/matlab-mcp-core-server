@@ -49,7 +49,7 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().
@@ -99,6 +99,35 @@ func TestNew_HappyPath(t *testing.T) {
 	assert.NotNil(t, processInstance, "Process instance should not be nil")
 }
 
+func TestNew_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &processmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockLoggerFactory := &processmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockDirectory := &processmocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
+	mockConfigFactory := &processmocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	// Act
+	processInstance, err := process.New(mockOSLayer, mockLoggerFactory, mockDirectory, mockConfigFactory)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "New should return the error from GetGlobalLogger")
+	assert.Nil(t, processInstance, "Process instance should be nil on error")
+}
+
 func TestNew_ConfigError(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
@@ -119,7 +148,7 @@ func TestNew_ConfigError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().
@@ -158,7 +187,7 @@ func TestNew_ExecutableError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().
@@ -209,7 +238,7 @@ func TestProcess_Start_HappyPath(t *testing.T) {
 	// Setup mocks for New
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().
@@ -297,7 +326,7 @@ func TestProcess_Start_Error(t *testing.T) {
 	// Setup mocks for New
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockConfigFactory.EXPECT().

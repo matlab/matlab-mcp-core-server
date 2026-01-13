@@ -13,7 +13,7 @@ import (
 )
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type LifecycleSignaler interface {
@@ -42,11 +42,14 @@ func New(
 	lifecycleSignaler LifecycleSignaler,
 	configurator MCPServerConfigurator,
 ) (*Server, error) {
-	logger := loggerFactory.GetGlobalLogger()
+	logger, messagesErr := loggerFactory.GetGlobalLogger()
+	if messagesErr != nil {
+		return nil, messagesErr
+	}
 
-	mcpserver, messageErr := mcpSDKServerfactory.NewServer(name, instructions)
-	if messageErr != nil {
-		return nil, messageErr
+	mcpserver, messagesErr := mcpSDKServerfactory.NewServer(name, instructions)
+	if messagesErr != nil {
+		return nil, messagesErr
 	}
 
 	toolsToAdd, err := configurator.GetToolsToAdd()

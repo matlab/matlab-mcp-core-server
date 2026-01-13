@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package evalmatlabcode_test
 
@@ -27,13 +27,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockMATLABManager := &entitiesmocks.MockMATLABManager{}
 	defer mockMATLABManager.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := evalmatlabcode.New(mockLoggerFactory, mockUsecase, mockMATLABManager)
@@ -244,13 +237,7 @@ func TestEvalInMATLABSession_Annotations(t *testing.T) {
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
 	expectedAnnotations := annotations.NewDestructiveAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := evalmatlabcode.New(mockLoggerFactory, mockUsecase, mockMATLABManager)

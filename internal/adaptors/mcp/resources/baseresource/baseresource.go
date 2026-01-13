@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package baseresource
 
@@ -9,13 +9,14 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const UnexpectedErrorPrefix = "unexpected error occurred: "
 
 type LoggerFactory interface {
-	NewMCPSessionLogger(session *mcp.ServerSession) entities.Logger
+	NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error)
 }
 
 type ResourceContents struct {
@@ -82,7 +83,12 @@ func (r *Resource) AddToServer(server resources.Server) {
 
 func (r *Resource) resourceHandler() mcp.ResourceHandler {
 	return func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
-		logger := r.loggerFactory.NewMCPSessionLogger(req.Session).With("resource-name", r.name)
+		logger, messagesErr := r.loggerFactory.NewMCPSessionLogger(req.Session)
+		if messagesErr != nil {
+			return nil, messagesErr
+		}
+
+		logger = logger.With("resource-name", r.name)
 		logger.Debug("Handling resource request")
 		defer logger.Debug("Handled resource request")
 

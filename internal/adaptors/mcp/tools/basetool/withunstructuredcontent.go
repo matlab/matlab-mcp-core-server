@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package basetool
 
@@ -15,7 +15,6 @@ import (
 type ToolWithUnstructuredContentOutput[ToolInput any] struct {
 	tool[ToolInput, any]
 	unstructuredContentHandler HandlerWithUnstructuredContentOutput[ToolInput]
-	logger                     entities.Logger
 }
 
 type HandlerWithUnstructuredContentOutput[ToolInput any] func(context.Context, entities.Logger, ToolInput) (tools.RichContent, error)
@@ -39,7 +38,6 @@ func NewToolWithUnstructuredContent[ToolInput any](
 			toolAdder: mcpfacade.NewToolAdder[ToolInput, any](),
 		},
 		unstructuredContentHandler: handler,
-		logger:                     loggerFactory.GetGlobalLogger().With("name", "tool with unstructured content"),
 	}
 }
 
@@ -71,8 +69,12 @@ func (t ToolWithUnstructuredContentOutput[_]) AddToServer(server *mcp.Server) er
 
 func (t ToolWithUnstructuredContentOutput[ToolInput]) Handler() mcp.ToolHandlerFor[ToolInput, any] {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (*mcp.CallToolResult, any, error) {
-		logger := t.loggerFactory.NewMCPSessionLogger(req.Session).
-			With("tool-name", t.name)
+		logger, messagesErr := t.loggerFactory.NewMCPSessionLogger(req.Session)
+		if messagesErr != nil {
+			return nil, nil, messagesErr
+		}
+
+		logger = logger.With("tool-name", t.name)
 		logger.Debug("Handling tool call request")
 		defer logger.Debug("Handled tool call request")
 

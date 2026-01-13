@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package checkmatlabcode_test
 
@@ -26,13 +26,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockGlobalMATLAB := &entitiesmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := checkmatlabcode.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)
@@ -205,13 +198,7 @@ func TestCheckMATLABCode_Annotations(t *testing.T) {
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	// Act
 	tool := checkmatlabcode.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)

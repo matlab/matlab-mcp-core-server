@@ -1,9 +1,10 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package watchdog
 
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
 )
@@ -17,7 +18,7 @@ type ClientFactory interface {
 }
 
 type LoggerFactory interface {
-	GetGlobalLogger() entities.Logger
+	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type SocketFactory interface {
@@ -25,7 +26,8 @@ type SocketFactory interface {
 }
 
 type Watchdog struct {
-	logger entities.Logger
+	loggerFactory LoggerFactory
+	logger        entities.Logger
 
 	watchdogProcess WatchdogProcess
 	socketFactory   SocketFactory
@@ -42,7 +44,7 @@ func New(
 	socketFactory SocketFactory,
 ) *Watchdog {
 	return &Watchdog{
-		logger: loggerFactory.GetGlobalLogger(),
+		loggerFactory: loggerFactory,
 
 		watchdogProcess: watchdogProcess,
 		socketFactory:   socketFactory,
@@ -54,6 +56,12 @@ func New(
 }
 
 func (w *Watchdog) Start() error {
+	logger, messagesErr := w.loggerFactory.GetGlobalLogger()
+	if messagesErr != nil {
+		return messagesErr
+	}
+
+	w.logger = logger
 	w.logger.Debug("Starting watchdog")
 
 	socket, err := w.socketFactory.Socket()

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package watchdog_test
 
@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
+	transportmessages "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
 	watchdogmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/watchdog"
 	transportmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport"
 	socketmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/socket"
@@ -18,8 +19,6 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
-	mockLogger := testutils.NewInspectableLogger()
-
 	mockWatchdogProcess := &watchdogmocks.MockWatchdogProcess{}
 	defer mockWatchdogProcess.AssertExpectations(t)
 
@@ -34,11 +33,6 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockClient := &transportmocks.MockClient{}
 	defer mockClient.AssertExpectations(t)
-
-	mockLoggerFactory.EXPECT().
-		GetGlobalLogger().
-		Return(mockLogger).
-		Once()
 
 	mockClientFactory.EXPECT().
 		New().
@@ -55,6 +49,49 @@ func TestNew_HappyPath(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, watchdogInstance, "Watchdog instance should not be nil")
+}
+
+func TestWatchdog_Start_GetGlobalLoggerError(t *testing.T) {
+	// Arrange
+	mockWatchdogProcess := &watchdogmocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
+
+	mockClientFactory := &watchdogmocks.MockClientFactory{}
+	defer mockClientFactory.AssertExpectations(t)
+
+	mockLoggerFactory := &watchdogmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockSocketFactory := &watchdogmocks.MockSocketFactory{}
+	defer mockSocketFactory.AssertExpectations(t)
+
+	mockClient := &transportmocks.MockClient{}
+	defer mockClient.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockClientFactory.EXPECT().
+		New().
+		Return(mockClient).
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(nil, expectedError).
+		Once()
+
+	watchdogInstance := watchdog.New(
+		mockWatchdogProcess,
+		mockClientFactory,
+		mockLoggerFactory,
+		mockSocketFactory,
+	)
+
+	// Act
+	err := watchdogInstance.Start()
+
+	// Assert
+	assert.ErrorIs(t, err, expectedError, "Error should be the GetGlobalLogger error")
 }
 
 func TestWatchdog_Start_HappyPath(t *testing.T) {
@@ -83,7 +120,7 @@ func TestWatchdog_Start_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -148,7 +185,7 @@ func TestWatchdog_Start_SocketFactoryError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockClientFactory.EXPECT().
@@ -201,7 +238,7 @@ func TestWatchdog_Start_WatchdogProcessStartError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockClientFactory.EXPECT().
@@ -260,7 +297,7 @@ func TestWatchdog_Start_ClientConnectError(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -329,7 +366,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -359,7 +396,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_HappyPath(t *testing.T) {
 
 	mockClient.EXPECT().
 		SendProcessPID(expectedPID).
-		Return(messages.ProcessToKillResponse{}, nil).
+		Return(transportmessages.ProcessToKillResponse{}, nil).
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -407,7 +444,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_WaitsIfNotStarted(t *testing.T)
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -437,7 +474,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_WaitsIfNotStarted(t *testing.T)
 
 	mockClient.EXPECT().
 		SendProcessPID(expectedPID).
-		Return(messages.ProcessToKillResponse{}, nil).
+		Return(transportmessages.ProcessToKillResponse{}, nil).
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -495,7 +532,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_SendProcessPIDError(t *testing.
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -525,7 +562,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_SendProcessPIDError(t *testing.
 
 	mockClient.EXPECT().
 		SendProcessPID(expectedPID).
-		Return(messages.ProcessToKillResponse{}, expectedError).
+		Return(transportmessages.ProcessToKillResponse{}, expectedError).
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -572,7 +609,7 @@ func TestWatchdog_Stop_HappyPath(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -602,7 +639,7 @@ func TestWatchdog_Stop_HappyPath(t *testing.T) {
 
 	mockClient.EXPECT().
 		SendStop().
-		Return(messages.ShutdownResponse{}, nil).
+		Return(transportmessages.ShutdownResponse{}, nil).
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -649,7 +686,7 @@ func TestWatchdog_Stop_StopErrors(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -679,7 +716,7 @@ func TestWatchdog_Stop_StopErrors(t *testing.T) {
 
 	mockClient.EXPECT().
 		SendStop().
-		Return(messages.ShutdownResponse{}, expectedError).
+		Return(transportmessages.ShutdownResponse{}, expectedError).
 		Once()
 
 	watchdogInstance := watchdog.New(
@@ -725,7 +762,7 @@ func TestWatchdog_Stop_WaitsIfNotStarted(t *testing.T) {
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
-		Return(mockLogger).
+		Return(mockLogger, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -755,7 +792,7 @@ func TestWatchdog_Stop_WaitsIfNotStarted(t *testing.T) {
 
 	mockClient.EXPECT().
 		SendStop().
-		Return(messages.ShutdownResponse{}, nil).
+		Return(transportmessages.ShutdownResponse{}, nil).
 		Once()
 
 	watchdogInstance := watchdog.New(

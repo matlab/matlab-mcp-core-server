@@ -87,7 +87,7 @@ func (_c *MockProcessHandler_KillProcess_Call) RunAndReturn(run func(processPid 
 }
 
 // WatchProcessAndGetTerminationChan provides a mock function for the type MockProcessHandler
-func (_mock *MockProcessHandler) WatchProcessAndGetTerminationChan(processPid int) <-chan struct{} {
+func (_mock *MockProcessHandler) WatchProcessAndGetTerminationChan(processPid int) (<-chan struct{}, error) {
 	ret := _mock.Called(processPid)
 
 	if len(ret) == 0 {
@@ -95,6 +95,10 @@ func (_mock *MockProcessHandler) WatchProcessAndGetTerminationChan(processPid in
 	}
 
 	var r0 <-chan struct{}
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(int) (<-chan struct{}, error)); ok {
+		return returnFunc(processPid)
+	}
 	if returnFunc, ok := ret.Get(0).(func(int) <-chan struct{}); ok {
 		r0 = returnFunc(processPid)
 	} else {
@@ -102,7 +106,12 @@ func (_mock *MockProcessHandler) WatchProcessAndGetTerminationChan(processPid in
 			r0 = ret.Get(0).(<-chan struct{})
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(int) error); ok {
+		r1 = returnFunc(processPid)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // MockProcessHandler_WatchProcessAndGetTerminationChan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WatchProcessAndGetTerminationChan'
@@ -129,12 +138,12 @@ func (_c *MockProcessHandler_WatchProcessAndGetTerminationChan_Call) Run(run fun
 	return _c
 }
 
-func (_c *MockProcessHandler_WatchProcessAndGetTerminationChan_Call) Return(valCh <-chan struct{}) *MockProcessHandler_WatchProcessAndGetTerminationChan_Call {
-	_c.Call.Return(valCh)
+func (_c *MockProcessHandler_WatchProcessAndGetTerminationChan_Call) Return(valCh <-chan struct{}, err error) *MockProcessHandler_WatchProcessAndGetTerminationChan_Call {
+	_c.Call.Return(valCh, err)
 	return _c
 }
 
-func (_c *MockProcessHandler_WatchProcessAndGetTerminationChan_Call) RunAndReturn(run func(processPid int) <-chan struct{}) *MockProcessHandler_WatchProcessAndGetTerminationChan_Call {
+func (_c *MockProcessHandler_WatchProcessAndGetTerminationChan_Call) RunAndReturn(run func(processPid int) (<-chan struct{}, error)) *MockProcessHandler_WatchProcessAndGetTerminationChan_Call {
 	_c.Call.Return(run)
 	return _c
 }
