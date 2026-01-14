@@ -8,9 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
@@ -19,62 +17,49 @@ const (
 	markerFileName       = ".matlab-mcp-core-server"
 )
 
-type ConfigFactory interface {
-	Config() (config.Config, messages.Error)
+type Config interface {
+	BaseDir() string
+	ServerInstanceID() string
 }
 
-type FilenameFactory interface {
-	CreateFileWithUniqueSuffix(baseName string, ext string) (string, string, error)
-}
-
-type OSLayer interface {
-	MkdirTemp(dir string, pattern string) (string, error)
-	MkdirAll(name string, perm os.FileMode) error
-	Create(name string) (osfacade.File, error)
-}
-
-type Directory struct {
+type directory struct {
 	baseDir string
 	id      string
 
 	osFacade OSLayer
 }
 
-func New(
-	configFactory ConfigFactory,
+func newDirectory(
+	config Config,
 	filenameFactory FilenameFactory,
 	osFacade OSLayer,
-) (*Directory, error) {
-	config, err := configFactory.Config()
-	if err != nil {
-		return nil, err
-	}
-
+) (*directory, messages.Error) {
 	baseDir := config.BaseDir()
 
 	if baseDir == "" {
 		var err error
 		if baseDir, err = osFacade.MkdirTemp("", defaultLogDirPattern); err != nil {
-			return nil, err
+			return nil, messages.New_StartupErrors_FailedToCreateSubdirectory_Error(os.TempDir())
 		}
 	} else {
 		if err := osFacade.MkdirAll(baseDir, 0o700); err != nil {
-			return nil, err
+			return nil, messages.New_StartupErrors_FailedToCreateDirectory_Error(baseDir)
 		}
 	}
 
 	serverInstanceID := config.ServerInstanceID()
 
 	if serverInstanceID == "" {
-		_, id, err := filenameFactory.CreateFileWithUniqueSuffix(filepath.Join(baseDir, markerFileName), "")
+		markerFilePath := filepath.Join(baseDir, markerFileName)
+		_, id, err := filenameFactory.CreateFileWithUniqueSuffix(markerFilePath, "")
 		if err != nil {
-			return nil, err
+			return nil, messages.New_StartupErrors_FailedToCreateFile_Error(markerFilePath)
 		}
 
 		serverInstanceID = id
 	}
 
-	return &Directory{
+	return &directory{
 		baseDir: baseDir,
 		id:      serverInstanceID,
 
@@ -82,25 +67,30 @@ func New(
 	}, nil
 }
 
-func (d *Directory) BaseDir() string {
+func (d *directory) BaseDir() string {
 	return d.baseDir
 }
 
-func (d *Directory) ID() string {
+func (d *directory) ID() string {
 	return d.id
 }
 
-func (d *Directory) CreateSubDir(pattern string) (string, error) {
+func (d *directory) CreateSubDir(pattern string) (string, messages.Error) {
 	if !strings.HasSuffix(pattern, "-") {
 		pattern = fmt.Sprintf("%s-", pattern)
 	}
 
 	pattern = fmt.Sprintf("%s%s-", pattern, d.id)
 
-	return d.osFacade.MkdirTemp(d.baseDir, pattern)
+	tempDir, err := d.osFacade.MkdirTemp(d.baseDir, pattern)
+	if err != nil {
+		return "", messages.New_StartupErrors_FailedToCreateSubdirectory_Error(d.baseDir)
+	}
+
+	return tempDir, nil
 }
 
-func (d *Directory) RecordToLogger(logger entities.Logger) {
+func (d *directory) RecordToLogger(logger entities.Logger) {
 	logger.
 		With("log-dir", d.baseDir).
 		With("id", d.id).

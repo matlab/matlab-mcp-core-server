@@ -10,7 +10,7 @@ import (
 )
 
 type WatchdogProcess interface {
-	Start() error
+	StartNewProcess() messages.Error
 }
 
 type ClientFactory interface {
@@ -70,7 +70,7 @@ func (w *Watchdog) Start() error {
 		return err
 	}
 
-	err = w.watchdogProcess.Start()
+	err = w.watchdogProcess.StartNewProcess()
 	if err != nil {
 		w.logger.WithError(err).Error("Failed to start watchdog process")
 		return err

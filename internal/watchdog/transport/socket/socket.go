@@ -5,13 +5,15 @@ package socket
 import (
 	"errors"
 	"path/filepath"
+
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
 var ErrSocketPathTooLong = errors.New("socket path is too long")
 
-type Directory interface {
-	BaseDir() string
-	ID() string
+type DirectoryFactory interface {
+	Directory() (directory.Directory, messages.Error)
 }
 
 type OSLayer interface {
@@ -23,20 +25,20 @@ type Socket interface {
 }
 
 type Factory struct {
-	directory Directory
-	osLayer   OSLayer
+	directoryFactory DirectoryFactory
+	osLayer          OSLayer
 
 	socketInstance Socket
 	socketError    error
 }
 
 func NewFactory(
-	directory Directory,
+	directoryFactory DirectoryFactory,
 	osLayer OSLayer,
 ) *Factory {
 	return &Factory{
-		directory: directory,
-		osLayer:   osLayer,
+		directoryFactory: directoryFactory,
+		osLayer:          osLayer,
 	}
 }
 
@@ -46,8 +48,14 @@ func (f *Factory) Socket() (Socket, error) {
 	}
 
 	if f.socketInstance == nil {
+		directory, messagesErr := f.directoryFactory.Directory()
+		if messagesErr != nil {
+			f.socketError = messagesErr
+			return nil, messagesErr
+		}
+
 		socket, err := newSocket(
-			f.directory,
+			directory,
 			f.osLayer,
 		)
 		if err != nil {
@@ -59,6 +67,11 @@ func (f *Factory) Socket() (Socket, error) {
 	}
 
 	return f.socketInstance, nil
+}
+
+type Directory interface {
+	BaseDir() string
+	ID() string
 }
 
 type socket struct {

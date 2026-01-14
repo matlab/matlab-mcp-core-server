@@ -1,6 +1,6 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
-package directorymanager
+package directory
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ const securePortFile = "connector.securePort"
 const certificateFile = "cert.pem"
 const certificateKeyFile = "cert.key"
 
-type directoryManager struct {
+type directory struct {
 	sessionDir string
 	osLayer    OSLayer
 
@@ -28,8 +28,8 @@ type directoryManager struct {
 	cleanupRetry                    time.Duration
 }
 
-func newDirectoryManager(sessionDir string, osLayer OSLayer) *directoryManager {
-	return &directoryManager{
+func newDirectory(sessionDir string, osLayer OSLayer) *directory {
+	return &directory{
 		sessionDir: sessionDir,
 		osLayer:    osLayer,
 
@@ -40,37 +40,37 @@ func newDirectoryManager(sessionDir string, osLayer OSLayer) *directoryManager {
 	}
 }
 
-func (m *directoryManager) Path() string {
-	return m.sessionDir
+func (d *directory) Path() string {
+	return d.sessionDir
 }
 
-func (m *directoryManager) CertificateFile() string {
-	return filepath.Join(m.sessionDir, certificateFile)
+func (d *directory) CertificateFile() string {
+	return filepath.Join(d.sessionDir, certificateFile)
 }
 
-func (m *directoryManager) CertificateKeyFile() string {
-	return filepath.Join(m.sessionDir, certificateKeyFile)
+func (d *directory) CertificateKeyFile() string {
+	return filepath.Join(d.sessionDir, certificateKeyFile)
 }
 
-func (m *directoryManager) GetEmbeddedConnectorDetails() (string, []byte, error) {
-	securePortFileFullPath := m.securePortFile()
-	certificateFileFullPath := m.CertificateFile()
+func (d *directory) GetEmbeddedConnectorDetails() (string, []byte, error) {
+	securePortFileFullPath := d.securePortFile()
+	certificateFileFullPath := d.CertificateFile()
 
-	timeout := time.After(m.embeddedConnectorDetailsTimeout)
-	tick := time.Tick(m.embeddedConnectorDetailsRetry)
+	timeout := time.After(d.embeddedConnectorDetailsTimeout)
+	tick := time.Tick(d.embeddedConnectorDetailsRetry)
 
 	for {
 		select {
 		case <-timeout:
 			return "", nil, fmt.Errorf("timeout waiting for worker to start")
 		case <-tick:
-			if _, err := m.osLayer.Stat(securePortFileFullPath); err != nil {
+			if _, err := d.osLayer.Stat(securePortFileFullPath); err != nil {
 				continue
 			}
-			if _, err := m.osLayer.Stat(certificateFileFullPath); err != nil {
+			if _, err := d.osLayer.Stat(certificateFileFullPath); err != nil {
 				continue
 			}
-			securePort, err := m.osLayer.ReadFile(securePortFileFullPath)
+			securePort, err := d.osLayer.ReadFile(securePortFileFullPath)
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to read secure port file: %w", err)
 			}
@@ -78,7 +78,7 @@ func (m *directoryManager) GetEmbeddedConnectorDetails() (string, []byte, error)
 				// File was made, but content is empty, wait for next tick
 				continue
 			}
-			certificatePEM, err := m.osLayer.ReadFile(certificateFileFullPath)
+			certificatePEM, err := d.osLayer.ReadFile(certificateFileFullPath)
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to read certificate path file: %w", err)
 			}
@@ -91,20 +91,20 @@ func (m *directoryManager) GetEmbeddedConnectorDetails() (string, []byte, error)
 	}
 }
 
-func (m *directoryManager) Cleanup() error {
-	if m.sessionDir == "" {
+func (d *directory) Cleanup() error {
+	if d.sessionDir == "" {
 		return nil
 	}
 
-	timeout := time.After(m.cleanupTimeout)
-	tick := time.Tick(m.cleanupRetry)
+	timeout := time.After(d.cleanupTimeout)
+	tick := time.Tick(d.cleanupRetry)
 
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("timeout trying to delete session directory %s", m.sessionDir)
+			return fmt.Errorf("timeout trying to delete session directory %s", d.sessionDir)
 		case <-tick:
-			err := m.osLayer.RemoveAll(m.sessionDir)
+			err := d.osLayer.RemoveAll(d.sessionDir)
 			if err == nil {
 				return nil
 			}
@@ -112,6 +112,6 @@ func (m *directoryManager) Cleanup() error {
 	}
 }
 
-func (m *directoryManager) securePortFile() string {
-	return filepath.Join(m.sessionDir, securePortFile)
+func (d *directory) securePortFile() string {
+	return filepath.Join(d.sessionDir, securePortFile)
 }

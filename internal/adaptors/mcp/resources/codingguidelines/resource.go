@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package codingguidelines
 
@@ -17,24 +17,19 @@ type Resource struct {
 	*baseresource.Resource
 }
 
-func New(loggerFactory baseresource.LoggerFactory) (*Resource, error) {
-	baseRes, err := baseresource.New(
-		name,
-		title,
-		description,
-		mimeType,
-		estimatedSize,
-		uri,
-		loggerFactory,
-		Handler(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
+func New(loggerFactory baseresource.LoggerFactory) *Resource {
 	return &Resource{
-		Resource: baseRes,
-	}, nil
+		Resource: baseresource.New(
+			name,
+			title,
+			description,
+			mimeType,
+			estimatedSize,
+			uri,
+			loggerFactory,
+			Handler(),
+		),
+	}
 }
 
 func Handler() baseresource.ResourceHandler {

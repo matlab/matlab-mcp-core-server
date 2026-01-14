@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package resources
 
@@ -11,5 +11,5 @@ type Server interface {
 }
 
 type Resource interface {
-	AddToServer(server Server)
+	AddToServer(server Server) error
 }

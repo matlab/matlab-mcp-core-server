@@ -40,9 +40,9 @@ type Factory struct {
 	parser  Parser
 	osLayer OSLayer
 
-	singletonInitialization sync.Once
-	configInstance          *config
-	initializationError     messages.Error
+	initOnce       sync.Once
+	initError      messages.Error
+	configInstance *config
 }
 
 func NewFactory(parser Parser, osLayer OSLayer) *Factory {
@@ -53,18 +53,18 @@ func NewFactory(parser Parser, osLayer OSLayer) *Factory {
 }
 
 func (f *Factory) Config() (Config, messages.Error) {
-	f.singletonInitialization.Do(func() {
+	f.initOnce.Do(func() {
 		configInstance, err := newConfig(f.osLayer, f.parser)
 		if err != nil {
-			f.initializationError = err
+			f.initError = err
 			return
 		}
 
 		f.configInstance = configInstance
 	})
 
-	if f.initializationError != nil {
-		return nil, f.initializationError
+	if f.initError != nil {
+		return nil, f.initError
 	}
 
 	return f.configInstance, nil

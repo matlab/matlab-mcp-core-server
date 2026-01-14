@@ -21,8 +21,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager/matlabfiles"
+	directory2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory/matlabfiles"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/processdetails"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/processlauncher"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/matlablocator"
@@ -93,29 +93,23 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	factory := config.NewFactory(parserParser, osFacade)
 	sdkFactory := sdk.NewFactory(factory)
 	filesFactory := files.NewFactory(osFacade)
-	directoryDirectory, err := directory.New(factory, filesFactory, osFacade)
-	if err != nil {
-		return nil, err
-	}
-	loggerFactory := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
+	directoryFactory := directory.NewFactory(factory, filesFactory, osFacade)
+	loggerFactory := logger.NewFactory(factory, directoryFactory, filesFactory, osFacade)
 	fileFacade := filefacade.New()
 	getter := matlabroot.New(osFacade, fileFacade)
 	ioFacade := iofacade.New()
 	matlabversionGetter := matlabversion.New(osFacade, ioFacade)
 	matlabLocator := matlablocator.New(getter, matlabversionGetter)
 	matlabFiles := matlabfiles.New()
-	directoryFactory := directorymanager.NewFactory(osFacade, directoryDirectory, matlabFiles)
+	factory2 := directory2.NewFactory(osFacade, directoryFactory, matlabFiles)
 	processDetails := processdetails.New(osFacade)
 	matlabProcessLauncher := processlauncher.New()
-	processProcess, err := process.New(osFacade, loggerFactory, directoryDirectory, factory)
-	if err != nil {
-		return nil, err
-	}
+	processFactory := process.New(osFacade, loggerFactory, directoryFactory, factory)
 	httpClientFactory := httpclientfactory.New()
 	clientFactory := client.NewFactory(osFacade, loggerFactory, httpClientFactory)
-	socketFactory := socket.NewFactory(directoryDirectory, osFacade)
-	watchdogWatchdog := watchdog.New(processProcess, clientFactory, loggerFactory, socketFactory)
-	starter := localmatlabsession.NewStarter(directoryFactory, processDetails, matlabProcessLauncher, watchdogWatchdog)
+	socketFactory := socket.NewFactory(directoryFactory, osFacade)
+	watchdogWatchdog := watchdog.New(processFactory, clientFactory, loggerFactory, socketFactory)
+	starter := localmatlabsession.NewStarter(factory2, processDetails, matlabProcessLauncher, watchdogWatchdog)
 	matlabServices := matlabservices.New(matlabLocator, starter)
 	store := matlabsessionstore.New(loggerFactory, lifecycleSignaler)
 	matlabsessionclientFactory := matlabsessionclient.NewFactory(httpClientFactory)
@@ -141,21 +135,12 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	runmatlabfileTool := runmatlabfile2.New(loggerFactory, runmatlabfileUsecase, globalMATLAB)
 	runmatlabtestfileUsecase := runmatlabtestfile.New(pathValidator)
 	runmatlabtestfileTool := runmatlabtestfile2.New(loggerFactory, runmatlabtestfileUsecase, globalMATLAB)
-	resource, err := codingguidelines.New(loggerFactory)
-	if err != nil {
-		return nil, err
-	}
-	plaintextlivecodegenerationResource, err := plaintextlivecodegeneration.New(loggerFactory)
-	if err != nil {
-		return nil, err
-	}
+	resource := codingguidelines.New(loggerFactory)
+	plaintextlivecodegenerationResource := plaintextlivecodegeneration.New(loggerFactory)
 	configuratorConfigurator := configurator.New(factory, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
-	serverServer, err := server.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
-	if err != nil {
-		return nil, err
-	}
+	serverServer := server.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
 	osSignaler := ossignaler.New()
-	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, factory, serverServer, watchdogWatchdog, loggerFactory, osSignaler, globalMATLAB, directoryDirectory)
+	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, factory, serverServer, watchdogWatchdog, loggerFactory, osSignaler, globalMATLAB, directoryFactory)
 	return orchestratorOrchestrator, nil
 }
 
@@ -165,18 +150,15 @@ func initializeWatchdog() (*watchdog2.Watchdog, error) {
 	osFacade := osfacade.New()
 	factory := config.NewFactory(parserParser, osFacade)
 	filesFactory := files.NewFactory(osFacade)
-	directoryDirectory, err := directory.New(factory, filesFactory, osFacade)
-	if err != nil {
-		return nil, err
-	}
-	loggerFactory := logger.NewFactory(factory, directoryDirectory, filesFactory, osFacade)
+	directoryFactory := directory.NewFactory(factory, filesFactory, osFacade)
+	loggerFactory := logger.NewFactory(factory, directoryFactory, filesFactory, osFacade)
 	osWrapper := oswrapper.New(osFacade)
 	processHandler := processhandler.New(loggerFactory, osWrapper)
 	osSignaler := ossignaler.New()
 	handlerFactory := handler.NewFactory(loggerFactory, processHandler)
 	httpServerFactory := httpserverfactory.New(osFacade)
 	serverFactory := server2.NewFactory(httpServerFactory, loggerFactory, handlerFactory)
-	socketFactory := socket.NewFactory(directoryDirectory, osFacade)
+	socketFactory := socket.NewFactory(directoryFactory, osFacade)
 	watchdogWatchdog := watchdog2.New(loggerFactory, osFacade, processHandler, osSignaler, handlerFactory, serverFactory, socketFactory)
 	return watchdogWatchdog, nil
 }

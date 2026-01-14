@@ -20,8 +20,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager/matlabfiles"
+	localmatlabsessiondirectory "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory/matlabfiles"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/processdetails"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/processlauncher"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/matlablocator"
@@ -131,25 +131,25 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		wire.Bind(new(orchestrator.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(orchestrator.OSSignaler), new(*ossignaler.OSSignaler)),
 		wire.Bind(new(orchestrator.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
-		wire.Bind(new(orchestrator.Directory), new(*directory.Directory)),
+		wire.Bind(new(orchestrator.DirectoryFactory), new(*directory.Factory)),
 
 		// Watchdog Client
 		watchdogclient.New,
-		wire.Bind(new(watchdogclient.WatchdogProcess), new(*process.Process)),
+		wire.Bind(new(watchdogclient.WatchdogProcess), new(*process.Factory)),
 		wire.Bind(new(watchdogclient.ClientFactory), new(*transportclient.Factory)),
 		wire.Bind(new(watchdogclient.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(watchdogclient.SocketFactory), new(*socket.Factory)),
 
 		// Socket Path Factory
 		socket.NewFactory,
-		wire.Bind(new(socket.Directory), new(*directory.Directory)),
+		wire.Bind(new(socket.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
 
 		// Watchdog Process Handler for Watchdog Client
 		process.New,
 		wire.Bind(new(process.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(process.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(process.Directory), new(*directory.Directory)),
+		wire.Bind(new(process.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(process.ConfigFactory), new(*config.Factory)),
 
 		// Watchdog Transport Client Factory
@@ -273,16 +273,16 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 
 		// Local MATLAB Session
 		localmatlabsession.NewStarter,
-		wire.Bind(new(localmatlabsession.SessionDirectoryFactory), new(*directorymanager.DirectoryFactory)),
+		wire.Bind(new(localmatlabsession.SessionDirectoryFactory), new(*localmatlabsessiondirectory.Factory)),
 		wire.Bind(new(localmatlabsession.ProcessDetails), new(*processdetails.ProcessDetails)),
 		wire.Bind(new(localmatlabsession.MATLABProcessLauncher), new(*processlauncher.MATLABProcessLauncher)),
 		wire.Bind(new(localmatlabsession.Watchdog), new(*watchdogclient.Watchdog)),
 
-		// Local MATLAB Session Directory Manager
-		directorymanager.NewFactory,
-		wire.Bind(new(directorymanager.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(directorymanager.ApplicationDirectory), new(*directory.Directory)),
-		wire.Bind(new(directorymanager.MATLABFiles), new(matlabfiles.MATLABFiles)),
+		// Local MATLAB Session Directory
+		localmatlabsessiondirectory.NewFactory,
+		wire.Bind(new(localmatlabsessiondirectory.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(localmatlabsessiondirectory.ApplicationDirectoryFactory), new(*directory.Factory)),
+		wire.Bind(new(localmatlabsessiondirectory.MATLABFiles), new(matlabfiles.MATLABFiles)),
 
 		// Local MATLAB Session Process Details
 		processdetails.New,
@@ -307,10 +307,10 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		// Low-level Interfaces
 		logger.NewFactory,
 		wire.Bind(new(logger.ConfigFactory), new(*config.Factory)),
-		wire.Bind(new(logger.Directory), new(*directory.Directory)),
+		wire.Bind(new(logger.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
-		directory.New,
+		directory.NewFactory,
 		wire.Bind(new(directory.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
@@ -366,16 +366,16 @@ func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
 
 		// Socket Factory
 		socket.NewFactory,
-		wire.Bind(new(socket.Directory), new(*directory.Directory)),
+		wire.Bind(new(socket.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
 
 		// Low-level Interfaces
 		logger.NewFactory,
 		wire.Bind(new(logger.ConfigFactory), new(*config.Factory)),
-		wire.Bind(new(logger.Directory), new(*directory.Directory)),
+		wire.Bind(new(logger.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
-		directory.New,
+		directory.NewFactory,
 		wire.Bind(new(directory.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),

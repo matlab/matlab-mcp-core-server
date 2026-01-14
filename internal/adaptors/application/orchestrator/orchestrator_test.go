@@ -11,6 +11,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	configmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/config"
+	directorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/directory"
 	orchestratormocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/orchestrator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,8 +40,8 @@ func TestNew_HappyPath(t *testing.T) {
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
-	defer mockDirectory.AssertExpectations(t)
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
 
 	//Act
 	orchestratorInstance := orchestrator.New(
@@ -51,7 +52,7 @@ func TestNew_HappyPath(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Assert
@@ -81,11 +82,11 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
-	defer mockDirectory.AssertExpectations(t)
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
 
 	ctx := t.Context()
-	expectedError := &messages.StartupErrors_BadFlag_Error{}
+	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -100,7 +101,7 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -136,8 +137,8 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
-	defer mockDirectory.AssertExpectations(t)
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
 
 	ctx := t.Context()
 	expectedError := messages.AnError
@@ -160,7 +161,7 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -168,6 +169,191 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from GetGlobalLogger")
+}
+
+func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
+	// Arrange
+	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockConfigFactory := &orchestratormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockServer := &orchestratormocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockWatchdogClient := &orchestratormocks.MockWatchdogClient{}
+	defer mockWatchdogClient.AssertExpectations(t)
+
+	mockLoggerFactory := &orchestratormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockSignalLayer := &orchestratormocks.MockOSSignaler{}
+	defer mockSignalLayer.AssertExpectations(t)
+
+	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLABManager.AssertExpectations(t)
+
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	ctx := t.Context()
+	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		RecordToLogger(mockLogger.AsMockArg()).
+		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(nil, expectedError).
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		RequestShutdown().
+		Return().
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		WaitForShutdownToComplete().
+		Return(nil).
+		Once()
+
+	mockWatchdogClient.EXPECT().
+		Stop().
+		Return(nil).
+		Once()
+
+	orchestratorInstance := orchestrator.New(
+		mockLifecycleSignaler,
+		mockConfigFactory,
+		mockServer,
+		mockWatchdogClient,
+		mockLoggerFactory,
+		mockSignalLayer,
+		mockGlobalMATLABManager,
+		mockDirectoryFactory,
+	)
+
+	// Act
+	err := orchestratorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from Directory")
+}
+
+func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
+	// Arrange
+	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockConfigFactory := &orchestratormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockServer := &orchestratormocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockWatchdogClient := &orchestratormocks.MockWatchdogClient{}
+	defer mockWatchdogClient.AssertExpectations(t)
+
+	mockLoggerFactory := &orchestratormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockSignalLayer := &orchestratormocks.MockOSSignaler{}
+	defer mockSignalLayer.AssertExpectations(t)
+
+	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLABManager.AssertExpectations(t)
+
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	ctx := t.Context()
+	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		RecordToLogger(mockLogger.AsMockArg()).
+		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		RecordToLogger(mockLogger.AsMockArg()).
+		Return().
+		Once()
+
+	mockWatchdogClient.EXPECT().
+		Start().
+		Return(expectedError).
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		RequestShutdown().
+		Return().
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		WaitForShutdownToComplete().
+		Return(nil).
+		Once()
+
+	mockWatchdogClient.EXPECT().
+		Stop().
+		Return(nil).
+		Once()
+
+	orchestratorInstance := orchestrator.New(
+		mockLifecycleSignaler,
+		mockConfigFactory,
+		mockServer,
+		mockWatchdogClient,
+		mockLoggerFactory,
+		mockSignalLayer,
+		mockGlobalMATLABManager,
+		mockDirectoryFactory,
+	)
+
+	// Act
+	err := orchestratorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from watchdogClient.Start")
 }
 
 func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
@@ -196,7 +382,10 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -219,6 +408,11 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -284,7 +478,7 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -329,7 +523,10 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABOnStartup_False(
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	ctx := t.Context()
@@ -348,6 +545,11 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABOnStartup_False(
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -411,7 +613,7 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABOnStartup_False(
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -453,7 +655,10 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -474,6 +679,11 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -534,7 +744,7 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -570,7 +780,10 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABErrorDoesNotTrig
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -592,6 +805,11 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABErrorDoesNotTrig
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -658,7 +876,7 @@ func TestOrchestrator_StartAndWaitForCompletion_InitializeMATLABErrorDoesNotTrig
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -705,7 +923,10 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -726,6 +947,11 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -786,7 +1012,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act
@@ -840,7 +1066,10 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t)
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	ctx := t.Context()
@@ -860,6 +1089,11 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -925,7 +1159,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 
 	orchestratorInstance := orchestrator.New(
 		mockLifecycleSignaler, mockConfigFactory, mockServer, mockWatchdogClient,
-		mockLoggerFactory, mockSignalLayer, mockGlobalMATLABManager, mockDirectory,
+		mockLoggerFactory, mockSignalLayer, mockGlobalMATLABManager, mockDirectoryFactory,
 	)
 
 	// Act
@@ -948,7 +1182,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 	assert.Equal(t, expectedError, fields["error"])
 }
 
-func TestOrchestrator_runMATLABMCPServerMain_MultipleSession_HappyPath(t *testing.T) {
+func TestOrchestrator_StartAndWaitForCompletion_MultipleSession_HappyPath(t *testing.T) {
 	// Arrange
 	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
@@ -974,7 +1208,10 @@ func TestOrchestrator_runMATLABMCPServerMain_MultipleSession_HappyPath(t *testin
 	mockGlobalMATLABManager := &orchestratormocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLABManager.AssertExpectations(t) // Implicit assertion here, Initialize should not be called
 
-	mockDirectory := &orchestratormocks.MockDirectory{}
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -994,6 +1231,11 @@ func TestOrchestrator_runMATLABMCPServerMain_MultipleSession_HappyPath(t *testin
 	mockConfig.EXPECT().
 		RecordToLogger(mockLogger.AsMockArg()).
 		Return().
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
 		Once()
 
 	mockDirectory.EXPECT().
@@ -1044,7 +1286,7 @@ func TestOrchestrator_runMATLABMCPServerMain_MultipleSession_HappyPath(t *testin
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockGlobalMATLABManager,
-		mockDirectory,
+		mockDirectoryFactory,
 	)
 
 	// Act

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -37,24 +37,24 @@ func (_m *MockSessionDirectoryFactory) EXPECT() *MockSessionDirectoryFactory_Exp
 	return &MockSessionDirectoryFactory_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function for the type MockSessionDirectoryFactory
-func (_mock *MockSessionDirectoryFactory) Create(logger entities.Logger) (directorymanager.Directory, error) {
+// New provides a mock function for the type MockSessionDirectoryFactory
+func (_mock *MockSessionDirectoryFactory) New(logger entities.Logger) (directory.Directory, error) {
 	ret := _mock.Called(logger)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Create")
+		panic("no return value specified for New")
 	}
 
-	var r0 directorymanager.Directory
+	var r0 directory.Directory
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger) (directorymanager.Directory, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(entities.Logger) (directory.Directory, error)); ok {
 		return returnFunc(logger)
 	}
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger) directorymanager.Directory); ok {
+	if returnFunc, ok := ret.Get(0).(func(entities.Logger) directory.Directory); ok {
 		r0 = returnFunc(logger)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(directorymanager.Directory)
+			r0 = ret.Get(0).(directory.Directory)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(entities.Logger) error); ok {
@@ -65,18 +65,18 @@ func (_mock *MockSessionDirectoryFactory) Create(logger entities.Logger) (direct
 	return r0, r1
 }
 
-// MockSessionDirectoryFactory_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
-type MockSessionDirectoryFactory_Create_Call struct {
+// MockSessionDirectoryFactory_New_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'New'
+type MockSessionDirectoryFactory_New_Call struct {
 	*mock.Call
 }
 
-// Create is a helper method to define mock.On call
+// New is a helper method to define mock.On call
 //   - logger entities.Logger
-func (_e *MockSessionDirectoryFactory_Expecter) Create(logger interface{}) *MockSessionDirectoryFactory_Create_Call {
-	return &MockSessionDirectoryFactory_Create_Call{Call: _e.mock.On("Create", logger)}
+func (_e *MockSessionDirectoryFactory_Expecter) New(logger interface{}) *MockSessionDirectoryFactory_New_Call {
+	return &MockSessionDirectoryFactory_New_Call{Call: _e.mock.On("New", logger)}
 }
 
-func (_c *MockSessionDirectoryFactory_Create_Call) Run(run func(logger entities.Logger)) *MockSessionDirectoryFactory_Create_Call {
+func (_c *MockSessionDirectoryFactory_New_Call) Run(run func(logger entities.Logger)) *MockSessionDirectoryFactory_New_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 entities.Logger
 		if args[0] != nil {
@@ -89,12 +89,12 @@ func (_c *MockSessionDirectoryFactory_Create_Call) Run(run func(logger entities.
 	return _c
 }
 
-func (_c *MockSessionDirectoryFactory_Create_Call) Return(directory directorymanager.Directory, err error) *MockSessionDirectoryFactory_Create_Call {
-	_c.Call.Return(directory, err)
+func (_c *MockSessionDirectoryFactory_New_Call) Return(directory1 directory.Directory, err error) *MockSessionDirectoryFactory_New_Call {
+	_c.Call.Return(directory1, err)
 	return _c
 }
 
-func (_c *MockSessionDirectoryFactory_Create_Call) RunAndReturn(run func(logger entities.Logger) (directorymanager.Directory, error)) *MockSessionDirectoryFactory_Create_Call {
+func (_c *MockSessionDirectoryFactory_New_Call) RunAndReturn(run func(logger entities.Logger) (directory.Directory, error)) *MockSessionDirectoryFactory_New_Call {
 	_c.Call.Return(run)
 	return _c
 }

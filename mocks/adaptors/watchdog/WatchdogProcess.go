@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -35,46 +36,48 @@ func (_m *MockWatchdogProcess) EXPECT() *MockWatchdogProcess_Expecter {
 	return &MockWatchdogProcess_Expecter{mock: &_m.Mock}
 }
 
-// Start provides a mock function for the type MockWatchdogProcess
-func (_mock *MockWatchdogProcess) Start() error {
+// StartNewProcess provides a mock function for the type MockWatchdogProcess
+func (_mock *MockWatchdogProcess) StartNewProcess() messages.Error {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Start")
+		panic("no return value specified for StartNewProcess")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func() error); ok {
+	var r0 messages.Error
+	if returnFunc, ok := ret.Get(0).(func() messages.Error); ok {
 		r0 = returnFunc()
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(messages.Error)
+		}
 	}
 	return r0
 }
 
-// MockWatchdogProcess_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
-type MockWatchdogProcess_Start_Call struct {
+// MockWatchdogProcess_StartNewProcess_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartNewProcess'
+type MockWatchdogProcess_StartNewProcess_Call struct {
 	*mock.Call
 }
 
-// Start is a helper method to define mock.On call
-func (_e *MockWatchdogProcess_Expecter) Start() *MockWatchdogProcess_Start_Call {
-	return &MockWatchdogProcess_Start_Call{Call: _e.mock.On("Start")}
+// StartNewProcess is a helper method to define mock.On call
+func (_e *MockWatchdogProcess_Expecter) StartNewProcess() *MockWatchdogProcess_StartNewProcess_Call {
+	return &MockWatchdogProcess_StartNewProcess_Call{Call: _e.mock.On("StartNewProcess")}
 }
 
-func (_c *MockWatchdogProcess_Start_Call) Run(run func()) *MockWatchdogProcess_Start_Call {
+func (_c *MockWatchdogProcess_StartNewProcess_Call) Run(run func()) *MockWatchdogProcess_StartNewProcess_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *MockWatchdogProcess_Start_Call) Return(err error) *MockWatchdogProcess_Start_Call {
-	_c.Call.Return(err)
+func (_c *MockWatchdogProcess_StartNewProcess_Call) Return(error messages.Error) *MockWatchdogProcess_StartNewProcess_Call {
+	_c.Call.Return(error)
 	return _c
 }
 
-func (_c *MockWatchdogProcess_Start_Call) RunAndReturn(run func() error) *MockWatchdogProcess_Start_Call {
+func (_c *MockWatchdogProcess_StartNewProcess_Call) RunAndReturn(run func() messages.Error) *MockWatchdogProcess_StartNewProcess_Call {
 	_c.Call.Return(run)
 	return _c
 }

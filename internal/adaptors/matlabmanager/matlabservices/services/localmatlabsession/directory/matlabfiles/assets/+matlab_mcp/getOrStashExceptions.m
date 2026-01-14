@@ -9,7 +9,7 @@ function [returnedException] = getOrStashExceptions(exceptionMessage, resetFlag)
     % When resetFlag is set, old exceptionMessage if any is returned, and is
     % cleared.
 
-    % Copyright 2025 The MathWorks, Inc.
+    % Copyright 2025-2026 The MathWorks, Inc.
 
     persistent stashedException
 

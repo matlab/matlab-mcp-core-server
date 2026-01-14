@@ -22,6 +22,20 @@ import (
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	mockLifecycleSignaler := &mocks.MockLifecycleSignaler{}
+	mockConfigurator := &mocks.MockMCPServerConfigurator{}
+
+	// Act
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
+	// Assert
+	assert.NotNil(t, svr, "Server should not be nil")
+}
+
+func TestServer_Run_HappyPath(t *testing.T) {
+	// Arrange
+	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
@@ -45,14 +59,14 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	expectedMCPServer := &mcp.Server{}
 
-	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
-		Return(expectedMCPServer, nil).
-		Once()
-
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockMCPSDKServerFactory.EXPECT().
+		NewServer(server.Name(), server.Instructions()).
+		Return(expectedMCPServer, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -77,18 +91,40 @@ func TestNew_HappyPath(t *testing.T) {
 
 	mockResource.EXPECT().
 		AddToServer(expectedMCPServer).
+		Return(nil).
+		Once()
+
+	capturedShutdownFuncC := make(chan func() error)
+	mockLifecycleSignaler.EXPECT().
+		AddShutdownFunction(mock.AnythingOfType("func() error")).
+		Run(func(shutdownFcn func() error) {
+			capturedShutdownFuncC <- shutdownFcn
+		}).
 		Return().
 		Once()
 
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
+	_, serverTransport := mcp.NewInMemoryTransports()
+	svr.SetServerTransport(serverTransport)
+
+	errC := make(chan error)
+	go func() {
+		errC <- svr.Run()
+	}()
+
+	capturedShutdownFunc := <-capturedShutdownFuncC
+
 	// Act
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	err := capturedShutdownFunc()
 
 	// Assert
-	require.NoError(t, err, "New should not return an error")
-	assert.NotNil(t, svr, "Server should not be nil")
+	require.NoError(t, err, "Shutdown function should not return an error")
+	serverErr := <-errC
+	require.NoError(t, serverErr, "Server run should exit without error after shutdown")
 }
 
-func TestNew_GetGlobalLoggerError(t *testing.T) {
+func TestServer_Run_GetGlobalLoggerError(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
@@ -109,15 +145,16 @@ func TestNew_GetGlobalLoggerError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
 	// Act
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	err := svr.Run()
 
 	// Assert
-	require.ErrorIs(t, err, expectedError, "New should return the error from GetGlobalLogger")
-	assert.Nil(t, svr, "Server should be nil when error occurs")
+	require.ErrorIs(t, err, expectedError, "Run should return the error from GetGlobalLogger")
 }
 
-func TestNew_MCPSDKServerFactoryError(t *testing.T) {
+func TestServer_Run_MCPSDKServerFactoryError(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
@@ -144,15 +181,16 @@ func TestNew_MCPSDKServerFactoryError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
 	// Act
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	err := svr.Run()
 
 	// Assert
-	require.ErrorIs(t, err, expectedError, "New should return the error from NewServer")
-	assert.Nil(t, svr, "Server should be nil when error occurs")
+	require.ErrorIs(t, err, expectedError, "Run should return the error from NewServer")
 }
 
-func TestNew_AddToServerReturnsError(t *testing.T) {
+func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
@@ -173,14 +211,14 @@ func TestNew_AddToServerReturnsError(t *testing.T) {
 	expectedError := assert.AnError
 	expectedMCPServer := &mcp.Server{}
 
-	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
-		Return(expectedMCPServer, nil).
-		Once()
-
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockMCPSDKServerFactory.EXPECT().
+		NewServer(server.Name(), server.Instructions()).
+		Return(expectedMCPServer, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -193,16 +231,17 @@ func TestNew_AddToServerReturnsError(t *testing.T) {
 		Return(expectedError).
 		Once()
 
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
 	// Act
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	err := svr.Run()
 
 	// Assert
-	require.Error(t, err, "New should return an error")
+	require.Error(t, err, "Run should return an error")
 	assert.Equal(t, expectedError, err, "Error should match expected error")
-	assert.Empty(t, svr, "Server should be nil when error occurs")
 }
 
-func TestNew_HandlesNoToolsOrResources(t *testing.T) {
+func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
@@ -216,17 +255,21 @@ func TestNew_HandlesNoToolsOrResources(t *testing.T) {
 	mockConfigurator := &mocks.MockMCPServerConfigurator{}
 	defer mockConfigurator.AssertExpectations(t)
 
-	mockLogger := testutils.NewInspectableLogger()
-	expectedMCPServer := &mcp.Server{}
+	mockResource := &resourcemocks.MockResource{}
+	defer mockResource.AssertExpectations(t)
 
-	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
-		Return(expectedMCPServer, nil).
-		Once()
+	mockLogger := testutils.NewInspectableLogger()
+	expectedError := assert.AnError
+	expectedMCPServer := &mcp.Server{}
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockMCPSDKServerFactory.EXPECT().
+		NewServer(server.Name(), server.Instructions()).
+		Return(expectedMCPServer, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -236,18 +279,25 @@ func TestNew_HandlesNoToolsOrResources(t *testing.T) {
 
 	mockConfigurator.EXPECT().
 		GetResourcesToAdd().
-		Return(nil).
+		Return([]resources.Resource{mockResource}).
 		Once()
 
+	mockResource.EXPECT().
+		AddToServer(expectedMCPServer).
+		Return(expectedError).
+		Once()
+
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
 	// Act
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	err := svr.Run()
 
 	// Assert
-	require.NoError(t, err, "New should not return an error")
-	assert.NotNil(t, svr, "Server should not be nil")
+	require.Error(t, err)
+	assert.Equal(t, expectedError, err)
 }
 
-func TestServer_Run_HappyPath(t *testing.T) {
+func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 	// Arrange
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
@@ -264,14 +314,14 @@ func TestServer_Run_HappyPath(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	expectedMCPServer := &mcp.Server{}
 
-	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
-		Return(expectedMCPServer, nil).
-		Once()
-
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockMCPSDKServerFactory.EXPECT().
+		NewServer(server.Name(), server.Instructions()).
+		Return(expectedMCPServer, nil).
 		Once()
 
 	mockConfigurator.EXPECT().
@@ -293,11 +343,8 @@ func TestServer_Run_HappyPath(t *testing.T) {
 		Return().
 		Once()
 
-	svr, err := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
-	require.NoError(t, err)
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
-	// The MCP STDIO transport will hijack os.Stdout, which will cause issues with code coverage reporting.
-	// To avoid this, we replace the transport with an in memory transport.
 	_, serverTransport := mcp.NewInMemoryTransports()
 	svr.SetServerTransport(serverTransport)
 
@@ -309,10 +356,52 @@ func TestServer_Run_HappyPath(t *testing.T) {
 	capturedShutdownFunc := <-capturedShutdownFuncC
 
 	// Act
-	err = capturedShutdownFunc()
+	err := capturedShutdownFunc()
 
 	// Assert
 	require.NoError(t, err, "Shutdown function should not return an error")
 	serverErr := <-errC
 	require.NoError(t, serverErr, "Server run should exit without error after shutdown")
+}
+
+func TestServer_Run_GetToolsToAddError(t *testing.T) {
+	// Arrange
+	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
+	defer mockMCPSDKServerFactory.AssertExpectations(t)
+
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockLifecycleSignaler := &mocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockConfigurator := &mocks.MockMCPServerConfigurator{}
+	defer mockConfigurator.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	expectedMCPServer := &mcp.Server{}
+	expectedError := assert.AnError
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockMCPSDKServerFactory.EXPECT().
+		NewServer(server.Name(), server.Instructions()).
+		Return(expectedMCPServer, nil).
+		Once()
+
+	mockConfigurator.EXPECT().
+		GetToolsToAdd().
+		Return(nil, expectedError).
+		Once()
+
+	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+
+	// Act
+	err := svr.Run()
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "Run should return the error from GetToolsToAdd")
 }

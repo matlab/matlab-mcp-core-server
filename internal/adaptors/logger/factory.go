@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
@@ -28,9 +29,8 @@ type ConfigFactory interface {
 	Config() (config.Config, messages.Error)
 }
 
-type Directory interface {
-	BaseDir() string
-	ID() string
+type DirectoryFactory interface {
+	Directory() (directory.Directory, messages.Error)
 }
 
 type FilenameFactory interface {
@@ -42,10 +42,10 @@ type OSLayer interface {
 }
 
 type Factory struct {
-	configFactory   ConfigFactory
-	directory       Directory
-	filenameFactory FilenameFactory
-	osLayer         OSLayer
+	configFactory    ConfigFactory
+	directoryFactory DirectoryFactory
+	filenameFactory  FilenameFactory
+	osLayer          OSLayer
 
 	initOnce       sync.Once
 	initError      messages.Error
@@ -58,15 +58,15 @@ type Factory struct {
 
 func NewFactory(
 	configFactory ConfigFactory,
-	directory Directory,
+	directoryFactory DirectoryFactory,
 	filenameFactory FilenameFactory,
 	osLayer OSLayer,
 ) *Factory {
 	return &Factory{
-		configFactory:   configFactory,
-		directory:       directory,
-		filenameFactory: filenameFactory,
-		osLayer:         osLayer,
+		configFactory:    configFactory,
+		directoryFactory: directoryFactory,
+		filenameFactory:  filenameFactory,
+		osLayer:          osLayer,
 
 		parsedLogLevel: defaultGlobalLogLevel,
 	}
@@ -120,9 +120,9 @@ func (f *Factory) GetGlobalLogger() (entities.Logger, messages.Error) {
 
 func (f *Factory) initialize() messages.Error {
 	f.initOnce.Do(func() {
-		config, configErr := f.configFactory.Config()
-		if configErr != nil {
-			f.initError = configErr
+		config, messagesErr := f.configFactory.Config()
+		if messagesErr != nil {
+			f.initError = messagesErr
 			return
 		}
 
@@ -143,8 +143,14 @@ func (f *Factory) initialize() messages.Error {
 		}
 		f.parsedLogLevel = parsedLogLevel
 
-		baseDir := f.directory.BaseDir()
-		id := f.directory.ID()
+		dir, messagesErr := f.directoryFactory.Directory()
+		if messagesErr != nil {
+			f.initError = messagesErr
+			return
+		}
+
+		baseDir := dir.BaseDir()
+		id := dir.ID()
 
 		logFileBase := filepath.Join(baseDir, logFileName)
 		if config.WatchdogMode() {

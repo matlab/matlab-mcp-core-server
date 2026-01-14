@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
@@ -41,8 +42,8 @@ type GlobalMATLAB interface {
 	Client(ctx context.Context, logger entities.Logger) (entities.MATLABSessionClient, error)
 }
 
-type Directory interface {
-	RecordToLogger(logger entities.Logger)
+type DirectoryFactory interface {
+	Directory() (directory.Directory, messages.Error)
 }
 
 // Orchestrator
@@ -54,7 +55,7 @@ type Orchestrator struct {
 	loggerFactory     LoggerFactory
 	osSignaler        OSSignaler
 	globalMATLAB      GlobalMATLAB
-	directory         Directory
+	directoryFactory  DirectoryFactory
 }
 
 func New(
@@ -65,7 +66,7 @@ func New(
 	loggerFactory LoggerFactory,
 	osSignaler OSSignaler,
 	globalMATLAB GlobalMATLAB,
-	directory Directory,
+	directoryFactory DirectoryFactory,
 ) *Orchestrator {
 	orchestrator := &Orchestrator{
 		lifecycleSignaler: lifecycleSignaler,
@@ -75,7 +76,7 @@ func New(
 		loggerFactory:     loggerFactory,
 		osSignaler:        osSignaler,
 		globalMATLAB:      globalMATLAB,
-		directory:         directory,
+		directoryFactory:  directoryFactory,
 	}
 	return orchestrator
 }
@@ -111,7 +112,12 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 
 	logger.Info("Initiating MATLAB MCP Core Server application startup")
 	config.RecordToLogger(logger)
-	o.directory.RecordToLogger(logger)
+
+	directory, messagesErr := o.directoryFactory.Directory()
+	if messagesErr != nil {
+		return messagesErr
+	}
+	directory.RecordToLogger(logger)
 
 	err := o.watchdogClient.Start()
 	if err != nil {

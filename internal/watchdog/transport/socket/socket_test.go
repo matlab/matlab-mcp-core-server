@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
+	directorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/directory"
 	socketmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/socket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,14 +16,14 @@ import (
 
 func TestNewFactory_HappyPath(t *testing.T) {
 	// Arrange
-	mockDirectory := &socketmocks.MockDirectory{}
-	defer mockDirectory.AssertExpectations(t)
+	mockDirectoryFactory := &socketmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
 
 	mockOSLayer := &socketmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
 	// Act
-	factory := socket.NewFactory(mockDirectory, mockOSLayer)
+	factory := socket.NewFactory(mockDirectoryFactory, mockOSLayer)
 
 	// Assert
 	assert.NotNil(t, factory)
@@ -29,7 +31,10 @@ func TestNewFactory_HappyPath(t *testing.T) {
 
 func TestFactory_Socket_HappyPath(t *testing.T) {
 	// Arrange
-	mockDirectory := &socketmocks.MockDirectory{}
+	mockDirectoryFactory := &socketmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockOSLayer := &socketmocks.MockOSLayer{}
@@ -37,6 +42,11 @@ func TestFactory_Socket_HappyPath(t *testing.T) {
 
 	baseDir := filepath.Join("tmp", "watchdog")
 	id := "abc123"
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
 
 	mockDirectory.EXPECT().
 		BaseDir().
@@ -48,7 +58,7 @@ func TestFactory_Socket_HappyPath(t *testing.T) {
 		Return(id).
 		Once()
 
-	factory := socket.NewFactory(mockDirectory, mockOSLayer)
+	factory := socket.NewFactory(mockDirectoryFactory, mockOSLayer)
 
 	// Act
 	socketInstance, err := factory.Socket()
@@ -58,9 +68,37 @@ func TestFactory_Socket_HappyPath(t *testing.T) {
 	assert.NotNil(t, socketInstance)
 }
 
+func TestFactory_Socket_DirectoryError(t *testing.T) {
+	// Arrange
+	mockDirectoryFactory := &socketmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockOSLayer := &socketmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	expectedError := messages.AnError
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(nil, expectedError).
+		Once()
+
+	factory := socket.NewFactory(mockDirectoryFactory, mockOSLayer)
+
+	// Act
+	socketInstance, err := factory.Socket()
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+	assert.Nil(t, socketInstance)
+}
+
 func TestFactory_Socket_Singleton(t *testing.T) {
 	// Arrange
-	mockDirectory := &socketmocks.MockDirectory{}
+	mockDirectoryFactory := &socketmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockOSLayer := &socketmocks.MockOSLayer{}
@@ -68,6 +106,11 @@ func TestFactory_Socket_Singleton(t *testing.T) {
 
 	baseDir := filepath.Join("tmp", "watchdog")
 	id := "abc123"
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
 
 	mockDirectory.EXPECT().
 		BaseDir().
@@ -79,7 +122,7 @@ func TestFactory_Socket_Singleton(t *testing.T) {
 		Return(id).
 		Once()
 
-	factory := socket.NewFactory(mockDirectory, mockOSLayer)
+	factory := socket.NewFactory(mockDirectoryFactory, mockOSLayer)
 
 	// Act
 	firstSocketInstance, firstErr := factory.Socket()
@@ -93,7 +136,10 @@ func TestFactory_Socket_Singleton(t *testing.T) {
 
 func TestFactory_Socket_ReturnCachedError(t *testing.T) {
 	// Arrange
-	mockDirectory := &socketmocks.MockDirectory{}
+	mockDirectoryFactory := &socketmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
 	mockOSLayer := &socketmocks.MockOSLayer{}
@@ -101,6 +147,11 @@ func TestFactory_Socket_ReturnCachedError(t *testing.T) {
 
 	baseDir := filepath.Join("tmp", "s_super_long_path_that_causes_an_error_for_the_socket_to_be_created_due_to_os_limits")
 	id := "abc123"
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
 
 	mockDirectory.EXPECT().
 		BaseDir().
@@ -117,7 +168,7 @@ func TestFactory_Socket_ReturnCachedError(t *testing.T) {
 		Return("linux").
 		Once()
 
-	factory := socket.NewFactory(mockDirectory, mockOSLayer)
+	factory := socket.NewFactory(mockDirectoryFactory, mockOSLayer)
 
 	// Act
 	firstSocketInstance, firstErr := factory.Socket()

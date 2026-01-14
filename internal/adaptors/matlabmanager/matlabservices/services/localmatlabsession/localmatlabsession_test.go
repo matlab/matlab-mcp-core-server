@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package localmatlabsession_test
 
@@ -12,7 +12,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
-	directorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager"
+	directorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -80,7 +80,7 @@ func TestStarter_StartLocalMATLABSession_HappyPath(t *testing.T) {
 	}
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 
@@ -198,7 +198,7 @@ func TestStarter_StartLocalMATLABSession_WithStartingDirectory(t *testing.T) {
 	processCleanup := func() {}
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 
@@ -274,7 +274,7 @@ func TestStarter_StartLocalMATLABSession_WithStartingDirectory(t *testing.T) {
 	assert.Equal(t, expectedCertificatePEM, connectionDetails.CertificatePEM)
 }
 
-func TestStarter_StartLocalMATLABSession_DirectoryFactoryCreateError(t *testing.T) {
+func TestStarter_StartLocalMATLABSession_DirectoryFactoryNewError(t *testing.T) {
 	// Arrange
 	mockDirectoryFactory := &mocks.MockSessionDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
@@ -293,7 +293,7 @@ func TestStarter_StartLocalMATLABSession_DirectoryFactoryCreateError(t *testing.
 	expectedError := assert.AnError
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(nil, expectedError).
 		Once()
 
@@ -350,7 +350,7 @@ func TestStarter_StartLocalMATLABSession_MATLABProcessLauncherError(t *testing.T
 	expectedError := assert.AnError
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 
@@ -446,7 +446,7 @@ func TestStarter_StartLocalMATLABSession_RegisterProcessPIDWithWatchdogError(t *
 	showDesktop := false
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 
@@ -566,7 +566,7 @@ func TestStarter_StartLocalMATLABSession_GetEmbeddedConnectorDetailsError(t *tes
 	expectedError := assert.AnError
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 
@@ -671,7 +671,7 @@ func TestStarter_StartLocalMATLABSession_CleanupReturnsSessionCleanupError(t *te
 	expectedError := assert.AnError
 
 	mockDirectoryFactory.EXPECT().
-		Create(mockLogger.AsMockArg()).
+		New(mockLogger.AsMockArg()).
 		Return(mockDirectory, nil).
 		Once()
 

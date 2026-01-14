@@ -10,5 +10,10 @@
          <entry key="FailedToCreateLogFile" context="error">Failed to create the log file "{0}".</entry>
          <entry key="MissingValue" context="error">Error with supplied arguments: value required for option {0}.</entry>
          <entry key="ParseFailed" context="error">Error with supplied arguments: parse failed.{0}{1}</entry>
+         <entry key="FailedToCreateDirectory" context="error">Failed to create directory "{0}".</entry>
+         <entry key="FailedToCreateSubdirectory" context="error">Failed to create subdirectory in "{0}".</entry>
+         <entry key="FailedToCreateFile" context="error">Failed to create file "{0}".</entry>
+         <entry key="FailedToGetExecutablePath" context="error">Failed to get executable path.</entry>
+         <entry key="FailedToStartWatchdogProcess" context="error">Failed to start watchdog process.</entry>
      </message>
 </rsccat>

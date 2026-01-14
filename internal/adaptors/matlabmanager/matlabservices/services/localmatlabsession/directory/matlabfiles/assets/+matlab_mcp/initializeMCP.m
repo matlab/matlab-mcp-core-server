@@ -1,7 +1,7 @@
 function initializeMCP()
     % initializeMCP intializes the MATLAB sessions for the MATLAB MCP Core Server.
 
-    % Copyright 2025 The MathWorks, Inc.
+    % Copyright 2025-2026 The MathWorks, Inc.
 
     connector.ensureServiceOn();
 

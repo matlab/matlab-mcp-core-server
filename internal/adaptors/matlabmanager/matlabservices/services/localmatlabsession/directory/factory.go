@@ -1,18 +1,20 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
-package directorymanager
+package directory
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 
+	applicationdirectory "github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
-type ApplicationDirectory interface {
-	CreateSubDir(pattern string) (string, error)
+type ApplicationDirectoryFactory interface {
+	Directory() (applicationdirectory.Directory, messages.Error)
 }
 
 type OSLayer interface {
@@ -36,33 +38,38 @@ type Directory interface {
 	Cleanup() error
 }
 
-type DirectoryFactory struct {
-	osLayer              OSLayer
-	applicationDirectory ApplicationDirectory
-	matlabFiles          MATLABFiles
+type Factory struct {
+	osLayer                     OSLayer
+	applicationDirectoryFactory ApplicationDirectoryFactory
+	matlabFiles                 MATLABFiles
 }
 
 func NewFactory(
 	osLayer OSLayer,
-	applicationDirectory ApplicationDirectory,
+	applicationDirectoryFactory ApplicationDirectoryFactory,
 	matlabFiles MATLABFiles,
-) *DirectoryFactory {
-	return &DirectoryFactory{
-		osLayer:              osLayer,
-		applicationDirectory: applicationDirectory,
-		matlabFiles:          matlabFiles,
+) *Factory {
+	return &Factory{
+		osLayer:                     osLayer,
+		applicationDirectoryFactory: applicationDirectoryFactory,
+		matlabFiles:                 matlabFiles,
 	}
 }
 
-func (f *DirectoryFactory) Create(logger entities.Logger) (Directory, error) {
-	sessionDir, err := f.applicationDirectory.CreateSubDir("matlab-session-")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary session directory: %w", err)
+func (f *Factory) New(logger entities.Logger) (Directory, error) {
+	applicationDirectory, messagesErr := f.applicationDirectoryFactory.Directory()
+	if messagesErr != nil {
+		return nil, messagesErr
+	}
+
+	sessionDir, messagesErr := applicationDirectory.CreateSubDir("matlab-session-")
+	if messagesErr != nil {
+		return nil, messagesErr
 	}
 
 	matlabMCPPackagePath := filepath.Join(sessionDir, "+matlab_mcp")
 
-	err = f.osLayer.Mkdir(matlabMCPPackagePath, 0o700)
+	err := f.osLayer.Mkdir(matlabMCPPackagePath, 0o700)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create package directory: %w", err)
 	}
@@ -74,5 +81,5 @@ func (f *DirectoryFactory) Create(logger entities.Logger) (Directory, error) {
 		}
 	}
 
-	return newDirectoryManager(sessionDir, f.osLayer), nil
+	return newDirectory(sessionDir, f.osLayer), nil
 }

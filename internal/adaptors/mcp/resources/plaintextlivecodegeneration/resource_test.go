@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package plaintextlivecodegeneration_test
 
@@ -16,13 +16,11 @@ import (
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := baseresourcemocks.NewMockLoggerFactory(t)
-	defer mockLoggerFactory.AssertExpectations(t)
 
 	// Act
-	resource, err := plaintextlivecodegeneration.New(mockLoggerFactory)
+	resource := plaintextlivecodegeneration.New(mockLoggerFactory)
 
 	// Assert
-	require.NoError(t, err)
 	require.NotNil(t, resource)
 	assert.Equal(t, "plain_text_live_code_guidelines", resource.Name())
 	assert.Equal(t, "Plain Text Live Code Generation", resource.Title())

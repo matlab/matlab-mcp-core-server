@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package codingguidelines_test
 
@@ -18,10 +18,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := baseresourcemocks.NewMockLoggerFactory(t)
 
 	// Act
-	resource, err := codingguidelines.New(mockLoggerFactory)
+	resource := codingguidelines.New(mockLoggerFactory)
 
 	// Assert
-	require.NoError(t, err)
 	require.NotNil(t, resource)
 	assert.Equal(t, "matlab_coding_guidelines", resource.Name())
 	assert.Equal(t, "MATLAB Coding Guidelines", resource.Title())

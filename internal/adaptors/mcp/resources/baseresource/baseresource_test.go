@@ -37,10 +37,9 @@ func TestNew_HappyPath(t *testing.T) {
 	}
 
 	// Act
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
 
 	// Assert
-	require.NoError(t, err)
 	assert.NotNil(t, r)
 	assert.Equal(t, name, r.Name())
 	assert.Equal(t, title, r.Title())
@@ -50,7 +49,7 @@ func TestNew_HappyPath(t *testing.T) {
 	assert.Equal(t, uri, r.URI())
 }
 
-func TestNew_InvalidMimeType(t *testing.T) {
+func TestResource_AddToServer_InvalidMimeType(t *testing.T) {
 	tests := []struct {
 		name             string
 		mimeType         string
@@ -93,12 +92,16 @@ func TestNew_InvalidMimeType(t *testing.T) {
 				return &baseresource.ReadResourceResult{}, nil
 			}
 
+			r := baseresource.New("test_resource", "Test Resource", "A test resource", tt.mimeType, 100, "test://resource", mockLoggerFactory, handler)
+
+			mockServer := &mocks.MockServer{}
+			defer mockServer.AssertExpectations(t)
+
 			// Act
-			r, err := baseresource.New("test_resource", "Test Resource", "A test resource", tt.mimeType, 100, "test://resource", mockLoggerFactory, handler)
+			err := r.AddToServer(mockServer)
 
 			// Assert
 			require.Error(t, err)
-			assert.Nil(t, r)
 			assert.Contains(t, err.Error(), tt.expectedErrorMsg)
 		})
 	}
@@ -122,8 +125,7 @@ func TestResource_AddToServer_HappyPath(t *testing.T) {
 		return &baseresource.ReadResourceResult{}, nil
 	}
 
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
-	require.NoError(t, err)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
 
 	mockServer := &mocks.MockServer{}
 	defer mockServer.AssertExpectations(t)
@@ -141,9 +143,10 @@ func TestResource_AddToServer_HappyPath(t *testing.T) {
 	).Return()
 
 	// Act
-	r.AddToServer(mockServer)
+	err := r.AddToServer(mockServer)
 
 	// Assert
+	require.NoError(t, err)
 }
 
 func TestResource_ResourceHandler_HappyPath(t *testing.T) {
@@ -178,8 +181,7 @@ func TestResource_ResourceHandler_HappyPath(t *testing.T) {
 		}, nil
 	}
 
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
-	require.NoError(t, err)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
 
 	var capturedHandler mcp.ResourceHandler
 	mockServer := &mocks.MockServer{}
@@ -192,7 +194,8 @@ func TestResource_ResourceHandler_HappyPath(t *testing.T) {
 		capturedHandler = h
 	}).Return()
 
-	r.AddToServer(mockServer)
+	err := r.AddToServer(mockServer)
+	require.NoError(t, err)
 
 	// Act
 	result, handlerErr := capturedHandler(t.Context(), &mcp.ReadResourceRequest{
@@ -235,8 +238,7 @@ func TestResource_ResourceHandler_HandlerError(t *testing.T) {
 		return nil, expectedError
 	}
 
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
-	require.NoError(t, err)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
 
 	var capturedHandler mcp.ResourceHandler
 	mockServer := &mocks.MockServer{}
@@ -249,7 +251,8 @@ func TestResource_ResourceHandler_HandlerError(t *testing.T) {
 		capturedHandler = h
 	}).Return()
 
-	r.AddToServer(mockServer)
+	err := r.AddToServer(mockServer)
+	require.NoError(t, err)
 
 	// Act
 	result, handlerErr := capturedHandler(t.Context(), &mcp.ReadResourceRequest{
@@ -284,8 +287,7 @@ func TestResource_ResourceHandler_NilHandler(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, nil)
-	require.NoError(t, err)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, nil)
 
 	var capturedHandler mcp.ResourceHandler
 	mockServer := &mocks.MockServer{}
@@ -298,7 +300,8 @@ func TestResource_ResourceHandler_NilHandler(t *testing.T) {
 		capturedHandler = h
 	}).Return()
 
-	r.AddToServer(mockServer)
+	err := r.AddToServer(mockServer)
+	require.NoError(t, err)
 
 	// Act
 	result, handlerErr := capturedHandler(t.Context(), &mcp.ReadResourceRequest{
@@ -338,8 +341,7 @@ func TestResource_ResourceHandler_NewMCPSessionLoggerError(t *testing.T) {
 		return &baseresource.ReadResourceResult{}, nil
 	}
 
-	r, err := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
-	require.NoError(t, err)
+	r := baseresource.New(name, title, description, mimeType, size, uri, mockLoggerFactory, handler)
 
 	var capturedHandler mcp.ResourceHandler
 	mockServer := &mocks.MockServer{}
@@ -352,7 +354,8 @@ func TestResource_ResourceHandler_NewMCPSessionLoggerError(t *testing.T) {
 		capturedHandler = h
 	}).Return()
 
-	r.AddToServer(mockServer)
+	err := r.AddToServer(mockServer)
+	require.NoError(t, err)
 
 	// Act
 	result, handlerErr := capturedHandler(t.Context(), &mcp.ReadResourceRequest{

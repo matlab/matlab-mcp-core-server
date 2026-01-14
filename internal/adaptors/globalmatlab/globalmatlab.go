@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package globalmatlab
 
@@ -28,12 +28,14 @@ type GlobalMATLAB struct {
 	matlabRootSelector        MATLABRootSelector
 	matlabStartingDirSelector MATLABStartingDirSelector
 
-	lock              *sync.Mutex
-	initializeOnce    *sync.Once
+	lock *sync.Mutex
+
+	initOnce  *sync.Once
+	initError error
+
 	matlabRoot        string
 	matlabStartingDir string
 	sessionID         entities.SessionID
-	cachedStartupErr  error
 }
 
 func New(
@@ -46,8 +48,8 @@ func New(
 		matlabRootSelector:        matlabRootSelector,
 		matlabStartingDirSelector: matlabStartingDirSelector,
 
-		lock:           &sync.Mutex{},
-		initializeOnce: &sync.Once{},
+		lock:     &sync.Mutex{},
+		initOnce: &sync.Once{},
 	}
 }
 
@@ -55,15 +57,15 @@ func (g *GlobalMATLAB) Client(ctx context.Context, logger entities.Logger) (enti
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	g.initializeOnce.Do(func() {
+	g.initOnce.Do(func() {
 		err := g.initializeStartupConfig(ctx, logger)
 		if err != nil {
-			g.cachedStartupErr = err
+			g.initError = err
 		}
 	})
 
-	if g.cachedStartupErr != nil {
-		return nil, g.cachedStartupErr
+	if g.initError != nil {
+		return nil, g.initError
 	}
 
 	return g.getOrCreateClient(ctx, logger)
@@ -75,7 +77,7 @@ func (g *GlobalMATLAB) getOrCreateClient(ctx context.Context, logger entities.Lo
 	// Start MATLAB if we don't have a session
 	if g.sessionID == sessionIDZeroValue {
 		if err := g.startNewSession(ctx, logger); err != nil {
-			g.cachedStartupErr = err
+			g.initError = err
 			return nil, err
 		}
 	}
@@ -89,7 +91,7 @@ func (g *GlobalMATLAB) getOrCreateClient(ctx context.Context, logger entities.Lo
 		}
 
 		if err := g.startNewSession(ctx, logger); err != nil {
-			g.cachedStartupErr = err
+			g.initError = err
 			return nil, err
 		}
 

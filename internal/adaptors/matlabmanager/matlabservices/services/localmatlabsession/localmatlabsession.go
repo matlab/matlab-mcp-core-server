@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package localmatlabsession
 
@@ -6,13 +6,13 @@ import (
 	"runtime"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directorymanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
 type SessionDirectoryFactory interface {
-	Create(logger entities.Logger) (directorymanager.Directory, error)
+	New(logger entities.Logger) (directory.Directory, error)
 }
 
 type ProcessDetails interface {
@@ -53,7 +53,7 @@ func NewStarter(
 func (m *Starter) StartLocalMATLABSession(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
 	logger.Debug("Starting a local MATLAB session")
 
-	sessionDir, err := m.directoryFactory.Create(logger)
+	sessionDir, err := m.directoryFactory.New(logger)
 	if err != nil {
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}

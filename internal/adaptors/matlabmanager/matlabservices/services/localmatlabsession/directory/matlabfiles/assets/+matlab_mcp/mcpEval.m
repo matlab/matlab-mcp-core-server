@@ -18,7 +18,7 @@ function results = mcpEval(code)
     % This is largely a re-use of:
     % https://github.com/mathworks/jupyter-matlab-proxy/blob/057564dccb7de37f052e709f5380e3ece0b2c4a1/src/jupyter_matlab_kernel/matlab/%2Bjupyter/execute.m#L1
 
-    % Copyright 2025 The MathWorks, Inc.
+    % Copyright 2025-2026 The MathWorks, Inc.
 
     % Embed user MATLAB code in a try-catch block for MATLAB versions less than R2022b.
     % This is will disable inbuilt ErrorRecovery mechanism. Any exceptions created in

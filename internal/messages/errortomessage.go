@@ -35,12 +35,36 @@ func FromError(catalog LocaleSpecificCatalog, err Error) string {
 			e.Attr0,
 			e.Attr1,
 		)
+	case *StartupErrors_FailedToCreateDirectory_Error:
+		msg := catalog.Get(StartupErrors_FailedToCreateDirectory)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+		)
+	case *StartupErrors_FailedToCreateFile_Error:
+		msg := catalog.Get(StartupErrors_FailedToCreateFile)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+		)
 	case *StartupErrors_FailedToCreateLogFile_Error:
 		msg := catalog.Get(StartupErrors_FailedToCreateLogFile)
 		return fmt.Sprintf(
 			msg,
 			e.Attr0,
 		)
+	case *StartupErrors_FailedToCreateSubdirectory_Error:
+		msg := catalog.Get(StartupErrors_FailedToCreateSubdirectory)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+		)
+	case *StartupErrors_FailedToGetExecutablePath_Error:
+		msg := catalog.Get(StartupErrors_FailedToGetExecutablePath)
+		return msg
+	case *StartupErrors_FailedToStartWatchdogProcess_Error:
+		msg := catalog.Get(StartupErrors_FailedToStartWatchdogProcess)
+		return msg
 	case *StartupErrors_InvalidLogLevel_Error:
 		msg := catalog.Get(StartupErrors_InvalidLogLevel)
 		return fmt.Sprintf(

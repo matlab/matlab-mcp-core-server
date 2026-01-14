@@ -37,9 +37,20 @@ func (_m *MockResource) EXPECT() *MockResource_Expecter {
 }
 
 // AddToServer provides a mock function for the type MockResource
-func (_mock *MockResource) AddToServer(server resources.Server) {
-	_mock.Called(server)
-	return
+func (_mock *MockResource) AddToServer(server resources.Server) error {
+	ret := _mock.Called(server)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddToServer")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(resources.Server) error); ok {
+		r0 = returnFunc(server)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
 }
 
 // MockResource_AddToServer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddToServer'
@@ -66,12 +77,12 @@ func (_c *MockResource_AddToServer_Call) Run(run func(server resources.Server)) 
 	return _c
 }
 
-func (_c *MockResource_AddToServer_Call) Return() *MockResource_AddToServer_Call {
-	_c.Call.Return()
+func (_c *MockResource_AddToServer_Call) Return(err error) *MockResource_AddToServer_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockResource_AddToServer_Call) RunAndReturn(run func(server resources.Server)) *MockResource_AddToServer_Call {
-	_c.Run(run)
+func (_c *MockResource_AddToServer_Call) RunAndReturn(run func(server resources.Server) error) *MockResource_AddToServer_Call {
+	_c.Call.Return(run)
 	return _c
 }

@@ -85,6 +85,48 @@ func New_StartupErrors_BadValue_Error(
 	}
 }
 
+// StartupErrors_FailedToCreateDirectory_Error defines an error corresponding to the "StartupErrors_FailedToCreateDirectory" message catalog message
+type StartupErrors_FailedToCreateDirectory_Error struct {
+	Attr0 string
+}
+
+// Error makes StartupErrors_FailedToCreateDirectory_Error satisfy the error interface.
+func (e *StartupErrors_FailedToCreateDirectory_Error) Error() string {
+	return "StartupErrors_FailedToCreateDirectory_Error"
+}
+
+func (*StartupErrors_FailedToCreateDirectory_Error) marker() {}
+
+// New_StartupErrors_FailedToCreateDirectory_Error makes a new StartupErrors_FailedToCreateDirectory_Error error.
+func New_StartupErrors_FailedToCreateDirectory_Error(
+	attr0 string,
+) *StartupErrors_FailedToCreateDirectory_Error {
+	return &StartupErrors_FailedToCreateDirectory_Error{
+		Attr0: attr0,
+	}
+}
+
+// StartupErrors_FailedToCreateFile_Error defines an error corresponding to the "StartupErrors_FailedToCreateFile" message catalog message
+type StartupErrors_FailedToCreateFile_Error struct {
+	Attr0 string
+}
+
+// Error makes StartupErrors_FailedToCreateFile_Error satisfy the error interface.
+func (e *StartupErrors_FailedToCreateFile_Error) Error() string {
+	return "StartupErrors_FailedToCreateFile_Error"
+}
+
+func (*StartupErrors_FailedToCreateFile_Error) marker() {}
+
+// New_StartupErrors_FailedToCreateFile_Error makes a new StartupErrors_FailedToCreateFile_Error error.
+func New_StartupErrors_FailedToCreateFile_Error(
+	attr0 string,
+) *StartupErrors_FailedToCreateFile_Error {
+	return &StartupErrors_FailedToCreateFile_Error{
+		Attr0: attr0,
+	}
+}
+
 // StartupErrors_FailedToCreateLogFile_Error defines an error corresponding to the "StartupErrors_FailedToCreateLogFile" message catalog message
 type StartupErrors_FailedToCreateLogFile_Error struct {
 	Attr0 string
@@ -104,6 +146,59 @@ func New_StartupErrors_FailedToCreateLogFile_Error(
 	return &StartupErrors_FailedToCreateLogFile_Error{
 		Attr0: attr0,
 	}
+}
+
+// StartupErrors_FailedToCreateSubdirectory_Error defines an error corresponding to the "StartupErrors_FailedToCreateSubdirectory" message catalog message
+type StartupErrors_FailedToCreateSubdirectory_Error struct {
+	Attr0 string
+}
+
+// Error makes StartupErrors_FailedToCreateSubdirectory_Error satisfy the error interface.
+func (e *StartupErrors_FailedToCreateSubdirectory_Error) Error() string {
+	return "StartupErrors_FailedToCreateSubdirectory_Error"
+}
+
+func (*StartupErrors_FailedToCreateSubdirectory_Error) marker() {}
+
+// New_StartupErrors_FailedToCreateSubdirectory_Error makes a new StartupErrors_FailedToCreateSubdirectory_Error error.
+func New_StartupErrors_FailedToCreateSubdirectory_Error(
+	attr0 string,
+) *StartupErrors_FailedToCreateSubdirectory_Error {
+	return &StartupErrors_FailedToCreateSubdirectory_Error{
+		Attr0: attr0,
+	}
+}
+
+// StartupErrors_FailedToGetExecutablePath_Error defines an error corresponding to the "StartupErrors_FailedToGetExecutablePath" message catalog message
+type StartupErrors_FailedToGetExecutablePath_Error struct {
+}
+
+// Error makes StartupErrors_FailedToGetExecutablePath_Error satisfy the error interface.
+func (e *StartupErrors_FailedToGetExecutablePath_Error) Error() string {
+	return "StartupErrors_FailedToGetExecutablePath_Error"
+}
+
+func (*StartupErrors_FailedToGetExecutablePath_Error) marker() {}
+
+// New_StartupErrors_FailedToGetExecutablePath_Error makes a new StartupErrors_FailedToGetExecutablePath_Error error.
+func New_StartupErrors_FailedToGetExecutablePath_Error() *StartupErrors_FailedToGetExecutablePath_Error {
+	return &StartupErrors_FailedToGetExecutablePath_Error{}
+}
+
+// StartupErrors_FailedToStartWatchdogProcess_Error defines an error corresponding to the "StartupErrors_FailedToStartWatchdogProcess" message catalog message
+type StartupErrors_FailedToStartWatchdogProcess_Error struct {
+}
+
+// Error makes StartupErrors_FailedToStartWatchdogProcess_Error satisfy the error interface.
+func (e *StartupErrors_FailedToStartWatchdogProcess_Error) Error() string {
+	return "StartupErrors_FailedToStartWatchdogProcess_Error"
+}
+
+func (*StartupErrors_FailedToStartWatchdogProcess_Error) marker() {}
+
+// New_StartupErrors_FailedToStartWatchdogProcess_Error makes a new StartupErrors_FailedToStartWatchdogProcess_Error error.
+func New_StartupErrors_FailedToStartWatchdogProcess_Error() *StartupErrors_FailedToStartWatchdogProcess_Error {
+	return &StartupErrors_FailedToStartWatchdogProcess_Error{}
 }
 
 // StartupErrors_InvalidLogLevel_Error defines an error corresponding to the "StartupErrors_InvalidLogLevel" message catalog message

@@ -39,11 +39,7 @@ func New(
 	uri string,
 	loggerFactory LoggerFactory,
 	handler ResourceHandler,
-) (*Resource, error) {
-	if err := validateMIMEType(mimeType); err != nil {
-		return nil, err
-	}
-
+) *Resource {
 	return &Resource{
 		name:          name,
 		title:         title,
@@ -53,7 +49,7 @@ func New(
 		uri:           uri,
 		loggerFactory: loggerFactory,
 		handler:       handler,
-	}, nil
+	}
 }
 
 type Resource struct {
@@ -67,7 +63,11 @@ type Resource struct {
 	handler       ResourceHandler
 }
 
-func (r *Resource) AddToServer(server resources.Server) {
+func (r *Resource) AddToServer(server resources.Server) error {
+	if err := validateMIMEType(r.mimeType); err != nil {
+		return err
+	}
+
 	server.AddResource(
 		&mcp.Resource{
 			Name:        r.name,
@@ -79,6 +79,8 @@ func (r *Resource) AddToServer(server resources.Server) {
 		},
 		r.resourceHandler(),
 	)
+
+	return nil
 }
 
 func (r *Resource) resourceHandler() mcp.ResourceHandler {

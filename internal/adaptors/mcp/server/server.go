@@ -30,10 +30,11 @@ type MCPServerConfigurator interface {
 }
 
 type Server struct {
-	mcpServer         *mcp.Server
-	serverLogger      entities.Logger
-	lifecycleSignaler LifecycleSignaler
-	serverTransport   mcp.Transport
+	mcpSDKServerFactory MCPSDKServerFactory
+	loggerFactory       LoggerFactory
+	lifecycleSignaler   LifecycleSignaler
+	configurator        MCPServerConfigurator
+	serverTransport     mcp.Transport
 }
 
 func New(
@@ -41,70 +42,71 @@ func New(
 	loggerFactory LoggerFactory,
 	lifecycleSignaler LifecycleSignaler,
 	configurator MCPServerConfigurator,
-) (*Server, error) {
-	logger, messagesErr := loggerFactory.GetGlobalLogger()
+) *Server {
+	return &Server{
+		mcpSDKServerFactory: mcpSDKServerfactory,
+		loggerFactory:       loggerFactory,
+		lifecycleSignaler:   lifecycleSignaler,
+		configurator:        configurator,
+		serverTransport:     &mcp.StdioTransport{},
+	}
+}
+
+func (s *Server) Run() error {
+	logger, messagesErr := s.loggerFactory.GetGlobalLogger()
 	if messagesErr != nil {
-		return nil, messagesErr
+		return messagesErr
 	}
 
-	mcpserver, messagesErr := mcpSDKServerfactory.NewServer(name, instructions)
+	mcpServer, messagesErr := s.mcpSDKServerFactory.NewServer(name, instructions)
 	if messagesErr != nil {
-		return nil, messagesErr
+		return messagesErr
 	}
 
-	toolsToAdd, err := configurator.GetToolsToAdd()
+	toolsToAdd, err := s.configurator.GetToolsToAdd()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, tool := range toolsToAdd {
-		if err := tool.AddToServer(mcpserver); err != nil {
-			return nil, err
+		if err := tool.AddToServer(mcpServer); err != nil {
+			return err
 		}
 	}
 	logger.With("count", len(toolsToAdd)).Info("Added tools to MCP SDK server")
 
-	resourcesToAdd := configurator.GetResourcesToAdd()
+	resourcesToAdd := s.configurator.GetResourcesToAdd()
 	for _, resource := range resourcesToAdd {
-		resource.AddToServer(mcpserver)
+		if err := resource.AddToServer(mcpServer); err != nil {
+			return err
+		}
 	}
 	logger.With("count", len(resourcesToAdd)).Info("Added resources to MCP SDK server")
 
-	return &Server{
-		mcpServer:         mcpserver,
-		serverLogger:      logger,
-		lifecycleSignaler: lifecycleSignaler,
-		serverTransport:   &mcp.StdioTransport{},
-	}, nil
-}
-
-func (s *Server) Run() error {
-	s.serverLogger.Debug("Starting MCP server")
+	logger.Debug("Starting MCP server")
 
 	ctx, stopServer := context.WithCancel(context.Background())
 	defer stopServer()
 
-	// This channel only closes when we exit the Run method
-	// This ensures that the mcpServer connections have all been closed and resolved
 	serverShutdownC := make(chan struct{})
 	defer close(serverShutdownC)
 
 	serverErrC := make(chan error)
 	go func() {
-		serverErrC <- s.mcpServer.Run(ctx, s.serverTransport)
+		serverErrC <- mcpServer.Run(ctx, s.serverTransport)
 	}()
-	s.serverLogger.Debug("Started MCP server")
+	logger.Debug("Started MCP server")
 
 	s.lifecycleSignaler.AddShutdownFunction(func() error {
-		s.serverLogger.Debug("Stopping MCP server")
+		logger.Debug("Stopping MCP server")
 		stopServer()
 		<-serverShutdownC
-		s.serverLogger.Debug("Stopped MCP server")
+		logger.Debug("Stopped MCP server")
 		return nil
 	})
 
 	if err := <-serverErrC; err != nil && err != context.Canceled {
-		s.serverLogger.WithError(err).Error("MCP server run method returned an unexpected error")
+		logger.WithError(err).Error("MCP server run method returned an unexpected error")
 		return err
 	}
 

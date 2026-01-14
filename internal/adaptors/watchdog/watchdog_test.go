@@ -124,7 +124,7 @@ func TestWatchdog_Start_HappyPath(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -234,7 +234,7 @@ func TestWatchdog_Start_WatchdogProcessStartError(t *testing.T) {
 	mockSocket := &socketmocks.MockSocket{}
 	defer mockSocket.AssertExpectations(t)
 
-	expectedError := assert.AnError
+	expectedError := messages.AnError
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
@@ -252,7 +252,7 @@ func TestWatchdog_Start_WatchdogProcessStartError(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(expectedError).
 		Once()
 
@@ -301,7 +301,7 @@ func TestWatchdog_Start_ClientConnectError(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -370,7 +370,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_HappyPath(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -448,7 +448,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_WaitsIfNotStarted(t *testing.T)
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -536,7 +536,7 @@ func TestWatchdog_RegisterProcessPIDWithWatchdog_SendProcessPIDError(t *testing.
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -613,7 +613,7 @@ func TestWatchdog_Stop_HappyPath(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -690,7 +690,7 @@ func TestWatchdog_Stop_StopErrors(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
@@ -766,7 +766,7 @@ func TestWatchdog_Stop_WaitsIfNotStarted(t *testing.T) {
 		Once()
 
 	mockWatchdogProcess.EXPECT().
-		Start().
+		StartNewProcess().
 		Return(nil).
 		Once()
 
