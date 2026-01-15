@@ -8,7 +8,6 @@ import (
 	"io"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
-	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
@@ -20,71 +19,58 @@ type Parser interface {
 	Usage() string
 }
 
-type WatchdogProcessFactory interface { //nolint:iface // Intentional interface for deps injection
-	Create() (entities.Mode, error)
+type WatchdogProcess interface { //nolint:iface // Intentional interface for deps injection
+	StartAndWaitForCompletion(ctx context.Context) error
 }
 
-type OrchestratorFactory interface { //nolint:iface // Intentional interface for deps injection
-	Create() (entities.Mode, error)
+type Orchestrator interface { //nolint:iface // Intentional interface for deps injection
+	StartAndWaitForCompletion(ctx context.Context) error
 }
 
 type OSLayer interface {
 	Stdout() io.Writer
 }
 
-// ModeSelector is the top level object of the MATLAB MCP Core Server.
-// It will be imported in `main.go` to start the application, and wait for it's completion.
-// It will select which mode to run in based on the configuration, and defer construction of the required objects until the mode is known.
 type ModeSelector struct {
-	configFactory          ConfigFactory
-	watchdogProcessFactory WatchdogProcessFactory
-	orchestratorFactory    OrchestratorFactory
-	osLayer                OSLayer
-	parser                 Parser
+	configFactory   ConfigFactory
+	watchdogProcess WatchdogProcess
+	orchestrator    Orchestrator
+	osLayer         OSLayer
+	parser          Parser
 }
 
 func New(
 	configFactory ConfigFactory,
 	parser Parser,
-	watchdogProcessFactory WatchdogProcessFactory,
-	orchestratorFactory OrchestratorFactory,
+	watchdogProcess WatchdogProcess,
+	orchestrator Orchestrator,
 	osLayer OSLayer,
 ) *ModeSelector {
 	return &ModeSelector{
-		configFactory:          configFactory,
-		parser:                 parser,
-		watchdogProcessFactory: watchdogProcessFactory,
-		orchestratorFactory:    orchestratorFactory,
-		osLayer:                osLayer,
+		configFactory:   configFactory,
+		parser:          parser,
+		watchdogProcess: watchdogProcess,
+		orchestrator:    orchestrator,
+		osLayer:         osLayer,
 	}
 }
 
-func (a *ModeSelector) StartAndWaitForCompletion(ctx context.Context) error {
-	config, err := a.configFactory.Config()
+func (m *ModeSelector) StartAndWaitForCompletion(ctx context.Context) error {
+	config, err := m.configFactory.Config()
 	if err != nil {
 		return err
 	}
 
 	switch {
 	case config.HelpMode():
-		_, err := fmt.Fprintf(a.osLayer.Stdout(), "%s\n", a.parser.Usage())
+		_, err := fmt.Fprintf(m.osLayer.Stdout(), "%s\n", m.parser.Usage())
 		return err
 	case config.VersionMode():
-		_, err := fmt.Fprintf(a.osLayer.Stdout(), "%s\n", config.Version())
+		_, err := fmt.Fprintf(m.osLayer.Stdout(), "%s\n", config.Version())
 		return err
 	case config.WatchdogMode():
-		watchdogProcess, err := a.watchdogProcessFactory.Create()
-		if err != nil {
-			return err
-		}
-
-		return watchdogProcess.StartAndWaitForCompletion(ctx)
+		return m.watchdogProcess.StartAndWaitForCompletion(ctx)
 	default:
-		orchestrator, err := a.orchestratorFactory.Create()
-		if err != nil {
-			return err
-		}
-
-		return orchestrator.StartAndWaitForCompletion(ctx)
+		return m.orchestrator.StartAndWaitForCompletion(ctx)
 	}
 }

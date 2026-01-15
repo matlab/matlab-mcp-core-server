@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package client_test
 
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -78,7 +79,8 @@ func TestHTTPClientFactory_NewClientOverUDS_HappyPath(t *testing.T) {
 }
 
 func newClientFactory() *httpclientfactory.HTTPClientFactory {
-	return httpclientfactory.New()
+	application := wire.Initialize()
+	return application.HTTPClientFactory
 }
 
 func newTestHTTPSServer(t *testing.T) *httptest.Server {

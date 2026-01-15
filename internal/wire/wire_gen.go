@@ -32,7 +32,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionstore"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
+	server2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/configurator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
 	evalmatlabcode2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
@@ -45,9 +45,8 @@ import (
 	runmatlabfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
+	watchdog2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog/process"
-	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/filefacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/iofacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
@@ -64,37 +63,34 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/ossignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/utils/oswrapper"
-	watchdog2 "github.com/matlab/matlab-mcp-core-server/internal/watchdog"
+	"github.com/matlab/matlab-mcp-core-server/internal/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/processhandler"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
-	server2 "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
+	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server/handler"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
 )
 
 // Injectors from wire.go:
 
-func InitializeModeSelector() (*modeselector.ModeSelector, error) {
+func Initialize() *Application {
 	messageCatalog := messagecatalog.New()
 	parserParser := parser.New(messageCatalog)
 	osFacade := osfacade.New()
 	factory := config.NewFactory(parserParser, osFacade)
-	wireWatchdogProcessFactory := newWatchdogProcessFactory()
-	wireOrchestratorFactory := newOrchestratorFactory()
-	modeSelector := modeselector.New(factory, parserParser, wireWatchdogProcessFactory, wireOrchestratorFactory, osFacade)
-	return modeSelector, nil
-}
-
-func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
-	lifecycleSignaler := lifecyclesignaler.New()
-	messageCatalog := messagecatalog.New()
-	parserParser := parser.New(messageCatalog)
-	osFacade := osfacade.New()
-	factory := config.NewFactory(parserParser, osFacade)
-	sdkFactory := sdk.NewFactory(factory)
 	filesFactory := files.NewFactory(osFacade)
 	directoryFactory := directory.NewFactory(factory, filesFactory, osFacade)
 	loggerFactory := logger.NewFactory(factory, directoryFactory, filesFactory, osFacade)
+	osWrapper := oswrapper.New(osFacade)
+	processHandler := processhandler.New(loggerFactory, osWrapper)
+	osSignaler := ossignaler.New()
+	handlerFactory := handler.NewFactory(loggerFactory, processHandler)
+	httpServerFactory := httpserverfactory.New(osFacade)
+	serverFactory := server.NewFactory(httpServerFactory, loggerFactory, handlerFactory)
+	socketFactory := socket.NewFactory(directoryFactory, osFacade)
+	watchdogWatchdog := watchdog.New(loggerFactory, osFacade, processHandler, osSignaler, handlerFactory, serverFactory, socketFactory)
+	lifecycleSignaler := lifecyclesignaler.New()
+	sdkFactory := sdk.NewFactory(factory)
 	fileFacade := filefacade.New()
 	getter := matlabroot.New(osFacade, fileFacade)
 	ioFacade := iofacade.New()
@@ -107,9 +103,8 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	processFactory := process.New(osFacade, loggerFactory, directoryFactory, factory)
 	httpClientFactory := httpclientfactory.New()
 	clientFactory := client.NewFactory(osFacade, loggerFactory, httpClientFactory)
-	socketFactory := socket.NewFactory(directoryFactory, osFacade)
-	watchdogWatchdog := watchdog.New(processFactory, clientFactory, loggerFactory, socketFactory)
-	starter := localmatlabsession.NewStarter(factory2, processDetails, matlabProcessLauncher, watchdogWatchdog)
+	watchdog3 := watchdog2.New(processFactory, clientFactory, loggerFactory, socketFactory)
+	starter := localmatlabsession.NewStarter(factory2, processDetails, matlabProcessLauncher, watchdog3)
 	matlabServices := matlabservices.New(matlabLocator, starter)
 	store := matlabsessionstore.New(loggerFactory, lifecycleSignaler)
 	matlabsessionclientFactory := matlabsessionclient.NewFactory(httpClientFactory)
@@ -138,49 +133,23 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 	resource := codingguidelines.New(loggerFactory)
 	plaintextlivecodegenerationResource := plaintextlivecodegeneration.New(loggerFactory)
 	configuratorConfigurator := configurator.New(factory, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
-	serverServer := server.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
-	osSignaler := ossignaler.New()
-	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, factory, serverServer, watchdogWatchdog, loggerFactory, osSignaler, globalMATLAB, directoryFactory)
-	return orchestratorOrchestrator, nil
-}
-
-func initializeWatchdog() (*watchdog2.Watchdog, error) {
-	messageCatalog := messagecatalog.New()
-	parserParser := parser.New(messageCatalog)
-	osFacade := osfacade.New()
-	factory := config.NewFactory(parserParser, osFacade)
-	filesFactory := files.NewFactory(osFacade)
-	directoryFactory := directory.NewFactory(factory, filesFactory, osFacade)
-	loggerFactory := logger.NewFactory(factory, directoryFactory, filesFactory, osFacade)
-	osWrapper := oswrapper.New(osFacade)
-	processHandler := processhandler.New(loggerFactory, osWrapper)
-	osSignaler := ossignaler.New()
-	handlerFactory := handler.NewFactory(loggerFactory, processHandler)
-	httpServerFactory := httpserverfactory.New(osFacade)
-	serverFactory := server2.NewFactory(httpServerFactory, loggerFactory, handlerFactory)
-	socketFactory := socket.NewFactory(directoryFactory, osFacade)
-	watchdogWatchdog := watchdog2.New(loggerFactory, osFacade, processHandler, osSignaler, handlerFactory, serverFactory, socketFactory)
-	return watchdogWatchdog, nil
+	serverServer := server2.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
+	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, factory, serverServer, watchdog3, loggerFactory, osSignaler, globalMATLAB, directoryFactory)
+	modeSelector := modeselector.New(factory, parserParser, watchdogWatchdog, orchestratorOrchestrator, osFacade)
+	application := &Application{
+		ModeSelector:      modeSelector,
+		MessageCatalog:    messageCatalog,
+		HTTPClientFactory: httpClientFactory,
+		HTTPServerFactory: httpServerFactory,
+	}
+	return application
 }
 
 // wire.go:
 
-type orchestratorFactory struct{}
-
-func newOrchestratorFactory() *orchestratorFactory {
-	return &orchestratorFactory{}
-}
-
-func (f *orchestratorFactory) Create() (entities.Mode, error) {
-	return initializeOrchestrator()
-}
-
-type watchdogProcessFactory struct{}
-
-func newWatchdogProcessFactory() *watchdogProcessFactory {
-	return &watchdogProcessFactory{}
-}
-
-func (f *watchdogProcessFactory) Create() (entities.Mode, error) {
-	return initializeWatchdog()
+type Application struct {
+	ModeSelector      *modeselector.ModeSelector
+	MessageCatalog    *messagecatalog.MessageCatalog
+	HTTPClientFactory *httpclientfactory.HTTPClientFactory
+	HTTPServerFactory *httpserverfactory.HTTPServerFactory
 }

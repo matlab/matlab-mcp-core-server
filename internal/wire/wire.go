@@ -73,55 +73,46 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/socket"
 )
 
-type orchestratorFactory struct{}
-
-func newOrchestratorFactory() *orchestratorFactory {
-	return &orchestratorFactory{}
+type Application struct {
+	ModeSelector      *modeselector.ModeSelector
+	MessageCatalog    *messagecatalog.MessageCatalog
+	HTTPClientFactory *httpclientfactory.HTTPClientFactory
+	HTTPServerFactory *httpserverfactory.HTTPServerFactory
 }
 
-func (f *orchestratorFactory) Create() (entities.Mode, error) {
-	return initializeOrchestrator()
-}
-
-type watchdogProcessFactory struct{}
-
-func newWatchdogProcessFactory() *watchdogProcessFactory {
-	return &watchdogProcessFactory{}
-}
-
-func (f *watchdogProcessFactory) Create() (entities.Mode, error) {
-	return initializeWatchdog()
-}
-
-func InitializeModeSelector() (*modeselector.ModeSelector, error) {
+func Initialize() *Application {
 	wire.Build(
 		// Application
+		wire.Struct(new(Application), "*"),
+
+		// Mode Selector
 		modeselector.New,
 		wire.Bind(new(modeselector.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(modeselector.Parser), new(*parser.Parser)),
-		wire.Bind(new(modeselector.WatchdogProcessFactory), new(*watchdogProcessFactory)),
-		wire.Bind(new(modeselector.OrchestratorFactory), new(*orchestratorFactory)),
+		wire.Bind(new(modeselector.WatchdogProcess), new(*watchdogprocess.Watchdog)),
+		wire.Bind(new(modeselector.Orchestrator), new(*orchestrator.Orchestrator)),
 		wire.Bind(new(modeselector.OSLayer), new(*osfacade.OsFacade)),
 
-		// Factories
-		newWatchdogProcessFactory,
-		newOrchestratorFactory,
+		// Watchdog Process
+		watchdogprocess.New,
+		wire.Bind(new(watchdogprocess.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(watchdogprocess.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(watchdogprocess.ProcessHandler), new(*processhandler.ProcessHandler)),
+		wire.Bind(new(watchdogprocess.OSSignaler), new(*ossignaler.OSSignaler)),
+		wire.Bind(new(watchdogprocess.ServerHandlerFactory), new(*handler.Factory)),
+		wire.Bind(new(watchdogprocess.ServerFactory), new(*transportserver.Factory)),
+		wire.Bind(new(watchdogprocess.SocketFactory), new(*socket.Factory)),
 
-		// Low-level Interfaces
-		config.NewFactory,
-		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(config.Parser), new(*parser.Parser)),
-		parser.New,
-		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
-		messagecatalog.New,
-		osfacade.New,
-	)
+		// Watchdog Transport Server Factory
+		transportserver.NewFactory,
+		wire.Bind(new(transportserver.HTTPServerFactory), new(*httpserverfactory.HTTPServerFactory)),
+		wire.Bind(new(transportserver.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(transportserver.HandlerFactory), new(*handler.Factory)),
 
-	return nil, nil
-}
+		// HTTP Server Factory
+		httpserverfactory.New,
+		wire.Bind(new(httpserverfactory.OSLayer), new(*osfacade.OsFacade)),
 
-func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
-	wire.Build(
 		// Orchestrator
 		orchestrator.New,
 		wire.Bind(new(orchestrator.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
@@ -132,31 +123,6 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		wire.Bind(new(orchestrator.OSSignaler), new(*ossignaler.OSSignaler)),
 		wire.Bind(new(orchestrator.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
 		wire.Bind(new(orchestrator.DirectoryFactory), new(*directory.Factory)),
-
-		// Watchdog Client
-		watchdogclient.New,
-		wire.Bind(new(watchdogclient.WatchdogProcess), new(*process.Factory)),
-		wire.Bind(new(watchdogclient.ClientFactory), new(*transportclient.Factory)),
-		wire.Bind(new(watchdogclient.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(watchdogclient.SocketFactory), new(*socket.Factory)),
-
-		// Socket Path Factory
-		socket.NewFactory,
-		wire.Bind(new(socket.DirectoryFactory), new(*directory.Factory)),
-		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
-
-		// Watchdog Process Handler for Watchdog Client
-		process.New,
-		wire.Bind(new(process.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(process.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(process.DirectoryFactory), new(*directory.Factory)),
-		wire.Bind(new(process.ConfigFactory), new(*config.Factory)),
-
-		// Watchdog Transport Client Factory
-		transportclient.NewFactory,
-		wire.Bind(new(transportclient.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(transportclient.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(transportclient.HTTPClientFactory), new(*httpclientfactory.HTTPClientFactory)),
 
 		// MCP Server
 		server.New,
@@ -179,11 +145,17 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		listavailablematlabstool.New,
 		wire.Bind(new(listavailablematlabstool.Usecase), new(*listavailablematlabs.Usecase)),
 
+		listavailablematlabs.New,
+
 		startmatlabsessiontool.New,
 		wire.Bind(new(startmatlabsessiontool.Usecase), new(*startmatlabsession.Usecase)),
 
+		startmatlabsession.New,
+
 		stopmatlabsessiontool.New,
 		wire.Bind(new(stopmatlabsessiontool.Usecase), new(*stopmatlabsession.Usecase)),
+
+		stopmatlabsession.New,
 
 		evalmatlabcodemultisessiontool.New,
 		wire.Bind(new(evalmatlabcodemultisessiontool.Usecase), new(*evalmatlabcode.Usecase)),
@@ -191,61 +163,59 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		evalmatlabcodesinglesessiontool.New,
 		wire.Bind(new(evalmatlabcodesinglesessiontool.Usecase), new(*evalmatlabcode.Usecase)),
 
+		evalmatlabcode.New,
+		wire.Bind(new(evalmatlabcode.PathValidator), new(*pathvalidator.PathValidator)),
+
 		checkmatlabcodesinglesessiontool.New,
 		wire.Bind(new(checkmatlabcodesinglesessiontool.Usecase), new(*checkmatlabcode.Usecase)),
+
+		checkmatlabcode.New,
+		wire.Bind(new(checkmatlabcode.PathValidator), new(*pathvalidator.PathValidator)),
 
 		detectmatlabtoolboxessinglesessiontool.New,
 		wire.Bind(new(detectmatlabtoolboxessinglesessiontool.Usecase), new(*detectmatlabtoolboxes.Usecase)),
 
+		detectmatlabtoolboxes.New,
+
 		runmatlabfilesinglesessiontool.New,
 		wire.Bind(new(runmatlabfilesinglesessiontool.Usecase), new(*runmatlabfile.Usecase)),
+
+		runmatlabfile.New,
+		wire.Bind(new(runmatlabfile.PathValidator), new(*pathvalidator.PathValidator)),
 
 		runmatlabtestfilesinglesessiontool.New,
 		wire.Bind(new(runmatlabtestfilesinglesessiontool.Usecase), new(*runmatlabtestfile.Usecase)),
 
-		// Resources
-		wire.Bind(new(baseresource.LoggerFactory), new(*logger.Factory)),
-		codingguidelines.New,
-		plaintextlivecodegeneration.New,
-
-		// Use Cases
-		listavailablematlabs.New,
-		startmatlabsession.New,
-		stopmatlabsession.New,
-		evalmatlabcode.New,
-		wire.Bind(new(evalmatlabcode.PathValidator), new(*pathvalidator.PathValidator)),
-		checkmatlabcode.New,
-		wire.Bind(new(checkmatlabcode.PathValidator), new(*pathvalidator.PathValidator)),
-		detectmatlabtoolboxes.New,
-		runmatlabfile.New,
-		wire.Bind(new(runmatlabfile.PathValidator), new(*pathvalidator.PathValidator)),
 		runmatlabtestfile.New,
 		wire.Bind(new(runmatlabtestfile.PathValidator), new(*pathvalidator.PathValidator)),
 
-		// Use Cases Utilities
-		pathvalidator.New,
-		wire.Bind(new(pathvalidator.OSLayer), new(*osfacade.OsFacade)),
+		// Resources
+		wire.Bind(new(baseresource.LoggerFactory), new(*logger.Factory)),
 
-		// Entities
-		wire.Bind(new(entities.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
-		wire.Bind(new(entities.MATLABManager), new(*matlabmanager.MATLABManager)),
+		codingguidelines.New,
+		plaintextlivecodegeneration.New,
 
-		// MATLAB Manager
-		matlabmanager.New,
-		wire.Bind(new(matlabmanager.MATLABServices), new(*matlabservices.MATLABServices)),
-		wire.Bind(new(matlabmanager.MATLABSessionStore), new(*matlabsessionstore.Store)),
-		wire.Bind(new(matlabmanager.MATLABSessionClientFactory), new(*matlabsessionclient.Factory)),
+		// Watchdog Client
+		watchdogclient.New,
+		wire.Bind(new(watchdogclient.WatchdogProcess), new(*process.Factory)),
+		wire.Bind(new(watchdogclient.ClientFactory), new(*transportclient.Factory)),
+		wire.Bind(new(watchdogclient.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(watchdogclient.SocketFactory), new(*socket.Factory)),
 
-		// MATLAB Session Store
-		matlabsessionstore.New,
-		wire.Bind(new(matlabsessionstore.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(matlabsessionstore.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
+		// Watchdog Process Handler for Watchdog Client
+		process.New,
+		wire.Bind(new(process.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(process.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(process.DirectoryFactory), new(*directory.Factory)),
+		wire.Bind(new(process.ConfigFactory), new(*config.Factory)),
 
-		// MATLAB Session Client Factory
-		matlabsessionclient.NewFactory,
-		wire.Bind(new(matlabsessionclient.HttpClientFactory), new(*httpclientfactory.HTTPClientFactory)),
+		// Watchdog Transport Client Factory
+		transportclient.NewFactory,
+		wire.Bind(new(transportclient.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(transportclient.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(transportclient.HTTPClientFactory), new(*httpclientfactory.HTTPClientFactory)),
 
-		// Global MATLAB Session
+		// Global MATLAB
 		globalmatlab.New,
 		wire.Bind(new(globalmatlab.MATLABManager), new(*matlabmanager.MATLABManager)),
 		wire.Bind(new(globalmatlab.MATLABRootSelector), new(*matlabrootselector.MATLABRootSelector)),
@@ -261,6 +231,16 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		wire.Bind(new(matlabstartingdirselector.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(matlabstartingdirselector.OSLayer), new(*osfacade.OsFacade)),
 
+		// Entities
+		wire.Bind(new(entities.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
+		wire.Bind(new(entities.MATLABManager), new(*matlabmanager.MATLABManager)),
+
+		// MATLAB Manager
+		matlabmanager.New,
+		wire.Bind(new(matlabmanager.MATLABServices), new(*matlabservices.MATLABServices)),
+		wire.Bind(new(matlabmanager.MATLABSessionStore), new(*matlabsessionstore.Store)),
+		wire.Bind(new(matlabmanager.MATLABSessionClientFactory), new(*matlabsessionclient.Factory)),
+
 		// MATLAB Services
 		matlabservices.New,
 		wire.Bind(new(matlabservices.MATLABLocator), new(*matlablocator.MATLABLocator)),
@@ -270,6 +250,16 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		matlablocator.New,
 		wire.Bind(new(matlablocator.MATLABRootGetter), new(*matlabroot.Getter)),
 		wire.Bind(new(matlablocator.MATLABVersionGetter), new(*matlabversion.Getter)),
+
+		// MATLAB Root Getter
+		matlabroot.New,
+		wire.Bind(new(matlabroot.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(matlabroot.FileLayer), new(*filefacade.FileFacade)),
+
+		// MATLAB Version Getter
+		matlabversion.New,
+		wire.Bind(new(matlabversion.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(matlabversion.IOLayer), new(*iofacade.IoFacade)),
 
 		// Local MATLAB Session
 		localmatlabsession.NewStarter,
@@ -284,6 +274,9 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		wire.Bind(new(localmatlabsessiondirectory.ApplicationDirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(localmatlabsessiondirectory.MATLABFiles), new(matlabfiles.MATLABFiles)),
 
+		// MATLAB Files Provider
+		matlabfiles.New,
+
 		// Local MATLAB Session Process Details
 		processdetails.New,
 		wire.Bind(new(processdetails.OSLayer), new(*osfacade.OsFacade)),
@@ -291,75 +284,31 @@ func initializeOrchestrator() (*orchestrator.Orchestrator, error) {
 		// Local MATLAB Process Launcher
 		processlauncher.New,
 
-		// MATLAB Root Getter
-		matlabroot.New,
-		wire.Bind(new(matlabroot.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(matlabroot.FileLayer), new(*filefacade.FileFacade)),
+		// MATLAB Session Store
+		matlabsessionstore.New,
+		wire.Bind(new(matlabsessionstore.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(matlabsessionstore.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
 
-		// MATLAB Version Getter
-		matlabversion.New,
-		wire.Bind(new(matlabversion.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(matlabversion.IOLayer), new(*iofacade.IoFacade)),
+		// MATLAB Session Client Factory
+		matlabsessionclient.NewFactory,
+		wire.Bind(new(matlabsessionclient.HttpClientFactory), new(*httpclientfactory.HTTPClientFactory)),
 
-		// MATLAB Files Provider
-		matlabfiles.New,
+		// Shared Dependencies
 
-		// Low-level Interfaces
-		logger.NewFactory,
-		wire.Bind(new(logger.ConfigFactory), new(*config.Factory)),
-		wire.Bind(new(logger.DirectoryFactory), new(*directory.Factory)),
-		wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
-		wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
-		directory.NewFactory,
-		wire.Bind(new(directory.ConfigFactory), new(*config.Factory)),
-		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
-		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
-		lifecyclesignaler.New,
-		config.NewFactory,
-		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(config.Parser), new(*parser.Parser)),
-		parser.New,
-		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
-		messagecatalog.New,
-		files.NewFactory,
-		wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
-		osfacade.New,
-		iofacade.New,
-		filefacade.New,
-		ossignaler.New,
-		httpclientfactory.New,
-	)
+		// Path Validator
+		pathvalidator.New,
+		wire.Bind(new(pathvalidator.OSLayer), new(*osfacade.OsFacade)),
 
-	return nil, nil
-}
-
-func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
-	wire.Build( // Watchdog Process
-		watchdogprocess.New,
-		wire.Bind(new(watchdogprocess.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(watchdogprocess.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(watchdogprocess.ProcessHandler), new(*processhandler.ProcessHandler)),
-		wire.Bind(new(watchdogprocess.OSSignaler), new(*ossignaler.OSSignaler)),
-		wire.Bind(new(watchdogprocess.ServerHandlerFactory), new(*handler.Factory)),
-		wire.Bind(new(watchdogprocess.ServerFactory), new(*transportserver.Factory)),
-		wire.Bind(new(watchdogprocess.SocketFactory), new(*socket.Factory)),
-
-		// Process Handler for Watchdog Process
+		// Process Handler
 		processhandler.New,
 		wire.Bind(new(processhandler.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(processhandler.OSWrapper), new(*oswrapper.OSWrapper)),
 
-		// Watchdog Transport Server Factory
-		transportserver.NewFactory,
-		wire.Bind(new(transportserver.HTTPServerFactory), new(*httpserverfactory.HTTPServerFactory)),
-		wire.Bind(new(transportserver.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(transportserver.HandlerFactory), new(*handler.Factory)),
+		// OS Wrapper
+		oswrapper.New,
+		wire.Bind(new(oswrapper.OSLayer), new(*osfacade.OsFacade)),
 
-		// HTTP Server Factory
-		httpserverfactory.New,
-		wire.Bind(new(httpserverfactory.OSLayer), new(*osfacade.OsFacade)),
-
-		// HTTP Server Handler
+		// HTTP Server Handler Factory
 		handler.NewFactory,
 		wire.Bind(new(handler.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(handler.ProcessHandler), new(*processhandler.ProcessHandler)),
@@ -369,29 +318,49 @@ func initializeWatchdog() (*watchdogprocess.Watchdog, error) {
 		wire.Bind(new(socket.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(socket.OSLayer), new(*osfacade.OsFacade)),
 
-		// Low-level Interfaces
+		// Logger Factory
 		logger.NewFactory,
 		wire.Bind(new(logger.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(logger.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(logger.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(logger.OSLayer), new(*osfacade.OsFacade)),
+
+		// Directory Factory
 		directory.NewFactory,
 		wire.Bind(new(directory.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(directory.FilenameFactory), new(*files.Factory)),
 		wire.Bind(new(directory.OSLayer), new(*osfacade.OsFacade)),
+
+		// Lifecycle Signaler
+		lifecyclesignaler.New,
+
+		// Config Factory
 		config.NewFactory,
 		wire.Bind(new(config.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(config.Parser), new(*parser.Parser)),
+
+		// Parser
 		parser.New,
 		wire.Bind(new(parser.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+
+		// Message Catalog
 		messagecatalog.New,
+
+		// Files Factory
 		files.NewFactory,
 		wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
-		oswrapper.New,
-		wire.Bind(new(oswrapper.OSLayer), new(*osfacade.OsFacade)),
+
+		// HTTP Client Factory
+		httpclientfactory.New,
+
+		// OS Signaler
 		ossignaler.New,
+
+		// Facades
 		osfacade.New,
+		iofacade.New,
+		filefacade.New,
 	)
 
-	return nil, nil
+	return nil
 }

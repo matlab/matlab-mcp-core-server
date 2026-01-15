@@ -20,11 +20,11 @@ func TestNew_HappyPath(t *testing.T) {
 	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
@@ -36,8 +36,8 @@ func TestNew_HappyPath(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -50,11 +50,11 @@ func TestStartAndWaitForCompletion_ConfigError(t *testing.T) {
 	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
@@ -72,8 +72,8 @@ func TestStartAndWaitForCompletion_ConfigError(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -92,11 +92,11 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
@@ -142,8 +142,8 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -162,11 +162,11 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
@@ -213,8 +213,8 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -233,17 +233,14 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockWatchdogProcess := &entitiesmocks.MockMode{}
-	defer mockWatchdogProcess.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -268,11 +265,6 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 	mockConfig.EXPECT().
 		WatchdogMode().
 		Return(true).
-		Once()
-
-	mockWatchdogProcessFactory.EXPECT().
-		Create().
-		Return(mockWatchdogProcess, nil).
 		Once()
 
 	mockWatchdogProcess.EXPECT().
@@ -283,8 +275,8 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -295,68 +287,6 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 	require.NoError(t, err, "StartAndWaitForCompletion should not return an error in watchdog mode")
 }
 
-func TestStartAndWaitForCompletion_WatchdogMode_CreateError(t *testing.T) {
-	// Arrange
-	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
-	defer mockConfigFactory.AssertExpectations(t)
-
-	mockConfig := &configmocks.MockConfig{}
-	defer mockConfig.AssertExpectations(t)
-
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
-
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
-
-	mockOsLayer := &modeselectormocks.MockOSLayer{}
-	defer mockOsLayer.AssertExpectations(t)
-
-	mockParser := &modeselectormocks.MockParser{}
-	defer mockParser.AssertExpectations(t)
-
-	expectedError := assert.AnError
-
-	mockConfigFactory.EXPECT().
-		Config().
-		Return(mockConfig, nil).
-		Once()
-
-	mockConfig.EXPECT().
-		HelpMode().
-		Return(false).
-		Once()
-
-	mockConfig.EXPECT().
-		VersionMode().
-		Return(false).
-		Once()
-
-	mockConfig.EXPECT().
-		WatchdogMode().
-		Return(true).
-		Once()
-
-	mockWatchdogProcessFactory.EXPECT().
-		Create().
-		Return(nil, expectedError).
-		Once()
-
-	modeSelectorInstance := modeselector.New(
-		mockConfigFactory,
-		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
-		mockOsLayer,
-	)
-
-	// Act
-	err := modeSelectorInstance.StartAndWaitForCompletion(t.Context())
-
-	// Assert
-	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from Create")
-}
-
 func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) {
 	// Arrange
 	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
@@ -365,17 +295,14 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockWatchdogProcess := &entitiesmocks.MockMode{}
-	defer mockWatchdogProcess.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -403,11 +330,6 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 		Return(true).
 		Once()
 
-	mockWatchdogProcessFactory.EXPECT().
-		Create().
-		Return(mockWatchdogProcess, nil).
-		Once()
-
 	mockWatchdogProcess.EXPECT().
 		StartAndWaitForCompletion(ctx).
 		Return(expectedError).
@@ -416,8 +338,8 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -436,17 +358,14 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockOrchestrator := &entitiesmocks.MockMode{}
-	defer mockOrchestrator.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -471,11 +390,6 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 	mockConfig.EXPECT().
 		WatchdogMode().
 		Return(false).
-		Once()
-
-	mockOrchestratorFactory.EXPECT().
-		Create().
-		Return(mockOrchestrator, nil).
 		Once()
 
 	mockOrchestrator.EXPECT().
@@ -486,8 +400,8 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -498,68 +412,6 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 	require.NoError(t, err, "StartAndWaitForCompletion should not return an error in default mode")
 }
 
-func TestStartAndWaitForCompletion_DefaultMode_CreateError(t *testing.T) {
-	// Arrange
-	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
-	defer mockConfigFactory.AssertExpectations(t)
-
-	mockConfig := &configmocks.MockConfig{}
-	defer mockConfig.AssertExpectations(t)
-
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
-
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
-
-	mockOsLayer := &modeselectormocks.MockOSLayer{}
-	defer mockOsLayer.AssertExpectations(t)
-
-	mockParser := &modeselectormocks.MockParser{}
-	defer mockParser.AssertExpectations(t)
-
-	expectedError := assert.AnError
-
-	mockConfigFactory.EXPECT().
-		Config().
-		Return(mockConfig, nil).
-		Once()
-
-	mockConfig.EXPECT().
-		HelpMode().
-		Return(false).
-		Once()
-
-	mockConfig.EXPECT().
-		VersionMode().
-		Return(false).
-		Once()
-
-	mockConfig.EXPECT().
-		WatchdogMode().
-		Return(false).
-		Once()
-
-	mockOrchestratorFactory.EXPECT().
-		Create().
-		Return(nil, expectedError).
-		Once()
-
-	modeSelectorInstance := modeselector.New(
-		mockConfigFactory,
-		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
-		mockOsLayer,
-	)
-
-	// Act
-	err := modeSelectorInstance.StartAndWaitForCompletion(t.Context())
-
-	// Assert
-	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from Create")
-}
-
 func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 	// Arrange
 	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
@@ -568,17 +420,14 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockOrchestrator := &entitiesmocks.MockMode{}
-	defer mockOrchestrator.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -606,11 +455,6 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 		Return(false).
 		Once()
 
-	mockOrchestratorFactory.EXPECT().
-		Create().
-		Return(mockOrchestrator, nil).
-		Once()
-
 	mockOrchestrator.EXPECT().
 		StartAndWaitForCompletion(ctx).
 		Return(expectedError).
@@ -619,8 +463,8 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -639,17 +483,14 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitHappyPath(t *testing.T) 
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockOrchestrator := &entitiesmocks.MockMode{}
-	defer mockOrchestrator.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -678,8 +519,8 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitHappyPath(t *testing.T) 
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
@@ -708,17 +549,14 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitWriteError(t *testing.T)
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
-	mockWatchdogProcessFactory := &modeselectormocks.MockWatchdogProcessFactory{}
-	defer mockWatchdogProcessFactory.AssertExpectations(t)
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
 
-	mockOrchestratorFactory := &modeselectormocks.MockOrchestratorFactory{}
-	defer mockOrchestratorFactory.AssertExpectations(t)
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
 
 	mockOsLayer := &modeselectormocks.MockOSLayer{}
 	defer mockOsLayer.AssertExpectations(t)
-
-	mockOrchestrator := &entitiesmocks.MockMode{}
-	defer mockOrchestrator.AssertExpectations(t)
 
 	mockParser := &modeselectormocks.MockParser{}
 	defer mockParser.AssertExpectations(t)
@@ -748,8 +586,8 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitWriteError(t *testing.T)
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
 		mockParser,
-		mockWatchdogProcessFactory,
-		mockOrchestratorFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
 		mockOsLayer,
 	)
 
