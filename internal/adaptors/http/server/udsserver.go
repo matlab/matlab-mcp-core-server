@@ -1,6 +1,6 @@
 // Copyright 2025-2026 The MathWorks, Inc.
 
-package httpserverfactory
+package server
 
 import (
 	"context"
@@ -14,26 +14,18 @@ import (
 
 const defaultReadHeaderTimeout = 10 * time.Second
 
-type HttpServer interface {
-	Serve(socketPath string) error
-	Shutdown(ctx context.Context) error
+type udsServer struct {
+	httpServer *http.Server
+	osLayer    OSLayer
+	socketPath string
+
+	lock *sync.Mutex
 }
 
-type OSLayer interface {
-	RemoveAll(name string) error
-}
-
-type HTTPServerFactory struct {
-	osLayer OSLayer
-}
-
-func New(osLayer OSLayer) *HTTPServerFactory {
-	return &HTTPServerFactory{
-		osLayer: osLayer,
-	}
-}
-
-func (f *HTTPServerFactory) NewServerOverUDS(handlers map[string]http.HandlerFunc) (HttpServer, error) {
+func newUDSServer(
+	osLayer OSLayer,
+	handlers map[string]http.HandlerFunc,
+) *udsServer {
 	mux := http.NewServeMux()
 	for pattern, handler := range handlers {
 		mux.HandleFunc(pattern, handler)
@@ -44,18 +36,9 @@ func (f *HTTPServerFactory) NewServerOverUDS(handlers map[string]http.HandlerFun
 			Handler:           mux,
 			ReadHeaderTimeout: defaultReadHeaderTimeout,
 		},
-		osLayer: f.osLayer,
-
-		lock: new(sync.Mutex),
-	}, nil
-}
-
-type udsServer struct {
-	httpServer *http.Server
-	osLayer    OSLayer
-	socketPath string
-
-	lock *sync.Mutex
+		osLayer: osLayer,
+		lock:    new(sync.Mutex),
+	}
 }
 
 func (s *udsServer) Serve(socketPath string) error {

@@ -1,9 +1,8 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabroot_test
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -145,7 +144,7 @@ func TestMATLABRootGetter_GetAll_StatError(t *testing.T) {
 	matlabExePath := filepath.Join(errorPath, config.MATLABExeName)
 	mockOSLayer.EXPECT().
 		Stat(matlabExePath).
-		Return(nil, errors.New("stat error")).
+		Return(nil, assert.AnError).
 		Once()
 
 	pathEnv := strings.Join([]string{validPath, errorPath}, string(os.PathListSeparator))

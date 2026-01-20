@@ -3,7 +3,6 @@
 package logger_test
 
 import (
-	"errors"
 	"path/filepath"
 	"testing"
 
@@ -671,7 +670,7 @@ func TestFactory_NewMCPSessionLogger_ReturnsErrorWhenLogFileCreationFails(t *tes
 
 	mockOSLayer.EXPECT().
 		Create(expectedLogFile).
-		Return(nil, errors.New("file creation error")).
+		Return(nil, assert.AnError).
 		Once()
 
 	factory := logger.NewFactory(mockConfigFactory, mockDirectoryFactory, mockFilenameFactory, mockOSLayer)

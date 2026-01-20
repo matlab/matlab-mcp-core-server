@@ -3,10 +3,10 @@
 package client
 
 import (
+	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport"
 )
 
@@ -19,7 +19,7 @@ type LoggerFactory interface {
 }
 
 type HTTPClientFactory interface {
-	NewClientOverUDS(socketPath string) httpclientfactory.HttpClient
+	NewClientOverUDS(socketPath string) httpclient.HttpClient
 }
 
 type Factory struct {

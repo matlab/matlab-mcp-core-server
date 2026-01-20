@@ -43,7 +43,7 @@ func TestMATLABRootSelector_SelectMATLABRoot_ConfigError(t *testing.T) {
 	defer mockMATLABManager.AssertExpectations(t)
 
 	ctx := t.Context()
-	expectedError := &messages.StartupErrors_BadFlag_Error{}
+	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().

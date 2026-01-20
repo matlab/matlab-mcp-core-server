@@ -1,24 +1,23 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
-package oswrapper_test
+package os_test
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/oswrapper"
+	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
+	osmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/os"
 	osfacademocks "github.com/matlab/matlab-mcp-core-server/mocks/facades/osfacade"
-	oswrappermocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/oswrapper"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
-	mockOSLayer := &oswrappermocks.MockOSLayer{}
+	mockOSLayer := &osmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
 	mockOSLayer.EXPECT().
@@ -27,17 +26,17 @@ func TestNew_HappyPath(t *testing.T) {
 		Once()
 
 	// Act
-	wrapper := oswrapper.New(mockOSLayer)
+	pm := osadaptor.New(mockOSLayer)
 
 	// Assert
-	assert.NotNil(t, wrapper, "OSWrapper instance should not be nil")
+	assert.NotNil(t, pm, "ProcessManager instance should not be nil")
 }
 
-func TestOSWrapper_FindProcess_Unix_HappyPath(t *testing.T) {
+func TestProcessManager_FindProcess_Unix_HappyPath(t *testing.T) {
 	for _, goos := range []string{"linux", "darwin"} {
 		t.Run(goos, func(t *testing.T) {
 			// Arrange
-			mockOSLayer := &oswrappermocks.MockOSLayer{}
+			mockOSLayer := &osmocks.MockOSLayer{}
 			defer mockOSLayer.AssertExpectations(t)
 
 			mockProcess := &osfacademocks.MockProcess{}
@@ -60,10 +59,10 @@ func TestOSWrapper_FindProcess_Unix_HappyPath(t *testing.T) {
 				Return(nil).
 				Once()
 
-			wrapper := oswrapper.New(mockOSLayer)
+			pm := osadaptor.New(mockOSLayer)
 
 			// Act
-			result := wrapper.FindProcess(processPid)
+			result := pm.FindProcess(processPid)
 
 			// Assert
 			assert.Equal(t, mockProcess, result, "Should return the found process")
@@ -71,9 +70,9 @@ func TestOSWrapper_FindProcess_Unix_HappyPath(t *testing.T) {
 	}
 }
 
-func TestOSWrapper_FindProcess_Windows_HappyPath(t *testing.T) {
+func TestProcessManager_FindProcess_Windows_HappyPath(t *testing.T) {
 	// Arrange
-	mockOSLayer := &oswrappermocks.MockOSLayer{}
+	mockOSLayer := &osmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
 	mockProcess := &osfacademocks.MockProcess{}
@@ -91,22 +90,22 @@ func TestOSWrapper_FindProcess_Windows_HappyPath(t *testing.T) {
 		Return(mockProcess, nil).
 		Once()
 
-	wrapper := oswrapper.New(mockOSLayer)
+	pm := osadaptor.New(mockOSLayer)
 
 	// Act
-	result := wrapper.FindProcess(processPid)
+	result := pm.FindProcess(processPid)
 
 	// Assert
 	assert.Equal(t, mockProcess, result, "Should return the found process")
 }
 
-func TestOSWrapper_FindProcess_OSLayerFindProcessError(t *testing.T) {
+func TestProcessManager_FindProcess_OSLayerFindProcessError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &oswrappermocks.MockOSLayer{}
+	mockOSLayer := &osmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
 	processPid := 1234
-	expectedError := errors.New("process not found")
+	expectedError := assert.AnError
 
 	mockOSLayer.EXPECT().
 		GOOS().
@@ -118,27 +117,27 @@ func TestOSWrapper_FindProcess_OSLayerFindProcessError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	wrapper := oswrapper.New(mockOSLayer)
+	pm := osadaptor.New(mockOSLayer)
 
 	// Act
-	result := wrapper.FindProcess(processPid)
+	result := pm.FindProcess(processPid)
 
 	// Assert
 	assert.Nil(t, result, "Should return nil when OSLayer.FindProcess returns error")
 }
 
-func TestOSWrapper_FindProcess_Unix_ProcessSignalError(t *testing.T) {
+func TestProcessManager_FindProcess_Unix_ProcessSignalError(t *testing.T) {
 	for _, goos := range []string{"linux", "darwin"} {
 		t.Run(goos, func(t *testing.T) {
 			// Arrange
-			mockOSLayer := &oswrappermocks.MockOSLayer{}
+			mockOSLayer := &osmocks.MockOSLayer{}
 			defer mockOSLayer.AssertExpectations(t)
 
 			mockProcess := &osfacademocks.MockProcess{}
 			defer mockProcess.AssertExpectations(t)
 
 			processPid := 1234
-			signalError := errors.New("process not accessible")
+			signalError := assert.AnError
 
 			mockOSLayer.EXPECT().
 				GOOS().
@@ -155,10 +154,10 @@ func TestOSWrapper_FindProcess_Unix_ProcessSignalError(t *testing.T) {
 				Return(signalError).
 				Once()
 
-			wrapper := oswrapper.New(mockOSLayer)
+			pm := osadaptor.New(mockOSLayer)
 
 			// Act
-			result := wrapper.FindProcess(processPid)
+			result := pm.FindProcess(processPid)
 
 			// Assert
 			assert.Nil(t, result, "Should return nil when process signal check fails on Unix")
@@ -166,11 +165,11 @@ func TestOSWrapper_FindProcess_Unix_ProcessSignalError(t *testing.T) {
 	}
 }
 
-func TestOSWrapper_WaitForProcessToComplete_Unix_HappyPath(t *testing.T) {
+func TestProcessManager_WaitForProcessToComplete_Unix_HappyPath(t *testing.T) {
 	for _, goos := range []string{"linux", "darwin"} {
 		t.Run(goos, func(t *testing.T) {
 			// Arrange
-			mockOSLayer := &oswrappermocks.MockOSLayer{}
+			mockOSLayer := &osmocks.MockOSLayer{}
 			defer mockOSLayer.AssertExpectations(t)
 
 			mockProcess := &osfacademocks.MockProcess{}
@@ -186,26 +185,26 @@ func TestOSWrapper_WaitForProcessToComplete_Unix_HappyPath(t *testing.T) {
 			mockOSLayer.EXPECT().
 				FindProcess(processPid).
 				Return(mockProcess, nil).
-				Times(3) // Simulate 3 ticks, always finding the process
+				Times(3)
 
 			mockProcess.EXPECT().
 				Signal(syscall.Signal(0)).
 				Return(nil).
-				Twice() // Twice the process responds
+				Twice()
 
 			mockProcess.EXPECT().
 				Signal(syscall.Signal(0)).
 				Return(fmt.Errorf("process not found")).
-				Once() // But the third times, it does not
+				Once()
 
-			wrapper := oswrapper.New(mockOSLayer)
+			pm := osadaptor.New(mockOSLayer)
 
 			tickInterval := 1 * time.Millisecond
-			wrapper.SetCheckParentAliveInterval(tickInterval)
+			pm.SetCheckParentAliveInterval(tickInterval)
 
 			// Act
 			startTime := time.Now()
-			wrapper.WaitForProcessToComplete(processPid)
+			pm.WaitForProcessToComplete(processPid)
 			duration := time.Since(startTime)
 
 			// Assert
@@ -214,9 +213,9 @@ func TestOSWrapper_WaitForProcessToComplete_Unix_HappyPath(t *testing.T) {
 	}
 }
 
-func TestOSWrapper_WaitForProcessToComplete_Windows_HappyPath(t *testing.T) {
+func TestProcessManager_WaitForProcessToComplete_Windows_HappyPath(t *testing.T) {
 	// Arrange
-	mockOSLayer := &oswrappermocks.MockOSLayer{}
+	mockOSLayer := &osmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
 	mockProcess := &osfacademocks.MockProcess{}
@@ -243,13 +242,32 @@ func TestOSWrapper_WaitForProcessToComplete_Windows_HappyPath(t *testing.T) {
 		}).
 		Once()
 
-	wrapper := oswrapper.New(mockOSLayer)
+	pm := osadaptor.New(mockOSLayer)
 
 	// Act
 	startTime := time.Now()
-	wrapper.WaitForProcessToComplete(processPid)
+	pm.WaitForProcessToComplete(processPid)
 	duration := time.Since(startTime)
 
 	// Assert
 	assert.GreaterOrEqual(t, duration, processRunTime, "Should wait for process to complete on Windows")
+}
+
+func TestProcessManager_InterruptSignalChan_ReturnsChannel(t *testing.T) {
+	// Arrange
+	mockOSLayer := &osmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockOSLayer.EXPECT().
+		GOOS().
+		Return("linux").
+		Once()
+
+	pm := osadaptor.New(mockOSLayer)
+
+	// Act
+	signalChan := pm.InterruptSignalChan()
+
+	// Assert
+	assert.NotNil(t, signalChan, "InterruptSignalChan should return a non-nil channel")
 }

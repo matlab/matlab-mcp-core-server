@@ -38,7 +38,7 @@ func TestMATLABStartingDirSelector_GetMatlabStartDir_ConfigError(t *testing.T) {
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
-	expectedError := &messages.StartupErrors_BadFlag_Error{}
+	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().

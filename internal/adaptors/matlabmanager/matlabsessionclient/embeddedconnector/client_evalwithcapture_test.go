@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package embeddedconnector_test
 
@@ -10,7 +10,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	httpclientfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpclientfactory"
+	httpclientmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/http/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestClient_EvalWithCapture_DoErrors(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
-	mockHttpClient := &httpclientfactorymocks.MockHttpClient{}
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	mockHttpClient.EXPECT().
@@ -48,7 +48,7 @@ func TestClient_EvalWithCapture_ContextPropagation(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
-	mockHttpClient := &httpclientfactorymocks.MockHttpClient{}
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
 	type contextKeyType string

@@ -7,7 +7,7 @@ package mocks
 import (
 	"net/http"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -39,23 +39,23 @@ func (_m *MockHTTPServerFactory) EXPECT() *MockHTTPServerFactory_Expecter {
 }
 
 // NewServerOverUDS provides a mock function for the type MockHTTPServerFactory
-func (_mock *MockHTTPServerFactory) NewServerOverUDS(handlers map[string]http.HandlerFunc) (httpserverfactory.HttpServer, error) {
+func (_mock *MockHTTPServerFactory) NewServerOverUDS(handlers map[string]http.HandlerFunc) (server.HttpServer, error) {
 	ret := _mock.Called(handlers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewServerOverUDS")
 	}
 
-	var r0 httpserverfactory.HttpServer
+	var r0 server.HttpServer
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(map[string]http.HandlerFunc) (httpserverfactory.HttpServer, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(map[string]http.HandlerFunc) (server.HttpServer, error)); ok {
 		return returnFunc(handlers)
 	}
-	if returnFunc, ok := ret.Get(0).(func(map[string]http.HandlerFunc) httpserverfactory.HttpServer); ok {
+	if returnFunc, ok := ret.Get(0).(func(map[string]http.HandlerFunc) server.HttpServer); ok {
 		r0 = returnFunc(handlers)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(httpserverfactory.HttpServer)
+			r0 = ret.Get(0).(server.HttpServer)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(map[string]http.HandlerFunc) error); ok {
@@ -90,12 +90,12 @@ func (_c *MockHTTPServerFactory_NewServerOverUDS_Call) Run(run func(handlers map
 	return _c
 }
 
-func (_c *MockHTTPServerFactory_NewServerOverUDS_Call) Return(httpServer httpserverfactory.HttpServer, err error) *MockHTTPServerFactory_NewServerOverUDS_Call {
+func (_c *MockHTTPServerFactory_NewServerOverUDS_Call) Return(httpServer server.HttpServer, err error) *MockHTTPServerFactory_NewServerOverUDS_Call {
 	_c.Call.Return(httpServer, err)
 	return _c
 }
 
-func (_c *MockHTTPServerFactory_NewServerOverUDS_Call) RunAndReturn(run func(handlers map[string]http.HandlerFunc) (httpserverfactory.HttpServer, error)) *MockHTTPServerFactory_NewServerOverUDS_Call {
+func (_c *MockHTTPServerFactory_NewServerOverUDS_Call) RunAndReturn(run func(handlers map[string]http.HandlerFunc) (server.HttpServer, error)) *MockHTTPServerFactory_NewServerOverUDS_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -1,6 +1,6 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
-package httpclientfactory
+package client
 
 import (
 	"context"
@@ -17,13 +17,13 @@ type HttpClient interface {
 	CloseIdleConnections()
 }
 
-type HTTPClientFactory struct{}
+type Factory struct{}
 
-func New() *HTTPClientFactory {
-	return &HTTPClientFactory{}
+func NewFactory() *Factory {
+	return &Factory{}
 }
 
-func (f *HTTPClientFactory) NewClientForSelfSignedTLSServer(certificatePEM []byte) (HttpClient, error) {
+func (f *Factory) NewClientForSelfSignedTLSServer(certificatePEM []byte) (HttpClient, error) {
 	caCertPool := x509.NewCertPool()
 
 	if ok := caCertPool.AppendCertsFromPEM(certificatePEM); !ok {
@@ -48,7 +48,7 @@ func (f *HTTPClientFactory) NewClientForSelfSignedTLSServer(certificatePEM []byt
 	}, nil
 }
 
-func (f *HTTPClientFactory) NewClientOverUDS(socketPath string) HttpClient {
+func (f *Factory) NewClientOverUDS(socketPath string) HttpClient {
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			var d net.Dialer

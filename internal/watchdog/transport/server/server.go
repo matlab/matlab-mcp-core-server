@@ -8,14 +8,14 @@ import (
 	"io"
 	"net/http"
 
+	httpserver "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server/handler"
 )
 
 type Server struct {
-	httpServer httpserverfactory.HttpServer
+	httpServer httpserver.HttpServer
 	logger     entities.Logger
 }
 

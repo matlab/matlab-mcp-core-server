@@ -5,15 +5,15 @@ package server
 import (
 	"net/http"
 
+	httpserver "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server/handler"
 )
 
 type HTTPServerFactory interface {
-	NewServerOverUDS(handlers map[string]http.HandlerFunc) (httpserverfactory.HttpServer, error)
+	NewServerOverUDS(handlers map[string]http.HandlerFunc) (httpserver.HttpServer, error)
 }
 
 type HandlerFactory interface {

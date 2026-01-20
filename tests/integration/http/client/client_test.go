@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,7 +78,7 @@ func TestHTTPClientFactory_NewClientOverUDS_HappyPath(t *testing.T) {
 	require.NoError(t, response.Body.Close())
 }
 
-func newClientFactory() *httpclientfactory.HTTPClientFactory {
+func newClientFactory() *client.Factory {
 	application := wire.Initialize()
 	return application.HTTPClientFactory
 }

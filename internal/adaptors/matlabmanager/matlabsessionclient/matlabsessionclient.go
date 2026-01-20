@@ -1,15 +1,15 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabsessionclient
 
 import (
+	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 )
 
 type HttpClientFactory interface {
-	NewClientForSelfSignedTLSServer(certificatePEM []byte) (httpclientfactory.HttpClient, error)
+	NewClientForSelfSignedTLSServer(certificatePEM []byte) (httpclient.HttpClient, error)
 }
 
 type Factory struct {

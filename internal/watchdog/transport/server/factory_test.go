@@ -8,7 +8,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
-	httpserverfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpserverfactory"
+	httpservermocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/http/server"
 	servermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server"
 	handlermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server/handler"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +49,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockHandlerFactory := &servermocks.MockHandlerFactory{}
 	defer mockHandlerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}

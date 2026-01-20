@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,19 +37,19 @@ func (_m *MockHTTPClientFactory) EXPECT() *MockHTTPClientFactory_Expecter {
 }
 
 // NewClientOverUDS provides a mock function for the type MockHTTPClientFactory
-func (_mock *MockHTTPClientFactory) NewClientOverUDS(socketPath string) httpclientfactory.HttpClient {
+func (_mock *MockHTTPClientFactory) NewClientOverUDS(socketPath string) client.HttpClient {
 	ret := _mock.Called(socketPath)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewClientOverUDS")
 	}
 
-	var r0 httpclientfactory.HttpClient
-	if returnFunc, ok := ret.Get(0).(func(string) httpclientfactory.HttpClient); ok {
+	var r0 client.HttpClient
+	if returnFunc, ok := ret.Get(0).(func(string) client.HttpClient); ok {
 		r0 = returnFunc(socketPath)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(httpclientfactory.HttpClient)
+			r0 = ret.Get(0).(client.HttpClient)
 		}
 	}
 	return r0
@@ -79,12 +79,12 @@ func (_c *MockHTTPClientFactory_NewClientOverUDS_Call) Run(run func(socketPath s
 	return _c
 }
 
-func (_c *MockHTTPClientFactory_NewClientOverUDS_Call) Return(httpClient httpclientfactory.HttpClient) *MockHTTPClientFactory_NewClientOverUDS_Call {
+func (_c *MockHTTPClientFactory_NewClientOverUDS_Call) Return(httpClient client.HttpClient) *MockHTTPClientFactory_NewClientOverUDS_Call {
 	_c.Call.Return(httpClient)
 	return _c
 }
 
-func (_c *MockHTTPClientFactory_NewClientOverUDS_Call) RunAndReturn(run func(socketPath string) httpclientfactory.HttpClient) *MockHTTPClientFactory_NewClientOverUDS_Call {
+func (_c *MockHTTPClientFactory_NewClientOverUDS_Call) RunAndReturn(run func(socketPath string) client.HttpClient) *MockHTTPClientFactory_NewClientOverUDS_Call {
 	_c.Call.Return(run)
 	return _c
 }

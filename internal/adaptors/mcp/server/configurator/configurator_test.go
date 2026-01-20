@@ -138,7 +138,7 @@ func TestConfigurator_GetToolsToAdd_ConfigError(t *testing.T) {
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
-	expectedError := &messages.StartupErrors_BadFlag_Error{}
+	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().

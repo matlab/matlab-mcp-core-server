@@ -16,7 +16,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
 	transportmessages "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
-	httpmocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpclientfactory"
+	httpmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/http/client"
 	clientmocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

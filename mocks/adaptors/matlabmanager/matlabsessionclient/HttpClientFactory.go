@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,23 +37,23 @@ func (_m *MockHttpClientFactory) EXPECT() *MockHttpClientFactory_Expecter {
 }
 
 // NewClientForSelfSignedTLSServer provides a mock function for the type MockHttpClientFactory
-func (_mock *MockHttpClientFactory) NewClientForSelfSignedTLSServer(certificatePEM []byte) (httpclientfactory.HttpClient, error) {
+func (_mock *MockHttpClientFactory) NewClientForSelfSignedTLSServer(certificatePEM []byte) (client.HttpClient, error) {
 	ret := _mock.Called(certificatePEM)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewClientForSelfSignedTLSServer")
 	}
 
-	var r0 httpclientfactory.HttpClient
+	var r0 client.HttpClient
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func([]byte) (httpclientfactory.HttpClient, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func([]byte) (client.HttpClient, error)); ok {
 		return returnFunc(certificatePEM)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte) httpclientfactory.HttpClient); ok {
+	if returnFunc, ok := ret.Get(0).(func([]byte) client.HttpClient); ok {
 		r0 = returnFunc(certificatePEM)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(httpclientfactory.HttpClient)
+			r0 = ret.Get(0).(client.HttpClient)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func([]byte) error); ok {
@@ -88,12 +88,12 @@ func (_c *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call) Run(run fu
 	return _c
 }
 
-func (_c *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call) Return(httpClient httpclientfactory.HttpClient, err error) *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call {
+func (_c *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call) Return(httpClient client.HttpClient, err error) *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call {
 	_c.Call.Return(httpClient, err)
 	return _c
 }
 
-func (_c *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call) RunAndReturn(run func(certificatePEM []byte) (httpclientfactory.HttpClient, error)) *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call {
+func (_c *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call) RunAndReturn(run func(certificatePEM []byte) (client.HttpClient, error)) *MockHttpClientFactory_NewClientForSelfSignedTLSServer_Call {
 	_c.Call.Return(run)
 	return _c
 }

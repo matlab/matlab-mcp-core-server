@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabsessionclient_test
 
@@ -7,8 +7,8 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
+	httpclientmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/http/client"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabsessionclient"
-	httpclientfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpclientfactory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +30,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockHTTPClientFactory := &mocks.MockHttpClientFactory{}
 	defer mockHTTPClientFactory.AssertExpectations(t)
 
-	mockHTTPClient := &httpclientfactorymocks.MockHttpClient{}
+	mockHTTPClient := &httpclientmocks.MockHttpClient{}
 	defer mockHTTPClient.AssertExpectations(t)
 
 	expectedCertificatePEM := []byte("some cert")

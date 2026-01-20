@@ -1,11 +1,11 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package embeddedconnector
 
 import (
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
+	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 )
 
-func (c *Client) SetHttpClient(httpClient httpclientfactory.HttpClient) {
+func (c *Client) SetHttpClient(httpClient httpclient.HttpClient) {
 	c.httpClient = httpClient
 }

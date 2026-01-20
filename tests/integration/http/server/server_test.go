@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -97,7 +97,7 @@ func TestHTTPServerFactory_NewServerOverUDS_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedSecondBody, string(body))
 }
 
-func newServerFactory() *httpserverfactory.HTTPServerFactory {
+func newServerFactory() *server.Factory {
 	application := wire.Initialize()
 	return application.HTTPServerFactory
 }

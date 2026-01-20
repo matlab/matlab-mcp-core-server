@@ -12,9 +12,9 @@ import (
 	"os"
 	"time"
 
+	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
 )
 
@@ -31,7 +31,7 @@ var (
 )
 
 type Client struct {
-	httpClient          httpclientfactory.HttpClient
+	httpClient          httpclient.HttpClient
 	osLayer             OSLayer
 	httpClientFactory   HTTPClientFactory
 	loggerFactory       LoggerFactory
@@ -68,7 +68,7 @@ func (c *Client) Connect(socketPath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.socketWaitTimeout)
 	defer cancel()
 
-	httpClient, err := retry.Retry(ctx, func() (httpclientfactory.HttpClient, bool, error) {
+	httpClient, err := retry.Retry(ctx, func() (httpclient.HttpClient, bool, error) {
 		_, err := c.osLayer.Stat(socketPath)
 
 		if err == nil {
@@ -117,7 +117,7 @@ func (c *Client) SendStop() (messages.ShutdownResponse, error) {
 	)
 }
 
-func post[RequestType any, ResponseType any](httpClient httpclientfactory.HttpClient, logger entities.Logger, path string, reqBody RequestType) (ResponseType, error) {
+func post[RequestType any, ResponseType any](httpClient httpclient.HttpClient, logger entities.Logger, path string, reqBody RequestType) (ResponseType, error) {
 	var zeroValueResp ResponseType
 
 	if httpClient == nil {

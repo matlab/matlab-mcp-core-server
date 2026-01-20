@@ -3,7 +3,6 @@
 package process_test
 
 import (
-	"errors"
 	"path/filepath"
 	"testing"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	processmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/watchdog/process"
 	osfacademocks "github.com/matlab/matlab-mcp-core-server/mocks/facades/osfacade"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -102,7 +102,7 @@ func TestNewProcess_ExecutableError(t *testing.T) {
 
 	mockOSLayer.EXPECT().
 		Executable().
-		Return("", errors.New("executable error")).
+		Return("", assert.AnError).
 		Once()
 
 	// Act
@@ -170,7 +170,7 @@ func TestNewProcess_CommandStartError(t *testing.T) {
 
 	mockCmd.EXPECT().
 		Start().
-		Return(errors.New("start process error")).
+		Return(assert.AnError).
 		Once()
 
 	// Act

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package embeddedconnector_integration_test
 
@@ -8,17 +8,17 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_Eval_HappyPath(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "disp('Hello World')"
@@ -62,7 +62,7 @@ func TestClient_Eval_HappyPath(t *testing.T) {
 
 func TestClient_Eval_MATLABError(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedCode := "invalid_function()"
@@ -107,7 +107,7 @@ func TestClient_Eval_MATLABError(t *testing.T) {
 
 func TestClient_Eval_HTTPError(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForEvaluation(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -134,7 +134,7 @@ func TestClient_Eval_HTTPError(t *testing.T) {
 
 func TestClient_Eval_NoResponseMessages(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForEvaluation(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -170,7 +170,7 @@ func TestClient_Eval_NoResponseMessages(t *testing.T) {
 
 func TestClient_Eval_InvalidJSONResponse(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForEvaluation(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -200,7 +200,7 @@ func TestClient_Eval_InvalidJSONResponse(t *testing.T) {
 
 func TestClient_Eval_ContextCancellation(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForEvaluation(t, func(responseWriter http.ResponseWriter, request *http.Request) {

@@ -64,7 +64,7 @@ func TestFactory_NewServer_ConfigError(t *testing.T) {
 
 	expectedName := "test-server"
 	expectedInstructions := "test instructions"
-	expectedError := &messages.StartupErrors_BadFlag_Error{}
+	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().

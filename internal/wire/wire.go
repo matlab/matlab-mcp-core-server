@@ -16,6 +16,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabstartingdirselector"
+	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
+	httpserver "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
@@ -61,10 +63,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/startmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/stopmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/utils/pathvalidator"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpserverfactory"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/ossignaler"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/oswrapper"
+	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
 	watchdogprocess "github.com/matlab/matlab-mcp-core-server/internal/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/processhandler"
 	transportclient "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
@@ -76,8 +75,8 @@ import (
 type Application struct {
 	ModeSelector      *modeselector.ModeSelector
 	MessageCatalog    *messagecatalog.MessageCatalog
-	HTTPClientFactory *httpclientfactory.HTTPClientFactory
-	HTTPServerFactory *httpserverfactory.HTTPServerFactory
+	HTTPClientFactory *httpclient.Factory
+	HTTPServerFactory *httpserver.Factory
 }
 
 func Initialize() *Application {
@@ -98,20 +97,20 @@ func Initialize() *Application {
 		wire.Bind(new(watchdogprocess.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(watchdogprocess.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(watchdogprocess.ProcessHandler), new(*processhandler.ProcessHandler)),
-		wire.Bind(new(watchdogprocess.OSSignaler), new(*ossignaler.OSSignaler)),
+		wire.Bind(new(watchdogprocess.OSSignaler), new(*osadaptor.ProcessManager)),
 		wire.Bind(new(watchdogprocess.ServerHandlerFactory), new(*handler.Factory)),
 		wire.Bind(new(watchdogprocess.ServerFactory), new(*transportserver.Factory)),
 		wire.Bind(new(watchdogprocess.SocketFactory), new(*socket.Factory)),
 
 		// Watchdog Transport Server Factory
 		transportserver.NewFactory,
-		wire.Bind(new(transportserver.HTTPServerFactory), new(*httpserverfactory.HTTPServerFactory)),
+		wire.Bind(new(transportserver.HTTPServerFactory), new(*httpserver.Factory)),
 		wire.Bind(new(transportserver.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(transportserver.HandlerFactory), new(*handler.Factory)),
 
 		// HTTP Server Factory
-		httpserverfactory.New,
-		wire.Bind(new(httpserverfactory.OSLayer), new(*osfacade.OsFacade)),
+		httpserver.NewFactory,
+		wire.Bind(new(httpserver.OSLayer), new(*osfacade.OsFacade)),
 
 		// Orchestrator
 		orchestrator.New,
@@ -120,7 +119,7 @@ func Initialize() *Application {
 		wire.Bind(new(orchestrator.Server), new(*server.Server)),
 		wire.Bind(new(orchestrator.WatchdogClient), new(*watchdogclient.Watchdog)),
 		wire.Bind(new(orchestrator.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(orchestrator.OSSignaler), new(*ossignaler.OSSignaler)),
+		wire.Bind(new(orchestrator.OSSignaler), new(*osadaptor.ProcessManager)),
 		wire.Bind(new(orchestrator.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
 		wire.Bind(new(orchestrator.DirectoryFactory), new(*directory.Factory)),
 
@@ -213,7 +212,7 @@ func Initialize() *Application {
 		transportclient.NewFactory,
 		wire.Bind(new(transportclient.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(transportclient.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(transportclient.HTTPClientFactory), new(*httpclientfactory.HTTPClientFactory)),
+		wire.Bind(new(transportclient.HTTPClientFactory), new(*httpclient.Factory)),
 
 		// Global MATLAB
 		globalmatlab.New,
@@ -291,7 +290,7 @@ func Initialize() *Application {
 
 		// MATLAB Session Client Factory
 		matlabsessionclient.NewFactory,
-		wire.Bind(new(matlabsessionclient.HttpClientFactory), new(*httpclientfactory.HTTPClientFactory)),
+		wire.Bind(new(matlabsessionclient.HttpClientFactory), new(*httpclient.Factory)),
 
 		// Shared Dependencies
 
@@ -302,11 +301,7 @@ func Initialize() *Application {
 		// Process Handler
 		processhandler.New,
 		wire.Bind(new(processhandler.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(processhandler.OSWrapper), new(*oswrapper.OSWrapper)),
-
-		// OS Wrapper
-		oswrapper.New,
-		wire.Bind(new(oswrapper.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(processhandler.OSWrapper), new(*osadaptor.ProcessManager)),
 
 		// HTTP Server Handler Factory
 		handler.NewFactory,
@@ -351,10 +346,11 @@ func Initialize() *Application {
 		wire.Bind(new(files.OSLayer), new(*osfacade.OsFacade)),
 
 		// HTTP Client Factory
-		httpclientfactory.New,
+		httpclient.NewFactory,
 
-		// OS Signaler
-		ossignaler.New,
+		// Process Manager
+		osadaptor.New,
+		wire.Bind(new(osadaptor.OSLayer), new(*osfacade.OsFacade)),
 
 		// Facades
 		osfacade.New,

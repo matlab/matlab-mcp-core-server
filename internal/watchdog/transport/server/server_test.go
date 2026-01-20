@@ -13,7 +13,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/server"
-	httpserverfactorymocks "github.com/matlab/matlab-mcp-core-server/mocks/utils/httpserverfactory"
+	httpservermocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/http/server"
 	servermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server"
 	handlermocks "github.com/matlab/matlab-mcp-core-server/mocks/watchdog/transport/server/handler"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func TestServer_Start_HappyPath(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -80,7 +80,7 @@ func TestServer_Stop_HappyPath(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -117,7 +117,7 @@ func TestServer_HandleProcessToKill(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -166,7 +166,7 @@ func TestServer_HandleProcessToKill_Error(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -215,7 +215,7 @@ func TestServer_HandleShutdown(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -261,7 +261,7 @@ func TestServer_HandleShutdown_Error(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}
@@ -307,7 +307,7 @@ func TestServer_AnyHandler_IOReadAllError(t *testing.T) {
 	mockHTTPServerFactory := &servermocks.MockHTTPServerFactory{}
 	defer mockHTTPServerFactory.AssertExpectations(t)
 
-	mockHTTPServer := &httpserverfactorymocks.MockHttpServer{}
+	mockHTTPServer := &httpservermocks.MockHttpServer{}
 	defer mockHTTPServer.AssertExpectations(t)
 
 	mockHandler := &handlermocks.MockHandler{}

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package embeddedconnector_integration_test
 
@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +22,7 @@ const pingTimeout = 40 * time.Millisecond
 
 func TestClient_Ping_HappyPath(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForState(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -57,7 +57,7 @@ func TestClient_Ping_HappyPath(t *testing.T) {
 
 func TestClient_Ping_MATLABNotAvailable(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedErrorMessage = "MATLAB is not available"
@@ -97,7 +97,7 @@ func TestClient_Ping_MATLABNotAvailable(t *testing.T) {
 
 func TestClient_Ping_HTTPError(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForState(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -121,7 +121,7 @@ func TestClient_Ping_HTTPError(t *testing.T) {
 
 func TestClient_Ping_NoResponseMessages(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForState(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -154,7 +154,7 @@ func TestClient_Ping_NoResponseMessages(t *testing.T) {
 
 func TestClient_Ping_InvalidJSONResponse(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForState(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -181,7 +181,7 @@ func TestClient_Ping_InvalidJSONResponse(t *testing.T) {
 
 func TestClient_Ping_ContextCancellation(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	connectionDetails := startTestServerForEvaluation(t, func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -203,7 +203,7 @@ func TestClient_Ping_ContextCancellation(t *testing.T) {
 
 func TestClient_Ping_RetriesOnError(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const failuresBeforeSuccess = 2

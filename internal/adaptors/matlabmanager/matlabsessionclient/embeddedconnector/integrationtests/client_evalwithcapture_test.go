@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package embeddedconnector_integration_test
 
@@ -8,17 +8,17 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	"github.com/matlab/matlab-mcp-core-server/internal/utils/httpclientfactory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_EvalWithCapture_HappyPath(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "disp('Hello World')"
@@ -74,7 +74,7 @@ func TestClient_EvalWithCapture_HappyPath(t *testing.T) {
 
 func TestClient_EvalWithCapture_ReturnImages(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "plot(1:10)"
@@ -132,7 +132,7 @@ func TestClient_EvalWithCapture_ReturnImages(t *testing.T) {
 
 func TestClient_EvalWithCapture_ReturnStreams(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "undefined_function"
@@ -194,7 +194,7 @@ func TestClient_EvalWithCapture_ReturnStreams(t *testing.T) {
 
 func TestClient_EvalWithCapture_MultipleStreams_SameName(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "disp('line1'); disp('line2')"
@@ -264,7 +264,7 @@ func TestClient_EvalWithCapture_MultipleStreams_SameName(t *testing.T) {
 
 func TestClient_EvalWithCapture_MultipleStreams_DifferentNames(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "fprintf('output'); warning('warning message')"
@@ -344,7 +344,7 @@ func TestClient_EvalWithCapture_MultipleStreams_DifferentNames(t *testing.T) {
 
 func TestClient_EvalWithCapture_MixedStreamsAndResults(t *testing.T) {
 	// Arrange
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "x = 5; disp('calculating'); y = x * 2; plot(1:y)"
@@ -426,7 +426,7 @@ func TestClient_EvalWithCapture_MixedStreamsAndResults(t *testing.T) {
 }
 
 func TestClient_EvalWithCapture_StreamsWithInterruptionByExecuteResult(t *testing.T) {
-	httpClientFactory := httpclientfactory.New()
+	httpClientFactory := client.NewFactory()
 	mockLogger := testutils.NewInspectableLogger()
 
 	const expectedCode = "warning('first'); x = 1; warning('second')"
