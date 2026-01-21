@@ -35,10 +35,16 @@ R2025a or newer
 - End bulleted lists with a trailing backslash
 - Example:
   ```
-  %[text] - First item\
-  %[text] - Second item\
-  %[text] - Third item\
+  %[text] - First item
+  %[text] - Second item
+  %[text] - Third item \
   ```
+
+### Output Preferences
+- Prefer one output per code block
+- Avoid multiple outputs per code block, except during loops or repeated function calls
+- To display text values, leave off the semicolon
+- Do not use `fprintf` or similar commands to display text
 
 ## Script Template Structure
 
@@ -82,10 +88,10 @@ When generating Live Scripts:
 
 ## Benefits of Plain Text Format
 
-- **Version Control Compatible**: Easy to track changes in Git
-- **AI Development Ready**: Works seamlessly with AI coding assistants
-- **Collaboration Friendly**: Simple to review and merge in pull requests
-- **Portable**: Can be edited in any text editor
+- Easy to track changes in Git
+- Works with AI coding assistants
+- Simple to review and merge in pull requests
+- Can be edited in any text editor
 
 ## Example Structure
 
