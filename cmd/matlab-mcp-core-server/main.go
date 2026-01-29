@@ -4,25 +4,26 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/wire"
+	"github.com/matlab/matlab-mcp-core-server/pkg/server"
+
+	_ "embed"
 )
 
+//go:embed assets/instructions.txt
+var instructions string
+
 func main() {
-	application := wire.Initialize()
+	serverDefinition := server.Definition[any]{
+		Name:         "matlab-mcp-core-server",
+		Title:        "MATLAB MCP Core Server",
+		Instructions: instructions,
+	}
+	serverInstance := server.New(serverDefinition)
 
 	ctx := context.Background()
+	exitCode := serverInstance.StartAndWaitForCompletion(ctx)
 
-	if err := application.ModeSelector.StartAndWaitForCompletion(ctx); err != nil {
-		errorMessage, ok := application.MessageCatalog.GetFromGeneralError(err)
-		if ok {
-			fmt.Fprintf(os.Stderr, "%s\n", errorMessage)
-			os.Exit(1)
-		}
-		os.Exit(1)
-	}
-
-	os.Exit(0)
+	os.Exit(exitCode)
 }

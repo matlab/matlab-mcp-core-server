@@ -36,6 +36,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/configurator"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/basetool"
 	evalmatlabcodemultisessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
@@ -79,7 +80,7 @@ type Application struct {
 	HTTPServerFactory *httpserver.Factory
 }
 
-func Initialize() *Application {
+func Initialize(serverDefinition definition.Definition) *Application {
 	wire.Build(
 		// Application
 		wire.Struct(new(Application), "*"),
@@ -133,6 +134,7 @@ func Initialize() *Application {
 		// MCP Server (SDK)
 		sdk.NewFactory,
 		wire.Bind(new(sdk.ConfigFactory), new(*config.Factory)),
+		wire.Bind(new(sdk.Definition), new(definition.Definition)),
 
 		// MCP Server Configurator
 		configurator.New,

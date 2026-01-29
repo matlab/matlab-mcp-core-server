@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package mcpclient
 
@@ -82,6 +82,11 @@ func (s *MCPClientSession) Close() error {
 // This is useful for debugging test failures.
 func (s *MCPClientSession) Stderr() string {
 	return s.stderr.String()
+}
+
+// InitializeResult returns the result of the Initialize call.
+func (s *MCPClientSession) InitializeResult() *mcp.InitializeResult {
+	return s.session.InitializeResult()
 }
 
 // CallTool calls an MCP tool and asserts it doesn't error

@@ -21,7 +21,7 @@ type LifecycleSignaler interface {
 }
 
 type MCPSDKServerFactory interface {
-	NewServer(name string, instructions string) (*mcp.Server, messages.Error)
+	NewServer() (*mcp.Server, messages.Error)
 }
 
 type MCPServerConfigurator interface {
@@ -58,7 +58,7 @@ func (s *Server) Run() error {
 		return messagesErr
 	}
 
-	mcpServer, messagesErr := s.mcpSDKServerFactory.NewServer(name, instructions)
+	mcpServer, messagesErr := s.mcpSDKServerFactory.NewServer()
 	if messagesErr != nil {
 		return messagesErr
 	}

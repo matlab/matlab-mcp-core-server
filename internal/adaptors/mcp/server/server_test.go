@@ -65,7 +65,7 @@ func TestServer_Run_HappyPath(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(expectedMCPServer, nil).
 		Once()
 
@@ -177,7 +177,7 @@ func TestServer_Run_MCPSDKServerFactoryError(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(nil, expectedError).
 		Once()
 
@@ -217,7 +217,7 @@ func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(expectedMCPServer, nil).
 		Once()
 
@@ -268,7 +268,7 @@ func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(expectedMCPServer, nil).
 		Once()
 
@@ -320,7 +320,7 @@ func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(expectedMCPServer, nil).
 		Once()
 
@@ -388,7 +388,7 @@ func TestServer_Run_GetToolsToAddError(t *testing.T) {
 		Once()
 
 	mockMCPSDKServerFactory.EXPECT().
-		NewServer(server.Name(), server.Instructions()).
+		NewServer().
 		Return(expectedMCPServer, nil).
 		Once()
 

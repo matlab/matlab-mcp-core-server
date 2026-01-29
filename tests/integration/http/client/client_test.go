@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -79,7 +80,8 @@ func TestHTTPClientFactory_NewClientOverUDS_HappyPath(t *testing.T) {
 }
 
 func newClientFactory() *client.Factory {
-	application := wire.Initialize()
+	serverDefinition := definition.New("", "", "")
+	application := wire.Initialize(serverDefinition)
 	return application.HTTPClientFactory
 }
 

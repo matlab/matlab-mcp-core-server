@@ -12,30 +12,40 @@ type ConfigFactory interface {
 	Config() (config.Config, messages.Error)
 }
 
+type Definition interface {
+	Name() string
+	Title() string
+	Instructions() string
+}
+
 type Factory struct {
 	configFactory ConfigFactory
+	definition    Definition
 }
 
 func NewFactory(
 	configFactory ConfigFactory,
+	definition Definition,
 ) *Factory {
 	return &Factory{
 		configFactory: configFactory,
+		definition:    definition,
 	}
 }
 
-func (f *Factory) NewServer(name string, instructions string) (*mcp.Server, messages.Error) {
+func (f *Factory) NewServer() (*mcp.Server, messages.Error) {
 	config, err := f.configFactory.Config()
 	if err != nil {
 		return nil, err
 	}
 
 	impl := &mcp.Implementation{
-		Name:    name,
+		Name:    f.definition.Name(),
+		Title:   f.definition.Title(),
 		Version: config.Version(),
 	}
 	options := &mcp.ServerOptions{
-		Instructions: instructions,
+		Instructions: f.definition.Instructions(),
 	}
 
 	return mcp.NewServer(impl, options), nil

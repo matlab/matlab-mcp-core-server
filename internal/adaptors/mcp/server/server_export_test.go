@@ -9,11 +9,3 @@ import (
 func (s *Server) SetServerTransport(serverTransport mcp.Transport) {
 	s.serverTransport = serverTransport
 }
-
-func Name() string {
-	return name
-}
-
-func Instructions() string {
-	return instructions
-}

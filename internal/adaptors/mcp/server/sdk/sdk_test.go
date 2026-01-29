@@ -18,8 +18,11 @@ func TestNewFactory_HappyPath(t *testing.T) {
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
+	mockDefinition := &mocks.MockDefinition{}
+	defer mockDefinition.AssertExpectations(t)
+
 	// Act
-	factory := sdk.NewFactory(mockConfigFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition)
 
 	// Assert
 	assert.NotNil(t, factory, "Factory should not be nil")
@@ -33,8 +36,12 @@ func TestFactory_NewServer_HappyPath(t *testing.T) {
 	mockConfig := &configmocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
+	mockDefinition := &mocks.MockDefinition{}
+	defer mockDefinition.AssertExpectations(t)
+
 	expectedVersion := "1.0.0"
 	expectedName := "test-server"
+	expectedTitle := "Test Server"
 	expectedInstructions := "test instructions"
 
 	mockConfigFactory.EXPECT().
@@ -47,10 +54,25 @@ func TestFactory_NewServer_HappyPath(t *testing.T) {
 		Return(expectedVersion).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory)
+	mockDefinition.EXPECT().
+		Name().
+		Return(expectedName).
+		Once()
+
+	mockDefinition.EXPECT().
+		Title().
+		Return(expectedTitle).
+		Once()
+
+	mockDefinition.EXPECT().
+		Instructions().
+		Return(expectedInstructions).
+		Once()
+
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition)
 
 	// Act
-	server, err := factory.NewServer(expectedName, expectedInstructions)
+	server, err := factory.NewServer()
 
 	// Assert
 	require.NoError(t, err, "NewServer should not return an error")
@@ -62,8 +84,8 @@ func TestFactory_NewServer_ConfigError(t *testing.T) {
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
-	expectedName := "test-server"
-	expectedInstructions := "test instructions"
+	mockDefinition := &mocks.MockDefinition{}
+	defer mockDefinition.AssertExpectations(t)
 	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
@@ -71,12 +93,12 @@ func TestFactory_NewServer_ConfigError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition)
 
 	// Act
-	server, err := factory.NewServer(expectedName, expectedInstructions)
+	server, err := factory.NewServer()
 
 	// Assert
-	require.ErrorIs(t, err, expectedError, "NewServer should return the error from Config")
+	require.ErrorIs(t, err, expectedError)
 	assert.Nil(t, server, "Server should be nil when error occurs")
 }

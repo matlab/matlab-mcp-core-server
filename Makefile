@@ -63,7 +63,7 @@ else
 	LDFLAGS_ARG :=
 endif
 
-all: wire mockery lint unit-tests integration-tests build
+all: wire mockery lint unit-tests integration-tests functional-tests build
 
 mcp-inspector: build
 	npx @modelcontextprotocol/inspector matlab-mcp-core-server
@@ -144,20 +144,26 @@ endif
 # Testing
 
 unit-tests:
-	go tool gotestsum --packages="./internal/... ./tests/testutils/..." -- -race -coverprofile cover.out
+	go tool gotestsum --packages="./internal/... ./pkg/... ./tests/testutils/..." -- -race -coverprofile cover.out
 	
 integration-tests:
 	go tool gotestsum --packages="./tests/integration/..." -- -race
+	
+functional-tests:
+	go tool gotestsum --packages="./tests/functional/..." -- -race
 
 system-tests:
 	go tool gotestsum --packages="./tests/system/..." -- -race -count=1 -timeout 30m
 	@$(MAKE) --no-print-directory check-matlab-leaks
 
 ci-unit-tests:
-	go test $(RACE_FLAG) -json -count=1 -coverprofile cover.out ./internal/... ./tests/testutils/...
+	go test $(RACE_FLAG) -json -count=1 -coverprofile cover.out ./internal/... ./pkg/... ./tests/testutils/...
 
 ci-integration-tests:
 	go test $(RACE_FLAG) -json -count=1 ./tests/integration/...
+	
+ci-functional-tests:
+	go test $(RACE_FLAG) -json -count=1 ./tests/functional/...
 
 ci-system-tests:
 	go test $(RACE_FLAG) -timeout 120m -json -count=1 ./tests/system/...

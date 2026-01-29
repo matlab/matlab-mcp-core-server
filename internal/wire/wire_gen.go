@@ -36,6 +36,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	server3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/configurator"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
 	evalmatlabcode2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabs2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
@@ -72,7 +73,7 @@ import (
 
 // Injectors from wire.go:
 
-func Initialize() *Application {
+func Initialize(serverDefinition definition.Definition) *Application {
 	messageCatalog := messagecatalog.New()
 	parserParser := parser.New(messageCatalog)
 	osFacade := osfacade.New()
@@ -88,7 +89,7 @@ func Initialize() *Application {
 	socketFactory := socket.NewFactory(directoryFactory, osFacade)
 	watchdogWatchdog := watchdog.New(loggerFactory, osFacade, processHandler, processManager, handlerFactory, factory2, socketFactory)
 	lifecycleSignaler := lifecyclesignaler.New()
-	sdkFactory := sdk.NewFactory(factory)
+	sdkFactory := sdk.NewFactory(factory, serverDefinition)
 	fileFacade := filefacade.New()
 	getter := matlabroot.New(osFacade, fileFacade)
 	ioFacade := iofacade.New()
