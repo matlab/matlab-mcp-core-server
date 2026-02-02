@@ -8,6 +8,7 @@ package wire
 
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/inputs/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
@@ -36,8 +37,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	server3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/configurator"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	evalmatlabcode2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabs2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
 	startmatlabsession2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
@@ -73,7 +74,7 @@ import (
 
 // Injectors from wire.go:
 
-func Initialize(serverDefinition definition.Definition) *Application {
+func Initialize(serverDefinition ApplicationDefinition) *Application {
 	messageCatalog := messagecatalog.New()
 	parserParser := parser.New(messageCatalog)
 	osFacade := osfacade.New()
@@ -132,7 +133,7 @@ func Initialize(serverDefinition definition.Definition) *Application {
 	resource := codingguidelines.New(loggerFactory)
 	plaintextlivecodegenerationResource := plaintextlivecodegeneration.New(loggerFactory)
 	configuratorConfigurator := configurator.New(factory, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
-	serverServer := server3.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
+	serverServer := server3.New(serverDefinition, sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
 	orchestratorOrchestrator := orchestrator.New(lifecycleSignaler, factory, serverServer, watchdog3, loggerFactory, processManager, globalMATLAB, directoryFactory)
 	modeSelector := modeselector.New(factory, parserParser, watchdogWatchdog, orchestratorOrchestrator, osFacade)
 	application := &Application{
@@ -140,6 +141,7 @@ func Initialize(serverDefinition definition.Definition) *Application {
 		MessageCatalog:    messageCatalog,
 		HTTPClientFactory: clientFactory,
 		HTTPServerFactory: serverFactory,
+		LoggerFactory:     loggerFactory,
 	}
 	return application
 }
@@ -151,4 +153,12 @@ type Application struct {
 	MessageCatalog    *messagecatalog.MessageCatalog
 	HTTPClientFactory *client.Factory
 	HTTPServerFactory *server.Factory
+	LoggerFactory     *logger.Factory
+}
+
+type ApplicationDefinition interface {
+	Name() string
+	Title() string
+	Instructions() string
+	Tools(loggerFactory definition.LoggerFactory) []tools.Tool
 }

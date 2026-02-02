@@ -18,7 +18,6 @@ type AnnotationProvider interface {
 
 type LoggerFactory interface {
 	NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error)
-	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type ToolAdder[ToolInput, ToolOutput any] interface {

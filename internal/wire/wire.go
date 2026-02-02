@@ -7,6 +7,7 @@ package wire
 import (
 	"github.com/google/wire"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/inputs/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
@@ -36,8 +37,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/configurator"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/basetool"
 	evalmatlabcodemultisessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabstool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
@@ -49,6 +50,7 @@ import (
 	runmatlabfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
+	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
 	watchdogclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/watchdog/process"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -64,7 +66,6 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/startmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/stopmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/utils/pathvalidator"
-	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
 	watchdogprocess "github.com/matlab/matlab-mcp-core-server/internal/watchdog"
 	"github.com/matlab/matlab-mcp-core-server/internal/watchdog/processhandler"
 	transportclient "github.com/matlab/matlab-mcp-core-server/internal/watchdog/transport/client"
@@ -78,9 +79,17 @@ type Application struct {
 	MessageCatalog    *messagecatalog.MessageCatalog
 	HTTPClientFactory *httpclient.Factory
 	HTTPServerFactory *httpserver.Factory
+	LoggerFactory     *logger.Factory
 }
 
-func Initialize(serverDefinition definition.Definition) *Application {
+type ApplicationDefinition interface {
+	Name() string
+	Title() string
+	Instructions() string
+	Tools(loggerFactory definition.LoggerFactory) []tools.Tool
+}
+
+func Initialize(serverDefinition ApplicationDefinition) *Application {
 	wire.Build(
 		// Application
 		wire.Struct(new(Application), "*"),
@@ -126,6 +135,7 @@ func Initialize(serverDefinition definition.Definition) *Application {
 
 		// MCP Server
 		server.New,
+		wire.Bind(new(server.AdditionalToolsProvider), new(ApplicationDefinition)),
 		wire.Bind(new(server.MCPSDKServerFactory), new(*sdk.Factory)),
 		wire.Bind(new(server.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(server.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
@@ -134,7 +144,7 @@ func Initialize(serverDefinition definition.Definition) *Application {
 		// MCP Server (SDK)
 		sdk.NewFactory,
 		wire.Bind(new(sdk.ConfigFactory), new(*config.Factory)),
-		wire.Bind(new(sdk.Definition), new(definition.Definition)),
+		wire.Bind(new(sdk.Definition), new(ApplicationDefinition)),
 
 		// MCP Server Configurator
 		configurator.New,

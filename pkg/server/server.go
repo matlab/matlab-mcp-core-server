@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
+	internaltools "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire/adaptor"
@@ -17,6 +18,8 @@ type Definition[Dependencies any] struct {
 	Name         string
 	Title        string
 	Instructions string
+
+	ToolsProvider func(toolProviderResources ToolProviderResources[Dependencies]) []Tool
 }
 
 type Server[Dependencies any] struct {
@@ -36,10 +39,20 @@ func New[Dependencies any](thisDefinition Definition[Dependencies]) *Server[Depe
 }
 
 func (s *Server[Dependencies]) StartAndWaitForCompletion(ctx context.Context) int {
+	toolProviderResources := ToolProviderResources[Dependencies]{}
+
 	serverDefinition := definition.New(
 		s.serverDefinition.Name,
 		s.serverDefinition.Title,
 		s.serverDefinition.Instructions,
+		func(loggerFactory definition.LoggerFactory) []internaltools.Tool {
+			if s.serverDefinition.ToolsProvider == nil {
+				return nil
+			}
+
+			tools := s.serverDefinition.ToolsProvider(toolProviderResources)
+			return toolArray(tools).toInternal(loggerFactory)
+		},
 	)
 	application := s.applicationFactory.New(serverDefinition)
 

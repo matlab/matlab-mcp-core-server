@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/wire/adaptor"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -38,16 +37,16 @@ func (_m *MockApplicationFactory) EXPECT() *MockApplicationFactory_Expecter {
 }
 
 // New provides a mock function for the type MockApplicationFactory
-func (_mock *MockApplicationFactory) New(definition1 definition.Definition) adaptor.Application {
-	ret := _mock.Called(definition1)
+func (_mock *MockApplicationFactory) New(definition adaptor.ApplicationDefinition) adaptor.Application {
+	ret := _mock.Called(definition)
 
 	if len(ret) == 0 {
 		panic("no return value specified for New")
 	}
 
 	var r0 adaptor.Application
-	if returnFunc, ok := ret.Get(0).(func(definition.Definition) adaptor.Application); ok {
-		r0 = returnFunc(definition1)
+	if returnFunc, ok := ret.Get(0).(func(adaptor.ApplicationDefinition) adaptor.Application); ok {
+		r0 = returnFunc(definition)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(adaptor.Application)
@@ -62,16 +61,16 @@ type MockApplicationFactory_New_Call struct {
 }
 
 // New is a helper method to define mock.On call
-//   - definition1 definition.Definition
-func (_e *MockApplicationFactory_Expecter) New(definition1 interface{}) *MockApplicationFactory_New_Call {
-	return &MockApplicationFactory_New_Call{Call: _e.mock.On("New", definition1)}
+//   - definition adaptor.ApplicationDefinition
+func (_e *MockApplicationFactory_Expecter) New(definition interface{}) *MockApplicationFactory_New_Call {
+	return &MockApplicationFactory_New_Call{Call: _e.mock.On("New", definition)}
 }
 
-func (_c *MockApplicationFactory_New_Call) Run(run func(definition1 definition.Definition)) *MockApplicationFactory_New_Call {
+func (_c *MockApplicationFactory_New_Call) Run(run func(definition adaptor.ApplicationDefinition)) *MockApplicationFactory_New_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 definition.Definition
+		var arg0 adaptor.ApplicationDefinition
 		if args[0] != nil {
-			arg0 = args[0].(definition.Definition)
+			arg0 = args[0].(adaptor.ApplicationDefinition)
 		}
 		run(
 			arg0,
@@ -85,7 +84,7 @@ func (_c *MockApplicationFactory_New_Call) Return(application adaptor.Applicatio
 	return _c
 }
 
-func (_c *MockApplicationFactory_New_Call) RunAndReturn(run func(definition1 definition.Definition) adaptor.Application) *MockApplicationFactory_New_Call {
+func (_c *MockApplicationFactory_New_Call) RunAndReturn(run func(definition adaptor.ApplicationDefinition) adaptor.Application) *MockApplicationFactory_New_Call {
 	_c.Call.Return(run)
 	return _c
 }

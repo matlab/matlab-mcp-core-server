@@ -21,13 +21,23 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
+	defer mockMCPSDKServerFactory.AssertExpectations(t)
+
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
 	mockLifecycleSignaler := &mocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
 	mockConfigurator := &mocks.MockMCPServerConfigurator{}
+	defer mockConfigurator.AssertExpectations(t)
 
 	// Act
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Assert
 	assert.NotNil(t, svr, "Server should not be nil")
@@ -35,6 +45,9 @@ func TestNew_HappyPath(t *testing.T) {
 
 func TestServer_Run_HappyPath(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -55,6 +68,9 @@ func TestServer_Run_HappyPath(t *testing.T) {
 
 	mockSecondTool := &toolsmocks.MockTool{}
 	defer mockSecondTool.AssertExpectations(t)
+
+	mockAdditionalTool := &toolsmocks.MockTool{}
+	defer mockAdditionalTool.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedMCPServer := &mcp.Server{}
@@ -89,6 +105,16 @@ func TestServer_Run_HappyPath(t *testing.T) {
 		Return(nil).
 		Once()
 
+	mockAdditionalToolsProvider.EXPECT().
+		Tools(mockLoggerFactory).
+		Return([]tools.Tool{mockAdditionalTool}).
+		Once()
+
+	mockAdditionalTool.EXPECT().
+		AddToServer(expectedMCPServer).
+		Return(nil).
+		Once()
+
 	mockResource.EXPECT().
 		AddToServer(expectedMCPServer).
 		Return(nil).
@@ -103,7 +129,7 @@ func TestServer_Run_HappyPath(t *testing.T) {
 		Return().
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	_, serverTransport := mcp.NewInMemoryTransports()
 	svr.SetServerTransport(serverTransport)
@@ -126,6 +152,9 @@ func TestServer_Run_HappyPath(t *testing.T) {
 
 func TestServer_Run_GetGlobalLoggerError(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -145,7 +174,7 @@ func TestServer_Run_GetGlobalLoggerError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Act
 	err := svr.Run()
@@ -156,6 +185,9 @@ func TestServer_Run_GetGlobalLoggerError(t *testing.T) {
 
 func TestServer_Run_MCPSDKServerFactoryError(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -181,7 +213,7 @@ func TestServer_Run_MCPSDKServerFactoryError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Act
 	err := svr.Run()
@@ -192,6 +224,9 @@ func TestServer_Run_MCPSDKServerFactoryError(t *testing.T) {
 
 func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -231,7 +266,7 @@ func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 		Return(expectedError).
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Act
 	err := svr.Run()
@@ -243,6 +278,9 @@ func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 
 func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -277,6 +315,11 @@ func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 		Return(nil, nil).
 		Once()
 
+	mockAdditionalToolsProvider.EXPECT().
+		Tools(mockLoggerFactory).
+		Return(nil).
+		Once()
+
 	mockConfigurator.EXPECT().
 		GetResourcesToAdd().
 		Return([]resources.Resource{mockResource}).
@@ -287,7 +330,7 @@ func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 		Return(expectedError).
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Act
 	err := svr.Run()
@@ -299,6 +342,9 @@ func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 
 func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -329,6 +375,11 @@ func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 		Return(nil, nil).
 		Once()
 
+	mockAdditionalToolsProvider.EXPECT().
+		Tools(mockLoggerFactory).
+		Return(nil).
+		Once()
+
 	mockConfigurator.EXPECT().
 		GetResourcesToAdd().
 		Return(nil).
@@ -343,7 +394,7 @@ func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 		Return().
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	_, serverTransport := mcp.NewInMemoryTransports()
 	svr.SetServerTransport(serverTransport)
@@ -366,6 +417,9 @@ func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 
 func TestServer_Run_GetToolsToAddError(t *testing.T) {
 	// Arrange
+	mockAdditionalToolsProvider := &mocks.MockAdditionalToolsProvider{}
+	defer mockAdditionalToolsProvider.AssertExpectations(t)
+
 	mockMCPSDKServerFactory := &mocks.MockMCPSDKServerFactory{}
 	defer mockMCPSDKServerFactory.AssertExpectations(t)
 
@@ -397,7 +451,7 @@ func TestServer_Run_GetToolsToAddError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	svr := server.New(mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
+	svr := server.New(mockAdditionalToolsProvider, mockMCPSDKServerFactory, mockLoggerFactory, mockLifecycleSignaler, mockConfigurator)
 
 	// Act
 	err := svr.Run()

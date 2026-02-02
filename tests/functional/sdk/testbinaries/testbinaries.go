@@ -25,36 +25,6 @@ const goModTemplate = `module ` + goModName + `
 replace github.com/matlab/matlab-mcp-core-server => {{ .SDKPath }}
 `
 
-type ServerDetails struct {
-	binaryLocation string
-
-	moduleName string
-
-	name         string
-	title        string
-	instructions string
-}
-
-func (s ServerDetails) BinaryLocation() string {
-	return s.binaryLocation
-}
-
-func (s ServerDetails) ModuleName() string {
-	return s.moduleName
-}
-
-func (s ServerDetails) Name() string {
-	return s.name
-}
-
-func (s ServerDetails) Title() string {
-	return s.title
-}
-
-func (s ServerDetails) Instructions() string {
-	return s.instructions
-}
-
 func BuildEmptyServer(t *testing.T) ServerDetails {
 	// Those string literals match the one in the source code
 	return ServerDetails{
@@ -65,6 +35,19 @@ func BuildEmptyServer(t *testing.T) ServerDetails {
 		name:         "empty-server",
 		title:        "Empty Server",
 		instructions: "This is the Empty Server test binary",
+	}
+}
+
+func BuildServerWithCustomTools(t *testing.T) ServerDetails {
+	// Those string literals match the one in the source code
+	return ServerDetails{
+		binaryLocation: buildSDKServer(t, "server_with_custom_tools"),
+
+		moduleName: goModName,
+
+		name:         "server-with-custom-tools",
+		title:        "Server With Custom Tools",
+		instructions: "This is a test server with custom tools",
 	}
 }
 
