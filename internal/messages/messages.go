@@ -9,7 +9,7 @@ type localeMap map[localeKey]messageMap
 var messages_en_US = messageMap{
 	CLIMessages_BaseDirDescription:                          `The folder where the MCP Core Server stores log files. If not specified, the server uses the default temp folder of your operating system.`,
 	CLIMessages_DisableTelemetryDescription:                 `The MATLAB MCP Core Server can collect fully anonymized information about your usage of the server and send it to MathWorks. This data collection helps MathWorks improve products and is on by default. To opt out of data collection, set the argument --disable-telemetry to true.`,
-	CLIMessages_DisplayModeDescription:                      `Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or ` + "`" + `nodesktop` + "`" + ` mode to use MATLAB only from your AI application, without the MATLAB desktop. `,
+	CLIMessages_DisplayModeDescription:                      `Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. `,
 	CLIMessages_HelpDescription:                             `Show this help text`,
 	CLIMessages_InitializeMATLABOnStartupDescription:        `To initialize MATLAB as soon as you start the server, set this argument to true. By default, MATLAB only starts when the first tool is called. `,
 	CLIMessages_InternalUseDescription:                      `INTERNAL USE ONLY`,

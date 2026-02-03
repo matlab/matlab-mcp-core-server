@@ -48,13 +48,13 @@ Run MATLAB® using AI applications with the official MATLAB MCP Server from Math
 In your terminal, run the following, remembering to insert the full path to the server binary you acquired in the setup:
 
 ```sh
-claude mcp add --transport stdio matlab /fullpath/to/matlab-mcp-core-server-binary [arguments...]
+claude mcp add --transport stdio matlab -- /fullpath/to/matlab-mcp-core-server-binary
 ```
 
-You can customize the server by specifying optional [Arguments](#arguments):
+You can customize the server by specifying optional [Arguments](#arguments). Note the `--` separator between Claude Code's options and the server arguments:
 
 ```sh
-claude mcp add --transport stdio matlab /fullpath/to/matlab-mcp-core-server-binary --initial-working-folder=/home/username/myproject
+claude mcp add --transport stdio matlab -- /fullpath/to/matlab-mcp-core-server-binary --initial-working-folder=/home/username/myproject
 ```
 
 For details on adding MCP servers in Claude Code, see [Add a local stdio server (Claude Code)](https://docs.claude.com/en/docs/claude-code/mcp#option-3%3A-add-a-local-stdio-server). To remove the server later, run:

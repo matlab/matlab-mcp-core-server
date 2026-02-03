@@ -12,6 +12,6 @@
         <entry key="PreferredMATLABStartingDirectoryDescription">Specify the folder where MATLAB starts. If you do not provide the argument, MATLAB starts in these locations: Linux: /home/username, Windows: C:\Users\username\Documents, Mac: /Users/username/Documents.</entry>
         <entry key="InternalUseDescription">INTERNAL USE ONLY</entry>
         <entry key="InitializeMATLABOnStartupDescription">To initialize MATLAB as soon as you start the server, set this argument to true. By default, MATLAB only starts when the first tool is called. </entry>
-        <entry key="DisplayModeDescription">Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or `nodesktop` mode to use MATLAB only from your AI application, without the MATLAB desktop. </entry>
+        <entry key="DisplayModeDescription">Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. </entry>
     </message>
 </rsccat>
