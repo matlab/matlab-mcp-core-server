@@ -4,9 +4,11 @@ package client_test
 
 import (
 	"encoding/pem"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -98,7 +100,12 @@ func newTestHTTPSServer(t *testing.T) *httptest.Server {
 func newTestUDSServer(t *testing.T, handler http.HandlerFunc) *testUDSServer {
 	t.Helper()
 
-	socketPath := filepath.Join(t.TempDir(), "test.sock")
+	// Use os.TempDir() with a short unique name to avoid Windows UDS path length limit (~108 chars).
+	// t.TempDir() creates paths that are too long for Windows UDS.
+	socketPath := filepath.Join(os.TempDir(), fmt.Sprintf("uds%d.sock", os.Getpid())) //nolint:usetesting // intentional: t.TempDir() path too long for Windows UDS
+	t.Cleanup(func() {
+		_ = os.Remove(socketPath)
+	})
 
 	listener, err := net.Listen("unix", socketPath)
 	require.NoError(t, err, "Failed to create unix socket listener")

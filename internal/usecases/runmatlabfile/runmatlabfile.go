@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package runmatlabfile
 
@@ -11,7 +11,8 @@ import (
 )
 
 type Args struct {
-	ScriptPath string
+	ScriptPath    string
+	CaptureOutput bool
 }
 
 type PathValidator interface {
@@ -50,6 +51,10 @@ func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, cl
 
 	runCodeRequest := entities.EvalRequest{
 		Code: scriptName,
+	}
+
+	if request.CaptureOutput {
+		return client.EvalWithCapture(ctx, sessionLogger, runCodeRequest)
 	}
 	return client.Eval(ctx, sessionLogger, runCodeRequest)
 }

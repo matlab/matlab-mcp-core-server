@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package parser_test
 
@@ -37,6 +37,7 @@ func TestNew_HappyPath(t *testing.T) {
 				WatchdogMode:                     false,
 				ServerInstanceID:                 "",
 				InitializeMATLABOnStartup:        false,
+				DisplayMode:                      entities.DisplayModeDesktop,
 			},
 		},
 		{
@@ -52,6 +53,7 @@ func TestNew_HappyPath(t *testing.T) {
 				"--watchdog=true",
 				"--server-instance-id=1337",
 				"--initialize-matlab-on-startup=false",
+				"--matlab-display-mode=nodesktop",
 			},
 			expected: parser.SpecifiedArguments{
 				VersionMode:                      true,
@@ -64,6 +66,7 @@ func TestNew_HappyPath(t *testing.T) {
 				WatchdogMode:                     true,
 				ServerInstanceID:                 "1337",
 				InitializeMATLABOnStartup:        false,
+				DisplayMode:                      entities.DisplayModeNoDesktop,
 			},
 		},
 		{
@@ -82,6 +85,7 @@ func TestNew_HappyPath(t *testing.T) {
 				BaseDirectory:                    "",
 				WatchdogMode:                     false,
 				InitializeMATLABOnStartup:        false,
+				DisplayMode:                      entities.DisplayModeDesktop,
 			},
 		},
 	}
@@ -417,6 +421,91 @@ func TestParser_LogLevel_EmptyIsInvalid(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestParser_DisplayMode_HappyPath(t *testing.T) {
+	testSpecifiedArgs := []struct {
+		name     string
+		args     []string
+		expected entities.DisplayMode
+	}{
+		{
+			name:     "default value",
+			args:     []string{},
+			expected: entities.DisplayModeDesktop,
+		},
+		{
+			name:     "desktop mode",
+			args:     []string{"--matlab-display-mode=desktop"},
+			expected: entities.DisplayModeDesktop,
+		},
+		{
+			name:     "nodesktop mode",
+			args:     []string{"--matlab-display-mode=nodesktop"},
+			expected: entities.DisplayModeNoDesktop,
+		},
+	}
+
+	for _, testConfig := range testSpecifiedArgs {
+		t.Run(testConfig.name, func(t *testing.T) {
+			// Arrange
+			mockMessageCatalog := &parsermocks.MockMessageCatalog{}
+			defer mockMessageCatalog.AssertExpectations(t)
+
+			mockMessageCatalog.EXPECT().
+				Get(mock.Anything).
+				Return("any string")
+
+			// Act
+			parser := parser.New(mockMessageCatalog)
+			result, err := parser.Parse(testConfig.args)
+
+			// Assert
+			require.NoError(t, err)
+			assert.Equal(t, testConfig.expected, result.DisplayMode)
+		})
+	}
+}
+
+func TestParser_DisplayMode_Invalid(t *testing.T) {
+	// Arrange
+	badDisplayMode := "invalid"
+	args := []string{"--matlab-display-mode=" + badDisplayMode}
+
+	mockMessageCatalog := &parsermocks.MockMessageCatalog{}
+	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockMessageCatalog.EXPECT().
+		Get(mock.Anything).
+		Return("any string")
+
+	// Act
+	parser := parser.New(mockMessageCatalog)
+	result, err := parser.Parse(args)
+
+	// Assert
+	require.Equal(t, err, messages.New_StartupErrors_InvalidDisplayMode_Error(badDisplayMode))
+	assert.Empty(t, result)
+}
+
+func TestParser_DisplayMode_EmptyIsInvalid(t *testing.T) {
+	// Arrange
+	args := []string{"--matlab-display-mode="}
+
+	mockMessageCatalog := &parsermocks.MockMessageCatalog{}
+	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockMessageCatalog.EXPECT().
+		Get(mock.Anything).
+		Return("any string")
+
+	// Act
+	parser := parser.New(mockMessageCatalog)
+	result, err := parser.Parse(args)
+
+	// Assert
+	require.Equal(t, err, messages.New_StartupErrors_InvalidDisplayMode_Error(""))
+	assert.Empty(t, result)
+}
+
 func TestParser_BadFlagResultsInError(t *testing.T) {
 	// Arrange
 	args := []string{"--notaflag=true"}
@@ -503,6 +592,7 @@ func TestParser_DefaultValues(t *testing.T) {
 		WatchdogMode:                     flags.WatchdogModeDefaultValue,
 		ServerInstanceID:                 flags.ServerInstanceIDDefaultValue,
 		InitializeMATLABOnStartup:        flags.InitializeMATLABOnStartupDefaultValue,
+		DisplayMode:                      flags.DisplayModeDefaultValue,
 	}
 
 	// Act

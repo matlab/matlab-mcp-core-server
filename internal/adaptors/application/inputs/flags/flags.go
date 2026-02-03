@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package flags
 
@@ -26,6 +26,9 @@ const (
 
 	InitializeMATLABOnStartup             = "initialize-matlab-on-startup"
 	InitializeMATLABOnStartupDefaultValue = false
+
+	DisplayMode             = "matlab-display-mode"
+	DisplayModeDefaultValue = "desktop"
 
 	// Hidden
 	UseSingleMATLABSession             = "use-single-matlab-session"

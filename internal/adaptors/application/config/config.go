@@ -34,6 +34,7 @@ type Config interface {
 	LogLevel() entities.LogLevel
 	PreferredLocalMATLABRoot() string
 	PreferredMATLABStartingDirectory() string
+	ShouldShowMATLABDesktop() bool
 }
 
 type Factory struct {
@@ -146,6 +147,17 @@ func (c *config) InitializeMATLABOnStartup() bool {
 	return c.specifiedArguments.InitializeMATLABOnStartup
 }
 
+func (c *config) ShouldShowMATLABDesktop() bool {
+	switch c.specifiedArguments.DisplayMode {
+	case entities.DisplayModeDesktop:
+		return true
+	case entities.DisplayModeNoDesktop:
+		return false
+	default:
+		return true
+	}
+}
+
 func (c *config) RecordToLogger(logger entities.Logger) {
 	logger.
 		With(flags.DisableTelemetry, c.specifiedArguments.DisableTelemetry).
@@ -154,5 +166,6 @@ func (c *config) RecordToLogger(logger entities.Logger) {
 		With(flags.PreferredLocalMATLABRoot, c.specifiedArguments.PreferredLocalMATLABRoot).
 		With(flags.PreferredMATLABStartingDirectory, c.specifiedArguments.PreferredMATLABStartingDirectory).
 		With(flags.InitializeMATLABOnStartup, c.specifiedArguments.InitializeMATLABOnStartup).
+		With(flags.DisplayMode, c.specifiedArguments.DisplayMode).
 		Info("Configuration state")
 }

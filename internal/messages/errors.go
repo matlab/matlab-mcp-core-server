@@ -201,6 +201,27 @@ func New_StartupErrors_FailedToStartWatchdogProcess_Error() *StartupErrors_Faile
 	return &StartupErrors_FailedToStartWatchdogProcess_Error{}
 }
 
+// StartupErrors_InvalidDisplayMode_Error defines an error corresponding to the "StartupErrors_InvalidDisplayMode" message catalog message
+type StartupErrors_InvalidDisplayMode_Error struct {
+	Attr0 string
+}
+
+// Error makes StartupErrors_InvalidDisplayMode_Error satisfy the error interface.
+func (e *StartupErrors_InvalidDisplayMode_Error) Error() string {
+	return "StartupErrors_InvalidDisplayMode_Error"
+}
+
+func (*StartupErrors_InvalidDisplayMode_Error) marker() {}
+
+// New_StartupErrors_InvalidDisplayMode_Error makes a new StartupErrors_InvalidDisplayMode_Error error.
+func New_StartupErrors_InvalidDisplayMode_Error(
+	attr0 string,
+) *StartupErrors_InvalidDisplayMode_Error {
+	return &StartupErrors_InvalidDisplayMode_Error{
+		Attr0: attr0,
+	}
+}
+
 // StartupErrors_InvalidLogLevel_Error defines an error corresponding to the "StartupErrors_InvalidLogLevel" message catalog message
 type StartupErrors_InvalidLogLevel_Error struct {
 	Attr0 string

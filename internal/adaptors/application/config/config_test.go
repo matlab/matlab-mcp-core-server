@@ -249,6 +249,66 @@ func TestConfig_Version(t *testing.T) {
 	}
 }
 
+func TestConfig_ShouldShowMATLABDesktop(t *testing.T) {
+	testCases := []struct {
+		name         string
+		displayMode  entities.DisplayMode
+		expectedShow bool
+	}{
+		{
+			name:         "desktop mode shows MATLAB",
+			displayMode:  entities.DisplayModeDesktop,
+			expectedShow: true,
+		},
+		{
+			name:         "nodesktop mode hides MATLAB",
+			displayMode:  entities.DisplayModeNoDesktop,
+			expectedShow: false,
+		},
+		{
+			name:         "unset mode shows MATLAB (default)",
+			displayMode:  "",
+			expectedShow: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			mockOSLayer := &configmocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
+
+			mockParser := &configmocks.MockParser{}
+			defer mockParser.AssertExpectations(t)
+
+			programName := "testprocess"
+			args := []string{programName}
+			specifiedArguments := parser.SpecifiedArguments{
+				DisplayMode: tc.displayMode,
+			}
+
+			mockOSLayer.EXPECT().
+				Args().
+				Return(args).
+				Once()
+
+			mockParser.EXPECT().
+				Parse(args[1:]).
+				Return(specifiedArguments, nil).
+				Once()
+
+			cfg, err := config.New(mockOSLayer, mockParser)
+			require.NoError(t, err)
+
+			// Act
+			result := cfg.ShouldShowMATLABDesktop()
+
+			// Assert
+			assert.Equal(t, tc.expectedShow, result)
+		})
+	}
+}
+
 func TestConfig_Log_HappyPath(t *testing.T) {
 	// Arrange
 	specifiedArguments := parser.SpecifiedArguments{
@@ -257,6 +317,7 @@ func TestConfig_Log_HappyPath(t *testing.T) {
 		LogLevel:                         entities.LogLevelDebug,
 		PreferredLocalMATLABRoot:         filepath.Join("home", "matlab"),
 		UseSingleMATLABSession:           false,
+		DisplayMode:                      entities.DisplayModeNoDesktop,
 	}
 	expectedLogMessage := "Configuration state"
 	expectedConfigField := map[string]any{
@@ -265,6 +326,7 @@ func TestConfig_Log_HappyPath(t *testing.T) {
 		"log-level":                 entities.LogLevelDebug,
 		"matlab-root":               filepath.Join("home", "matlab"),
 		"use-single-matlab-session": false,
+		"matlab-display-mode":       entities.DisplayModeNoDesktop,
 	}
 	mockOSLayer := &configmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)

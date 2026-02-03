@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package evalmatlabcode
 
@@ -11,8 +11,9 @@ import (
 )
 
 type Args struct {
-	Code        string
-	ProjectPath string
+	Code          string
+	ProjectPath   string
+	CaptureOutput bool
 }
 
 type PathValidator interface {
@@ -49,12 +50,12 @@ func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, cl
 		return entities.EvalResponse{}, err
 	}
 
-	response, err := client.Eval(ctx, sessionLogger, entities.EvalRequest{
+	evalRequest := entities.EvalRequest{
 		Code: request.Code,
-	})
-	if err != nil {
-		return entities.EvalResponse{}, err
 	}
 
-	return response, nil
+	if request.CaptureOutput {
+		return client.EvalWithCapture(ctx, sessionLogger, evalRequest)
+	}
+	return client.Eval(ctx, sessionLogger, evalRequest)
 }

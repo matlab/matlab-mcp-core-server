@@ -65,6 +65,12 @@ func FromError(catalog LocaleSpecificCatalog, err Error) string {
 	case *StartupErrors_FailedToStartWatchdogProcess_Error:
 		msg := catalog.Get(StartupErrors_FailedToStartWatchdogProcess)
 		return msg
+	case *StartupErrors_InvalidDisplayMode_Error:
+		msg := catalog.Get(StartupErrors_InvalidDisplayMode)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+		)
 	case *StartupErrors_InvalidLogLevel_Error:
 		msg := catalog.Get(StartupErrors_InvalidLogLevel)
 		return fmt.Sprintf(

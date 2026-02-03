@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package globalmatlab_test
 
@@ -21,11 +21,15 @@ func TestNew_HappyPath(t *testing.T) {
 	mockMATLABStartingDirSelector := &mocks.MockMATLABStartingDirSelector{}
 	defer mockMATLABStartingDirSelector.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	// Act
 	globalMATLABSession := globalmatlab.New(
 		mockMATLABManager,
 		mockMATLABRootSelector,
 		mockMATLABStartingDirSelector,
+		mockConfigFactory,
 	)
 
 	// Assert

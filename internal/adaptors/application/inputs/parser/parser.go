@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package parser
 
@@ -29,6 +29,7 @@ type SpecifiedArguments struct {
 	WatchdogMode                     bool
 	ServerInstanceID                 string
 	InitializeMATLABOnStartup        bool
+	DisplayMode                      entities.DisplayMode
 }
 
 type Parser struct {
@@ -119,6 +120,18 @@ func (p *Parser) Parse(args []string) (SpecifiedArguments, messages.Error) {
 		initializeMATLABOnStartup = false
 	}
 
+	displayMode, err := p.flagSet.GetString(flags.DisplayMode)
+	if err != nil {
+		return SpecifiedArguments{}, p.convertToUserFacingError(err)
+	}
+
+	switch displayMode {
+	case string(entities.DisplayModeDesktop), string(entities.DisplayModeNoDesktop):
+		break
+	default:
+		return SpecifiedArguments{}, messages.New_StartupErrors_InvalidDisplayMode_Error(displayMode)
+	}
+
 	return SpecifiedArguments{
 		VersionMode:                      versionMode,
 		HelpMode:                         helpMode,
@@ -131,6 +144,7 @@ func (p *Parser) Parse(args []string) (SpecifiedArguments, messages.Error) {
 		WatchdogMode:                     watchdogMode,
 		ServerInstanceID:                 serverInstanceID,
 		InitializeMATLABOnStartup:        initializeMATLABOnStartup,
+		DisplayMode:                      entities.DisplayMode(displayMode),
 	}, nil
 }
 
@@ -177,6 +191,10 @@ func setupFlags(messageCatalog MessageCatalog, flagSet *pflag.FlagSet) {
 
 	flagSet.Bool(flags.InitializeMATLABOnStartup, flags.InitializeMATLABOnStartupDefaultValue,
 		messageCatalog.Get(messages.CLIMessages_InitializeMATLABOnStartupDescription),
+	)
+
+	flagSet.String(flags.DisplayMode, flags.DisplayModeDefaultValue,
+		messageCatalog.Get(messages.CLIMessages_DisplayModeDescription),
 	)
 
 	// Hidden flags, for internal use only

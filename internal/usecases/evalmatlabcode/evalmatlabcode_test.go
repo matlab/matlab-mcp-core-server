@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package evalmatlabcode_test
 
@@ -193,7 +193,109 @@ func TestUsecase_Execute_EvalError(t *testing.T) {
 
 	mockClient.EXPECT().
 		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{Code: evalRequest.Code}).
-		Return(entities.EvalResponse{ConsoleOutput: "some output that shouldn't be because there's an error"}, expectedError).
+		Return(entities.EvalResponse{}, expectedError).
+		Once()
+
+	usecase := evalmatlabcode.New(mockPathValidator)
+
+	// Act
+	response, err := usecase.Execute(ctx, mockLogger, mockClient, evalRequest)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "Error should be the original error")
+	assert.Empty(t, response, "Response should be empty when there's an error")
+}
+
+func TestUsecase_Execute_CaptureOutput_HappyPath(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockPathValidator := &mocks.MockPathValidator{}
+	defer mockPathValidator.AssertExpectations(t)
+
+	mockClient := &entitiesmocks.MockMATLABSessionClient{}
+	defer mockClient.AssertExpectations(t)
+
+	ctx := t.Context()
+	projectPath := filepath.Join("some", "path")
+	validatedProjectPath := filepath.Join("some", "path")
+	captureOutput := true
+
+	evalRequest := evalmatlabcode.Args{
+		ProjectPath:   projectPath,
+		Code:          "disp('Hello, World!')",
+		CaptureOutput: captureOutput,
+	}
+
+	expectedResponse := entities.EvalResponse{
+		ConsoleOutput: "Hello, World!",
+		Images:        nil,
+	}
+
+	mockPathValidator.EXPECT().
+		ValidateFolderPath(projectPath).
+		Return(validatedProjectPath, nil).
+		Once()
+
+	mockClient.EXPECT().
+		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
+			Code: "cd('" + validatedProjectPath + "')",
+		}).
+		Return(entities.EvalResponse{}, nil).
+		Once()
+
+	mockClient.EXPECT().
+		EvalWithCapture(ctx, mockLogger.AsMockArg(), entities.EvalRequest{Code: evalRequest.Code}).
+		Return(expectedResponse, nil).
+		Once()
+
+	usecase := evalmatlabcode.New(mockPathValidator)
+
+	// Act
+	response, err := usecase.Execute(ctx, mockLogger, mockClient, evalRequest)
+
+	// Assert
+	require.NoError(t, err, "Execute should not return an error")
+	assert.Equal(t, expectedResponse, response, "Response should match expected value")
+}
+
+func TestUsecase_Execute_CaptureOutput_EvalWithCaptureError(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockPathValidator := &mocks.MockPathValidator{}
+	defer mockPathValidator.AssertExpectations(t)
+
+	mockClient := &entitiesmocks.MockMATLABSessionClient{}
+	defer mockClient.AssertExpectations(t)
+
+	ctx := t.Context()
+	projectPath := filepath.Join("some", "path")
+	validatedProjectPath := filepath.Join("some", "path")
+	captureOutput := true
+	expectedError := assert.AnError
+
+	evalRequest := evalmatlabcode.Args{
+		Code:          "disp('Hello, World!')",
+		ProjectPath:   projectPath,
+		CaptureOutput: captureOutput,
+	}
+
+	mockPathValidator.EXPECT().
+		ValidateFolderPath(projectPath).
+		Return(validatedProjectPath, nil).
+		Once()
+
+	mockClient.EXPECT().
+		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
+			Code: "cd('" + validatedProjectPath + "')",
+		}).
+		Return(entities.EvalResponse{}, nil).
+		Once()
+
+	mockClient.EXPECT().
+		EvalWithCapture(ctx, mockLogger.AsMockArg(), entities.EvalRequest{Code: evalRequest.Code}).
+		Return(entities.EvalResponse{}, expectedError).
 		Once()
 
 	usecase := evalmatlabcode.New(mockPathValidator)

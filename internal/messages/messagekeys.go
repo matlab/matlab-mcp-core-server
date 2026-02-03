@@ -7,6 +7,7 @@ type messageKey string
 const (
 	CLIMessages_BaseDirDescription                          messageKey = "CLIMessages_BaseDirDescription"
 	CLIMessages_DisableTelemetryDescription                 messageKey = "CLIMessages_DisableTelemetryDescription"
+	CLIMessages_DisplayModeDescription                      messageKey = "CLIMessages_DisplayModeDescription"
 	CLIMessages_HelpDescription                             messageKey = "CLIMessages_HelpDescription"
 	CLIMessages_InitializeMATLABOnStartupDescription        messageKey = "CLIMessages_InitializeMATLABOnStartupDescription"
 	CLIMessages_InternalUseDescription                      messageKey = "CLIMessages_InternalUseDescription"
@@ -25,6 +26,7 @@ const (
 	StartupErrors_FailedToGetExecutablePath                 messageKey = "StartupErrors_FailedToGetExecutablePath"
 	StartupErrors_FailedToStartWatchdogProcess              messageKey = "StartupErrors_FailedToStartWatchdogProcess"
 	StartupErrors_GenericInitializeFailure                  messageKey = "StartupErrors_GenericInitializeFailure"
+	StartupErrors_InvalidDisplayMode                        messageKey = "StartupErrors_InvalidDisplayMode"
 	StartupErrors_InvalidLogLevel                           messageKey = "StartupErrors_InvalidLogLevel"
 	StartupErrors_MissingValue                              messageKey = "StartupErrors_MissingValue"
 	StartupErrors_ParseFailed                               messageKey = "StartupErrors_ParseFailed"

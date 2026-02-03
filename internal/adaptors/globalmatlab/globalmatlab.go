@@ -6,8 +6,14 @@ import (
 	"context"
 	"sync"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
+	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
+
+type ConfigFactory interface {
+	Config() (config.Config, messages.Error)
+}
 
 type MATLABManager interface {
 	StartMATLABSession(ctx context.Context, sessionLogger entities.Logger, startRequest entities.SessionDetails) (entities.SessionID, error)
@@ -27,6 +33,7 @@ type GlobalMATLAB struct {
 	matlabManager             MATLABManager
 	matlabRootSelector        MATLABRootSelector
 	matlabStartingDirSelector MATLABStartingDirSelector
+	configFactory             ConfigFactory
 
 	lock *sync.Mutex
 
@@ -42,11 +49,13 @@ func New(
 	matlabManager MATLABManager,
 	matlabRootSelector MATLABRootSelector,
 	matlabStartingDirSelector MATLABStartingDirSelector,
+	configFactory ConfigFactory,
 ) *GlobalMATLAB {
 	return &GlobalMATLAB{
 		matlabManager:             matlabManager,
 		matlabRootSelector:        matlabRootSelector,
 		matlabStartingDirSelector: matlabStartingDirSelector,
+		configFactory:             configFactory,
 
 		lock:     &sync.Mutex{},
 		initOnce: &sync.Once{},
@@ -102,11 +111,16 @@ func (g *GlobalMATLAB) getOrCreateClient(ctx context.Context, logger entities.Lo
 }
 
 func (g *GlobalMATLAB) startNewSession(ctx context.Context, logger entities.Logger) error {
+	config, messagesErr := g.configFactory.Config()
+	if messagesErr != nil {
+		return messagesErr
+	}
+
 	sessionID, err := g.matlabManager.StartMATLABSession(ctx, logger, entities.LocalSessionDetails{
 		MATLABRoot:             g.matlabRoot,
 		IsStartingDirectorySet: g.matlabStartingDir != "",
 		StartingDirectory:      g.matlabStartingDir,
-		ShowMATLABDesktop:      true,
+		ShowMATLABDesktop:      config.ShouldShowMATLABDesktop(),
 	})
 	if err != nil {
 		return err

@@ -159,6 +159,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		listavailablematlabs.New,
 
 		startmatlabsessiontool.New,
+		wire.Bind(new(startmatlabsessiontool.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(startmatlabsessiontool.Usecase), new(*startmatlabsession.Usecase)),
 
 		startmatlabsession.New,
@@ -169,9 +170,11 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		stopmatlabsession.New,
 
 		evalmatlabcodemultisessiontool.New,
+		wire.Bind(new(evalmatlabcodemultisessiontool.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(evalmatlabcodemultisessiontool.Usecase), new(*evalmatlabcode.Usecase)),
 
 		evalmatlabcodesinglesessiontool.New,
+		wire.Bind(new(evalmatlabcodesinglesessiontool.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(evalmatlabcodesinglesessiontool.Usecase), new(*evalmatlabcode.Usecase)),
 
 		evalmatlabcode.New,
@@ -189,6 +192,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		detectmatlabtoolboxes.New,
 
 		runmatlabfilesinglesessiontool.New,
+		wire.Bind(new(runmatlabfilesinglesessiontool.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(runmatlabfilesinglesessiontool.Usecase), new(*runmatlabfile.Usecase)),
 
 		runmatlabfile.New,
@@ -231,6 +235,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(globalmatlab.MATLABManager), new(*matlabmanager.MATLABManager)),
 		wire.Bind(new(globalmatlab.MATLABRootSelector), new(*matlabrootselector.MATLABRootSelector)),
 		wire.Bind(new(globalmatlab.MATLABStartingDirSelector), new(*matlabstartingdirselector.MATLABStartingDirSelector)),
+		wire.Bind(new(globalmatlab.ConfigFactory), new(*config.Factory)),
 
 		// MATLAB Root Selector
 		matlabrootselector.New,
