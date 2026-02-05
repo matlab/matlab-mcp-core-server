@@ -180,7 +180,7 @@ ifeq ($(OS),Windows_NT)
 else
 	@sleep 5
 	@echo "Checking for leaked MATLAB processes..."
-	@leaked=$$(pgrep -a -f 'matlab.*matlab-mcp-core-server' | grep -v 'make\|grep' || true); \
+	@leaked=$$(pgrep -a -f -l 'addpath\(sessionPath\);matlab_mcp\.initializeMCP\(\);clear sessionPath;' | grep -v 'make\|grep' || true); \
 	if [ -n "$$leaked" ]; then \
 		echo "WARNING: Found leaked MATLAB processes:"; \
 		echo "$$leaked"; \

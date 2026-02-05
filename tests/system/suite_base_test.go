@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package system_test
 
@@ -78,20 +78,51 @@ func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, ar
 	if env == nil {
 		env = s.defaultEnv
 	}
-	args = append(args, "--log-level=debug")
+
+	base, err := os.MkdirTemp("", "mcp-logs-")
+	s.Require().NoError(err, "should create log temp dir")
+	logFolderLocation := filepath.Join(base, "logs")
+	s.Require().NoError(os.MkdirAll(logFolderLocation, 0750), "should create log folder")
+	args = append(args, "--log-level=debug", "--log-folder="+logFolderLocation)
+
 	client := mcpclient.NewClient(ctx, s.mcpServerPath, env, args...)
 	session, err := client.CreateSession(ctx)
 	s.Require().NoError(err, "should create MCP session")
 
 	dumpLogs := func(t *testing.T) {
-		if t.Failed() {
-			stderr := session.Stderr()
-			if stderr != "" {
-				t.Logf("=== MCP Server Logs (stderr) ===\n%s\n=== End MCP Server Logs ===", stderr)
+		stderr := session.Stderr()
+		if stderr != "" {
+			t.Logf("=== MCP Server Logs (stderr) ===\n%s\n=== End MCP Server Logs ===", stderr)
+		}
+		serverLogPattern := filepath.Join(logFolderLocation, "server-*.log")
+		serverLogFiles, err := filepath.Glob(serverLogPattern)
+		if err != nil || len(serverLogFiles) == 0 {
+			t.Logf("Server log file not found: %s", serverLogPattern)
+		} else {
+			for _, logFile := range serverLogFiles {
+				serverLog, err := os.ReadFile(logFile) //#nosec G304 - log path constructed from known test directory
+				if err != nil {
+					t.Logf("Failed to read server log file: %s", err.Error())
+				} else {
+					t.Logf("=== MCP Server Log File (%s) ===\n%s\n=== End MCP Server Log File ===", filepath.Base(logFile), serverLog)
+				}
+			}
+		}
+		watchdogLogPattern := filepath.Join(logFolderLocation, "watchdog-*.log")
+		watchdogLogFiles, err := filepath.Glob(watchdogLogPattern)
+		if err != nil || len(watchdogLogFiles) == 0 {
+			t.Logf("Watchdog log file not found: %s", watchdogLogPattern)
+		} else {
+			for _, logFile := range watchdogLogFiles {
+				watchdogLog, err := os.ReadFile(logFile) //#nosec G304 - log path constructed from known test directory
+				if err != nil {
+					t.Logf("Failed to read watchdog log file: %s", err.Error())
+				} else {
+					t.Logf("=== MCP Watchdog Log File (%s) ===\n%s\n=== End MCP Watchdog Log File ===", filepath.Base(logFile), watchdogLog)
+				}
 			}
 		}
 	}
-
 	return session, dumpLogs
 }
 
