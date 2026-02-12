@@ -1,9 +1,10 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 //go:build windows
 
 package processlauncher
 
 import (
+	"context"
 	"fmt"
 	"iter"
 	"os"
@@ -12,13 +13,14 @@ import (
 	"unsafe"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/processlauncher/utils/winenvironmentbuilder"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"golang.org/x/sys/windows"
 )
 
 const EXPECTED_CHILD_MATLAB_PROCESS_NAME = "MATLAB.exe"
 
-func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, args []string, env []string, stdIO *stdIO) (*os.Process, error) {
+func startMatlab(ctx context.Context, logger entities.Logger, matlabRoot string, workingDir string, args []string, env []string, stdIO *stdIO) (*os.Process, error) {
 	matlabPath := filepath.Join(matlabRoot, "bin", "matlab.exe")
 
 	if _, err := os.Stat(matlabPath); err != nil {
@@ -79,9 +81,12 @@ func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, a
 		return nil, fmt.Errorf("error creating MATLAB process: %w", err)
 	}
 
-	// Close thread handle as we don't need it
-	if err := windows.CloseHandle(pi.Thread); err != nil {
-		logger.WithError(err).Warn("failed to close thread handle")
+	// Close handles as we don't need them after FindProcess
+	if closeErr := windows.CloseHandle(pi.Thread); closeErr != nil {
+		logger.WithError(closeErr).Warn("failed to close thread handle")
+	}
+	if closeErr := windows.CloseHandle(pi.Process); closeErr != nil {
+		logger.WithError(closeErr).Warn("failed to close process handle")
 	}
 
 	matlabLauncherProcess, err := os.FindProcess(int(pi.ProcessId))
@@ -91,8 +96,8 @@ func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, a
 
 	// On Windows, the process we launch is a launcher process that then launches the actual MATLAB process.
 	// Therefore, we need to find the child process of the launcher process.
-	// THere should be only one process, and that would be the actual MATLAB process.
-	matlabProcess, err := waitForMATLABProcess(logger, matlabLauncherProcess)
+	// There should be only one process, and that would be the actual MATLAB process.
+	matlabProcess, err := waitForMATLABProcess(ctx, logger, matlabLauncherProcess)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +105,9 @@ func startMatlab(logger entities.Logger, matlabRoot string, workingDir string, a
 	return matlabProcess, nil
 }
 
-func waitForMATLABProcess(logger entities.Logger, matlabLauncherProcess *os.Process) (*os.Process, error) {
-	timeout := time.After(20 * time.Second)
-	tick := time.Tick(1 * time.Second)
+func waitForMATLABProcess(_ context.Context, logger entities.Logger, matlabLauncherProcess *os.Process) (*os.Process, error) {
+	const pollInterval = 1 * time.Second
+	const timeout = 20 * time.Second
 
 	if matlabLauncherProcess.Pid < 0 || matlabLauncherProcess.Pid > 0xFFFFFFFF {
 		return nil, fmt.Errorf("invalid process ID: %d", matlabLauncherProcess.Pid)
@@ -110,17 +115,19 @@ func waitForMATLABProcess(logger entities.Logger, matlabLauncherProcess *os.Proc
 
 	matlabLauncherProcessID := uint32(matlabLauncherProcess.Pid)
 
-	for {
-		select {
-		case <-timeout:
-			return nil, fmt.Errorf("timeout waiting for matlab process to begin")
-		case <-tick:
-			matlabProcess := getMATLABChildProcess(logger, matlabLauncherProcessID)
-			if matlabProcess != nil {
-				return matlabProcess, nil
-			}
-		}
+	waitCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	matlabProcess, err := retry.Retry(waitCtx, func() (*os.Process, bool, error) {
+		process := getMATLABChildProcess(logger, matlabLauncherProcessID)
+		return process, process != nil, nil
+	}, retry.NewLinearRetryStrategy(pollInterval))
+
+	if err != nil {
+		return nil, fmt.Errorf("timeout waiting for matlab process to begin")
 	}
+
+	return matlabProcess, nil
 }
 
 func getMATLABChildProcess(logger entities.Logger, matlabLauncherProcessID uint32) *os.Process {

@@ -3,6 +3,7 @@
 package localmatlabsession
 
 import (
+	"context"
 	"runtime"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
@@ -22,7 +23,7 @@ type ProcessDetails interface {
 }
 
 type MATLABProcessLauncher interface {
-	Launch(logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), error)
+	Launch(ctx context.Context, logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), <-chan struct{}, error)
 }
 
 type Watchdog interface {
@@ -50,7 +51,7 @@ func NewStarter(
 	}
 }
 
-func (m *Starter) StartLocalMATLABSession(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
+func (m *Starter) StartLocalMATLABSession(ctx context.Context, logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
 	logger.Debug("Starting a local MATLAB session")
 
 	sessionDir, err := m.directoryFactory.New(logger)
@@ -80,7 +81,7 @@ func (m *Starter) StartLocalMATLABSession(logger entities.Logger, request dataty
 
 	startupFlags := m.processDetails.StartupFlag(runtime.GOOS, request.ShowMATLABDesktop, startupCode)
 
-	processID, processCleanup, err := m.matlabProcessLauncher.Launch(logger, sessionDirPath, request.MATLABRoot, request.StartingDirectory, startupFlags, env)
+	processID, processCleanup, _, err := m.matlabProcessLauncher.Launch(ctx, logger, sessionDirPath, request.MATLABRoot, request.StartingDirectory, startupFlags, env)
 	if err != nil {
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}

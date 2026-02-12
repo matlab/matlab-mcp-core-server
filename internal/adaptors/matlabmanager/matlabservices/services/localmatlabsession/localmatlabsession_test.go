@@ -114,9 +114,11 @@ func TestStarter_StartLocalMATLABSession_HappyPath(t *testing.T) {
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
-		Return(expectedProcessID, processCleanup, nil).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
+		Return(expectedProcessID, processCleanup, nil, nil).
 		Once()
 
 	mockWatchdog.EXPECT().
@@ -147,7 +149,7 @@ func TestStarter_StartLocalMATLABSession_HappyPath(t *testing.T) {
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.NoError(t, err)
@@ -232,10 +234,12 @@ func TestStarter_StartLocalMATLABSession_WithStartingDirectory(t *testing.T) {
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	// Note: When starting directory is empty, it should use sessionDirPath
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedStartingDir, expectedStartupFlags, expectedEnv).
-		Return(expectedProcessID, processCleanup, nil).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedStartingDir, expectedStartupFlags, expectedEnv).
+		Return(expectedProcessID, processCleanup, nil, nil).
 		Once()
 
 	mockWatchdog.EXPECT().
@@ -263,7 +267,7 @@ func TestStarter_StartLocalMATLABSession_WithStartingDirectory(t *testing.T) {
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.NoError(t, err)
@@ -312,7 +316,7 @@ func TestStarter_StartLocalMATLABSession_DirectoryFactoryNewError(t *testing.T) 
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(t.Context(), mockLogger, startRequest)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
@@ -384,9 +388,11 @@ func TestStarter_StartLocalMATLABSession_MATLABProcessLauncherError(t *testing.T
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
-		Return(0, nil, expectedError).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
+		Return(0, nil, nil, expectedError).
 		Once()
 
 	starter := localmatlabsession.NewStarter(
@@ -402,7 +408,7 @@ func TestStarter_StartLocalMATLABSession_MATLABProcessLauncherError(t *testing.T
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
@@ -480,9 +486,11 @@ func TestStarter_StartLocalMATLABSession_RegisterProcessPIDWithWatchdogError(t *
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedStartingDir, expectedStartupFlags, expectedEnv).
-		Return(expectedProcessID, processCleanup, nil).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedStartingDir, expectedStartupFlags, expectedEnv).
+		Return(expectedProcessID, processCleanup, nil, nil).
 		Once()
 
 	mockWatchdog.EXPECT().
@@ -510,7 +518,7 @@ func TestStarter_StartLocalMATLABSession_RegisterProcessPIDWithWatchdogError(t *
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.NoError(t, err)
@@ -600,9 +608,11 @@ func TestStarter_StartLocalMATLABSession_GetEmbeddedConnectorDetailsError(t *tes
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
-		Return(expectedProcessID, processCleanup, nil).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
+		Return(expectedProcessID, processCleanup, nil, nil).
 		Once()
 
 	mockWatchdog.EXPECT().
@@ -628,7 +638,7 @@ func TestStarter_StartLocalMATLABSession_GetEmbeddedConnectorDetailsError(t *tes
 	}
 
 	// Act
-	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	connectionDetails, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
@@ -705,9 +715,11 @@ func TestStarter_StartLocalMATLABSession_CleanupReturnsSessionCleanupError(t *te
 		Return(expectedStartupFlags).
 		Once()
 
+	expectedCtx := t.Context()
+
 	mockMATLABProcessLauncher.EXPECT().
-		Launch(mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
-		Return(expectedProcessID, processCleanup, nil).
+		Launch(expectedCtx, mockLogger.AsMockArg(), expectedSessionDirPath, expectedMATLABRoot, expectedSessionDirPath, expectedStartupFlags, expectedEnv).
+		Return(expectedProcessID, processCleanup, nil, nil).
 		Once()
 
 	mockWatchdog.EXPECT().
@@ -737,7 +749,7 @@ func TestStarter_StartLocalMATLABSession_CleanupReturnsSessionCleanupError(t *te
 		IsStartingDirectorySet: false,
 	}
 
-	_, cleanup, err := starter.StartLocalMATLABSession(mockLogger, startRequest)
+	_, cleanup, err := starter.StartLocalMATLABSession(expectedCtx, mockLogger, startRequest)
 	require.NoError(t, err)
 	require.NotNil(t, cleanup)
 

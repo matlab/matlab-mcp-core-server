@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager_test
 
@@ -47,8 +47,10 @@ func TestMATLABManager_StartMATLABSession_HappyPath(t *testing.T) {
 		IsStartingDirectorySet: false,
 	}
 
+	expectedCtx := t.Context()
+
 	mockMATLABServices.EXPECT().
-		StartLocalMATLABSession(mock.Anything, expectedLocalSessionDetails).
+		StartLocalMATLABSession(expectedCtx, mockLogger.AsMockArg(), expectedLocalSessionDetails).
 		Return(connectionDetails, sessionCleanupFunc, nil).
 		Once()
 
@@ -63,7 +65,6 @@ func TestMATLABManager_StartMATLABSession_HappyPath(t *testing.T) {
 		Once()
 
 	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
-	ctx := t.Context()
 
 	startRequest := entities.LocalSessionDetails{
 		MATLABRoot:             expectedMATLABRoot,
@@ -71,7 +72,7 @@ func TestMATLABManager_StartMATLABSession_HappyPath(t *testing.T) {
 	}
 
 	// Act
-	sessionID, err := manager.StartMATLABSession(ctx, mockLogger, startRequest)
+	sessionID, err := manager.StartMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.NoError(t, err)
@@ -99,13 +100,14 @@ func TestMATLABManager_StartMATLABSession_MATLABServicesError(t *testing.T) {
 		IsStartingDirectorySet: false,
 	}
 
+	expectedCtx := t.Context()
+
 	mockMATLABServices.EXPECT().
-		StartLocalMATLABSession(mock.Anything, expectedLocalSessionDetails).
+		StartLocalMATLABSession(expectedCtx, mockLogger.AsMockArg(), expectedLocalSessionDetails).
 		Return(embeddedconnector.ConnectionDetails{}, nil, expectedError).
 		Once()
 
 	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
-	ctx := t.Context()
 
 	startRequest := entities.LocalSessionDetails{
 		MATLABRoot:             expectedMATLABRoot,
@@ -113,7 +115,7 @@ func TestMATLABManager_StartMATLABSession_MATLABServicesError(t *testing.T) {
 	}
 
 	// Act
-	sessionID, err := manager.StartMATLABSession(ctx, mockLogger, startRequest)
+	sessionID, err := manager.StartMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
@@ -146,8 +148,10 @@ func TestMATLABManager_StartMATLABSession_ClientFactoryError(t *testing.T) {
 		IsStartingDirectorySet: false,
 	}
 
+	expectedCtx := t.Context()
+
 	mockMATLABServices.EXPECT().
-		StartLocalMATLABSession(mock.Anything, expectedLocalSessionDetails).
+		StartLocalMATLABSession(expectedCtx, mockLogger.AsMockArg(), expectedLocalSessionDetails).
 		Return(connectionDetails, sessionCleanupFunc, nil).
 		Once()
 
@@ -157,7 +161,6 @@ func TestMATLABManager_StartMATLABSession_ClientFactoryError(t *testing.T) {
 		Once()
 
 	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
-	ctx := t.Context()
 
 	startRequest := entities.LocalSessionDetails{
 		MATLABRoot:             expectedMATLABRoot,
@@ -165,7 +168,7 @@ func TestMATLABManager_StartMATLABSession_ClientFactoryError(t *testing.T) {
 	}
 
 	// Act
-	sessionID, err := manager.StartMATLABSession(ctx, mockLogger, startRequest)
+	sessionID, err := manager.StartMATLABSession(expectedCtx, mockLogger, startRequest)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)

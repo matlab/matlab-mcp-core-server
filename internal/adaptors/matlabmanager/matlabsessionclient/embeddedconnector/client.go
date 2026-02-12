@@ -13,6 +13,7 @@ import (
 	"time"
 
 	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
@@ -165,29 +166,26 @@ func (c *Client) FEval(ctx context.Context, logger entities.Logger, input entiti
 }
 
 func (m *Client) Ping(ctx context.Context, sessionLogger entities.Logger) entities.PingResponse {
-	timeout := time.After(m.pingTimeout)
-	tick := time.Tick(m.pingRetry)
+	pingCtx, cancel := context.WithTimeout(ctx, m.pingTimeout)
+	defer cancel()
 
-	for {
-		status, err := m.pingMATLAB(ctx, sessionLogger)
+	_, err := retry.Retry(pingCtx, func() (struct{}, bool, error) {
+		status, err := m.pingMATLAB(pingCtx, sessionLogger)
 		if err != nil {
 			sessionLogger.WithError(err).Debug("Ping to MATLAB session failed")
 		}
+		return struct{}{}, status, nil
+	}, retry.NewLinearRetryStrategy(m.pingRetry))
 
-		if status {
-			return entities.PingResponse{
-				IsAlive: true,
-			}
+	if err != nil {
+		sessionLogger.Warn("timeout waiting for matlab to be ready")
+		return entities.PingResponse{
+			IsAlive: false,
 		}
+	}
 
-		select {
-		case <-timeout:
-			sessionLogger.Warn("timeout waiting for matlab to be ready")
-			return entities.PingResponse{
-				IsAlive: false,
-			}
-		case <-tick:
-		}
+	return entities.PingResponse{
+		IsAlive: true,
 	}
 }
 

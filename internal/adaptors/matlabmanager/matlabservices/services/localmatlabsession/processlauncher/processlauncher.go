@@ -1,11 +1,14 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package processlauncher
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -19,49 +22,64 @@ func New() *MATLABProcessLauncher {
 	return &MATLABProcessLauncher{}
 }
 
-func (l *MATLABProcessLauncher) Launch(logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), error) {
+func (l *MATLABProcessLauncher) Launch(
+	ctx context.Context,
+	logger entities.Logger,
+	sessionRoot string,
+	matlabRoot string,
+	workingDir string,
+	args []string,
+	env []string,
+) (int, func(), <-chan struct{}, error) {
 	stdIO, stdIOCleanup, err := createLocalStdioForNewProcess(logger, sessionRoot)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, err
 	}
 
-	process, err := startMatlab(logger, matlabRoot, workingDir, args, env, stdIO)
+	// Use WithoutCancel to preserve existing behaviour: startup is not cancellable.
+	// The context is threaded through for future use but does not affect startup.
+	process, err := startMatlab(context.WithoutCancel(ctx), logger, matlabRoot, workingDir, args, env, stdIO)
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to start MATLAB process: %w", err)
+		stdIOCleanup()
+		return 0, nil, nil, fmt.Errorf("failed to start MATLAB process: %w", err)
 	}
 
-	return process.Pid, func() {
-		// By the time this is called, we expect MATLAB to be shutting down gracefully
-		logger.Debug("Waiting for MATLAB process to exit gracefully")
+	processExited := make(chan struct{})
+	waitResult := make(chan error, 1)
 
-		errC := make(chan error)
-		go func() {
-			_, err := process.Wait()
-			errC <- err
-		}()
+	go func() {
+		_, err := process.Wait()
+		waitResult <- err
+		close(processExited)
+	}()
 
-		select {
-		case err := <-errC:
-			logger.Debug("Done waiting for MATLAB process to exit")
-			if err != nil && err != os.ErrProcessDone {
-				logger.Warn("MATLAB process did not exit gracefully, forcefully kill it")
-				// Probably overkill, but ensure the process is killed if it's still running
+	var once sync.Once
+	cleanup := func() {
+		once.Do(func() {
+			logger.Debug("Waiting for MATLAB process to exit gracefully")
+
+			select {
+			case err := <-waitResult:
+				logger.Debug("Done waiting for MATLAB process to exit")
+				if err != nil && !errors.Is(err, os.ErrProcessDone) {
+					logger.Warn("MATLAB process did not exit gracefully, forcefully kill it")
+					killMATLABProcess(logger, process)
+				}
+			case <-time.After(gracefulShutdownTimeout):
+				logger.Warn("Timed out waiting for MATLAB process to exit gracefully, forcefully kill it")
 				killMATLABProcess(logger, process)
 			}
-		case <-time.After(gracefulShutdownTimeout):
-			logger.Warn("Timed out waiting for MATLAB process to exit gracefully, forcefully kill it")
-			// Probably overkill, but ensure the process is killed if it's still running
-			killMATLABProcess(logger, process)
-		}
 
-		// Cleanup the stdIO files
-		stdIOCleanup()
-	}, nil
+			stdIOCleanup()
+		})
+	}
+
+	return process.Pid, cleanup, processExited, nil
 }
 
 func killMATLABProcess(logger entities.Logger, process *os.Process) {
 	err := process.Kill()
-	if err != nil && err != os.ErrProcessDone {
+	if err != nil && !errors.Is(err, os.ErrProcessDone) {
 		logger.WithError(err).Warn("Failed to kill MATLAB process")
 	}
 }

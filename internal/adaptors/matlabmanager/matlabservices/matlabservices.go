@@ -1,8 +1,10 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabservices
 
 import (
+	"context"
+
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -13,7 +15,7 @@ type MATLABLocator interface {
 }
 
 type LocalMATLABSessionLauncher interface {
-	StartLocalMATLABSession(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)
+	StartLocalMATLABSession(ctx context.Context, logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)
 }
 
 type MATLABServices struct {

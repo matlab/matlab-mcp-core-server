@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -37,8 +39,8 @@ func (_m *MockMATLABProcessLauncher) EXPECT() *MockMATLABProcessLauncher_Expecte
 }
 
 // Launch provides a mock function for the type MockMATLABProcessLauncher
-func (_mock *MockMATLABProcessLauncher) Launch(logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), error) {
-	ret := _mock.Called(logger, sessionRoot, matlabRoot, workingDir, args, env)
+func (_mock *MockMATLABProcessLauncher) Launch(ctx context.Context, logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), <-chan struct{}, error) {
+	ret := _mock.Called(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Launch")
@@ -46,28 +48,36 @@ func (_mock *MockMATLABProcessLauncher) Launch(logger entities.Logger, sessionRo
 
 	var r0 int
 	var r1 func()
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger, string, string, string, []string, []string) (int, func(), error)); ok {
-		return returnFunc(logger, sessionRoot, matlabRoot, workingDir, args, env)
+	var r2 <-chan struct{}
+	var r3 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, string, string, string, []string, []string) (int, func(), <-chan struct{}, error)); ok {
+		return returnFunc(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
 	}
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger, string, string, string, []string, []string) int); ok {
-		r0 = returnFunc(logger, sessionRoot, matlabRoot, workingDir, args, env)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, string, string, string, []string, []string) int); ok {
+		r0 = returnFunc(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
 	} else {
 		r0 = ret.Get(0).(int)
 	}
-	if returnFunc, ok := ret.Get(1).(func(entities.Logger, string, string, string, []string, []string) func()); ok {
-		r1 = returnFunc(logger, sessionRoot, matlabRoot, workingDir, args, env)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entities.Logger, string, string, string, []string, []string) func()); ok {
+		r1 = returnFunc(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(func())
 		}
 	}
-	if returnFunc, ok := ret.Get(2).(func(entities.Logger, string, string, string, []string, []string) error); ok {
-		r2 = returnFunc(logger, sessionRoot, matlabRoot, workingDir, args, env)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, entities.Logger, string, string, string, []string, []string) <-chan struct{}); ok {
+		r2 = returnFunc(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
 	} else {
-		r2 = ret.Error(2)
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).(<-chan struct{})
+		}
 	}
-	return r0, r1, r2
+	if returnFunc, ok := ret.Get(3).(func(context.Context, entities.Logger, string, string, string, []string, []string) error); ok {
+		r3 = returnFunc(ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)
+	} else {
+		r3 = ret.Error(3)
+	}
+	return r0, r1, r2, r3
 }
 
 // MockMATLABProcessLauncher_Launch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Launch'
@@ -76,25 +86,26 @@ type MockMATLABProcessLauncher_Launch_Call struct {
 }
 
 // Launch is a helper method to define mock.On call
+//   - ctx context.Context
 //   - logger entities.Logger
 //   - sessionRoot string
 //   - matlabRoot string
 //   - workingDir string
 //   - args []string
 //   - env []string
-func (_e *MockMATLABProcessLauncher_Expecter) Launch(logger interface{}, sessionRoot interface{}, matlabRoot interface{}, workingDir interface{}, args interface{}, env interface{}) *MockMATLABProcessLauncher_Launch_Call {
-	return &MockMATLABProcessLauncher_Launch_Call{Call: _e.mock.On("Launch", logger, sessionRoot, matlabRoot, workingDir, args, env)}
+func (_e *MockMATLABProcessLauncher_Expecter) Launch(ctx interface{}, logger interface{}, sessionRoot interface{}, matlabRoot interface{}, workingDir interface{}, args interface{}, env interface{}) *MockMATLABProcessLauncher_Launch_Call {
+	return &MockMATLABProcessLauncher_Launch_Call{Call: _e.mock.On("Launch", ctx, logger, sessionRoot, matlabRoot, workingDir, args, env)}
 }
 
-func (_c *MockMATLABProcessLauncher_Launch_Call) Run(run func(logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string)) *MockMATLABProcessLauncher_Launch_Call {
+func (_c *MockMATLABProcessLauncher_Launch_Call) Run(run func(ctx context.Context, logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string)) *MockMATLABProcessLauncher_Launch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 entities.Logger
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(entities.Logger)
+			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 entities.Logger
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(entities.Logger)
 		}
 		var arg2 string
 		if args[2] != nil {
@@ -104,13 +115,17 @@ func (_c *MockMATLABProcessLauncher_Launch_Call) Run(run func(logger entities.Lo
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
-		var arg4 []string
+		var arg4 string
 		if args[4] != nil {
-			arg4 = args[4].([]string)
+			arg4 = args[4].(string)
 		}
 		var arg5 []string
 		if args[5] != nil {
 			arg5 = args[5].([]string)
+		}
+		var arg6 []string
+		if args[6] != nil {
+			arg6 = args[6].([]string)
 		}
 		run(
 			arg0,
@@ -119,17 +134,18 @@ func (_c *MockMATLABProcessLauncher_Launch_Call) Run(run func(logger entities.Lo
 			arg3,
 			arg4,
 			arg5,
+			arg6,
 		)
 	})
 	return _c
 }
 
-func (_c *MockMATLABProcessLauncher_Launch_Call) Return(n int, fn func(), err error) *MockMATLABProcessLauncher_Launch_Call {
-	_c.Call.Return(n, fn, err)
+func (_c *MockMATLABProcessLauncher_Launch_Call) Return(n int, fn func(), valCh <-chan struct{}, err error) *MockMATLABProcessLauncher_Launch_Call {
+	_c.Call.Return(n, fn, valCh, err)
 	return _c
 }
 
-func (_c *MockMATLABProcessLauncher_Launch_Call) RunAndReturn(run func(logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), error)) *MockMATLABProcessLauncher_Launch_Call {
+func (_c *MockMATLABProcessLauncher_Launch_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, sessionRoot string, matlabRoot string, workingDir string, args []string, env []string) (int, func(), <-chan struct{}, error)) *MockMATLABProcessLauncher_Launch_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager
 
@@ -17,9 +17,11 @@ func (m *MATLABManager) StartMATLABSession(ctx context.Context, sessionLogger en
 
 	switch request := startRequest.(type) {
 	case entities.LocalSessionDetails:
-		sessionLogger := sessionLogger.With("matlab-root", request.MATLABRoot)
+		localSessionLogger := sessionLogger.With("matlab-root", request.MATLABRoot)
 		// For now, we return embedded connector details, to decouple the session start logic from the client creation.
-		embeddedConnectorEndpoint, sessionCleanup, err := m.matlabServices.StartLocalMATLABSession(sessionLogger,
+		embeddedConnectorEndpoint, sessionCleanup, err := m.matlabServices.StartLocalMATLABSession(
+			ctx,
+			localSessionLogger,
 			datatypes.LocalSessionDetails{
 				MATLABRoot:             request.MATLABRoot,
 				IsStartingDirectorySet: request.IsStartingDirectorySet,

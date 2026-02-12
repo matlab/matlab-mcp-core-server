@@ -1,9 +1,10 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 //go:build !windows
 
 package processlauncher
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func startMatlab(_ entities.Logger, matlabRoot string, workingDir string, args []string, env []string, stdIO *stdIO) (*os.Process, error) {
+func startMatlab(_ context.Context, _ entities.Logger, matlabRoot string, workingDir string, args []string, env []string, stdIO *stdIO) (*os.Process, error) {
 	matlabPath := filepath.Join(matlabRoot, "bin", "matlab")
 	if _, err := os.Stat(matlabPath); err != nil {
 		return nil, err

@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
@@ -39,8 +41,8 @@ func (_m *MockLocalMATLABSessionLauncher) EXPECT() *MockLocalMATLABSessionLaunch
 }
 
 // StartLocalMATLABSession provides a mock function for the type MockLocalMATLABSessionLauncher
-func (_mock *MockLocalMATLABSessionLauncher) StartLocalMATLABSession(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
-	ret := _mock.Called(logger, request)
+func (_mock *MockLocalMATLABSessionLauncher) StartLocalMATLABSession(ctx context.Context, logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error) {
+	ret := _mock.Called(ctx, logger, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for StartLocalMATLABSession")
@@ -49,23 +51,23 @@ func (_mock *MockLocalMATLABSessionLauncher) StartLocalMATLABSession(logger enti
 	var r0 embeddedconnector.ConnectionDetails
 	var r1 func() error
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger, datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)); ok {
-		return returnFunc(logger, request)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)); ok {
+		return returnFunc(ctx, logger, request)
 	}
-	if returnFunc, ok := ret.Get(0).(func(entities.Logger, datatypes.LocalSessionDetails) embeddedconnector.ConnectionDetails); ok {
-		r0 = returnFunc(logger, request)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, datatypes.LocalSessionDetails) embeddedconnector.ConnectionDetails); ok {
+		r0 = returnFunc(ctx, logger, request)
 	} else {
 		r0 = ret.Get(0).(embeddedconnector.ConnectionDetails)
 	}
-	if returnFunc, ok := ret.Get(1).(func(entities.Logger, datatypes.LocalSessionDetails) func() error); ok {
-		r1 = returnFunc(logger, request)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entities.Logger, datatypes.LocalSessionDetails) func() error); ok {
+		r1 = returnFunc(ctx, logger, request)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(func() error)
 		}
 	}
-	if returnFunc, ok := ret.Get(2).(func(entities.Logger, datatypes.LocalSessionDetails) error); ok {
-		r2 = returnFunc(logger, request)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, entities.Logger, datatypes.LocalSessionDetails) error); ok {
+		r2 = returnFunc(ctx, logger, request)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -78,25 +80,31 @@ type MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call struct {
 }
 
 // StartLocalMATLABSession is a helper method to define mock.On call
+//   - ctx context.Context
 //   - logger entities.Logger
 //   - request datatypes.LocalSessionDetails
-func (_e *MockLocalMATLABSessionLauncher_Expecter) StartLocalMATLABSession(logger interface{}, request interface{}) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
-	return &MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call{Call: _e.mock.On("StartLocalMATLABSession", logger, request)}
+func (_e *MockLocalMATLABSessionLauncher_Expecter) StartLocalMATLABSession(ctx interface{}, logger interface{}, request interface{}) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
+	return &MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call{Call: _e.mock.On("StartLocalMATLABSession", ctx, logger, request)}
 }
 
-func (_c *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call) Run(run func(logger entities.Logger, request datatypes.LocalSessionDetails)) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
+func (_c *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call) Run(run func(ctx context.Context, logger entities.Logger, request datatypes.LocalSessionDetails)) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 entities.Logger
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(entities.Logger)
+			arg0 = args[0].(context.Context)
 		}
-		var arg1 datatypes.LocalSessionDetails
+		var arg1 entities.Logger
 		if args[1] != nil {
-			arg1 = args[1].(datatypes.LocalSessionDetails)
+			arg1 = args[1].(entities.Logger)
+		}
+		var arg2 datatypes.LocalSessionDetails
+		if args[2] != nil {
+			arg2 = args[2].(datatypes.LocalSessionDetails)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -107,7 +115,7 @@ func (_c *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call) Return(co
 	return _c
 }
 
-func (_c *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call) RunAndReturn(run func(logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
+func (_c *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, request datatypes.LocalSessionDetails) (embeddedconnector.ConnectionDetails, func() error, error)) *MockLocalMATLABSessionLauncher_StartLocalMATLABSession_Call {
 	_c.Call.Return(run)
 	return _c
 }
