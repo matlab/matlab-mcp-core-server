@@ -90,6 +90,19 @@ func BuildServerWithCustomDependencies(t *testing.T) ServerDetails {
 	}
 }
 
+func BuildServerWithLogging(t *testing.T) ServerDetails {
+	// Those string literals match the one in the source code
+	return ServerDetails{
+		binaryLocation: buildSDKServer(t, "server_with_logging"),
+
+		moduleName: goModName,
+
+		name:         "server-with-logging",
+		title:        "Server With Logging",
+		instructions: "This is a test server focused on logging",
+	}
+}
+
 func buildSDKServer(t *testing.T, serverFolder string) string {
 	t.Helper()
 

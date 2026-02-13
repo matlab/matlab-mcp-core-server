@@ -22,9 +22,7 @@ func NewGreetTool() server.Tool {
 			"Greets a user by name",
 			tools.NewReadOnlyAnnotations(),
 		),
-		func(ctx context.Context, request *tools.CallRequest, inputs GreetToolInput) (tools.RichContent, i18n.Error) {
-			request.Logger.Info("Greeting user: " + inputs.Name)
-
+		func(ctx context.Context, request tools.CallRequest, inputs GreetToolInput) (tools.RichContent, i18n.Error) {
 			return tools.RichContent{
 				TextContent: []string{"Hello " + inputs.Name},
 			}, nil

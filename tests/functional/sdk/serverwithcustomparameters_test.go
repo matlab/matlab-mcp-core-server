@@ -33,9 +33,7 @@ func TestServerWithCustomParametersTestSuite(t *testing.T) {
 
 func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_HappyPath() {
 	// Connect to a session
-	expectedID := "custom-param-id"
 	expectedValue := "someValue"
-
 	expectedRecordedID := "custom-recorded-param-id"
 	expectedRecordedValue := "someOtherValue"
 
@@ -51,35 +49,39 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_HappyPath(
 		s.Require().NoError(session.Close(), "closing session should not error")
 	}()
 
-	// Setup regexp to look into the logs
+	// Check for unstructured content output tool
+	result, err := session.CallTool(s.T().Context(), "greet", map[string]any{"name": "World"})
+	s.Require().NoError(err, "should call greet tool successfully")
+
+	textContent, err := session.GetTextContent(result)
+	s.Require().NoError(err, "should get text content")
+	s.Equal("Hello World "+expectedValue, textContent, "should return greeting with config value")
+
+	// Check for structured content output tool
+	response, err := session.CallTool(s.T().Context(), "greet-structured", map[string]any{"name": "World"})
+	s.Require().NoError(err, "should call greet tool successfully")
+	parsedValue := struct {
+		Response       string `json:"response"`
+		ParameterValue string `json:"configValue"`
+	}{}
+	err = session.UnmarshalStructuredContent(response, &parsedValue)
+	s.Require().NoError(err)
+	s.Equal(expectedValue, parsedValue.ParameterValue)
+
+	// Check recorded parameter is logged to stderr
 	anyCharacterButNewLines := `[^\n]+`
 	configStateLogMessage := "Configuration state"
 	configStateRegExp, err := regexp.Compile(configStateLogMessage + anyCharacterButNewLines + expectedRecordedID + anyCharacterButNewLines + expectedRecordedValue)
 	s.Require().NoError(err)
 
-	dependenciesProviderLogMessage := "Config value from dependency provider"
-	dependenciesProviderRegExp, err := regexp.Compile(dependenciesProviderLogMessage + anyCharacterButNewLines + expectedID + anyCharacterButNewLines + expectedValue)
-	s.Require().NoError(err)
-
-	toolsProviderLogMessage := "Config value from tools provider"
-	toolsProviderRegExp, err := regexp.Compile(toolsProviderLogMessage + anyCharacterButNewLines + expectedID + anyCharacterButNewLines + expectedValue)
-	s.Require().NoError(err)
-
-	// Check that the log features the custom parameter values
 	ctx, cancel := context.WithTimeout(s.T().Context(), 2*time.Second) // Timeout for the logs to appear in the stream
 	defer cancel()
 
 	_, err = retry.Retry(ctx, func() (struct{}, bool, error) {
-		logContent := session.Stderr()
-
-		foundAllLogEntries := configStateRegExp.MatchString(logContent) &&
-			dependenciesProviderRegExp.MatchString(logContent) &&
-			toolsProviderRegExp.MatchString(logContent)
-
-		return struct{}{}, foundAllLogEntries, nil
+		return struct{}{}, configStateRegExp.MatchString(session.Stderr()), nil
 	}, retry.NewLinearRetryStrategy(200*time.Millisecond))
 
-	s.Require().NoError(err, "Failed to find the log entries in :\n\n%s", session.Stderr())
+	s.Require().NoError(err, "recorded parameter should be logged with expected value:\n\n%s", session.Stderr())
 }
 
 func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_Recorded_ByEnvVar() {

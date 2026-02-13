@@ -154,7 +154,7 @@ functional-tests:
 
 system-tests:
 	go tool gotestsum --packages="./tests/system/..." -- -race -count=1 -timeout 30m
-	@$(MAKE) --no-print-directory check-matlab-leaks
+	@$(CHECK_MATLAB_LEAKS)
 
 ci-unit-tests:
 	go test $(RACE_FLAG) -json -count=1 -coverprofile cover.out ./internal/... ./pkg/... ./tests/testutils/...
@@ -167,25 +167,53 @@ ci-functional-tests:
 
 ci-system-tests:
 	go test $(RACE_FLAG) -timeout 120m -json -count=1 ./tests/system/...
-	@$(MAKE) --no-print-directory check-matlab-leaks
+	@$(CHECK_MATLAB_LEAKS)
 
 # Check for leaked MATLAB processes after system tests
 # Tests should clean up all MATLAB sessions they create
 check-matlab-leaks:
-	@echo "Waiting for processes to settle..."
+	@$(CHECK_MATLAB_LEAKS)
+
+# =============================================================================
+# Platform-specific multi-line command definitions
+# =============================================================================
+# These use define/endef for readability and $(strip ...) to flatten for execution
+
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "Start-Sleep -Seconds 5"
-	@echo "Checking for leaked MATLAB processes..."
-	@powershell -Command "$$procs = Get-Process -Name MATLAB -ErrorAction SilentlyContinue | Where-Object { $$_.CommandLine -like '*matlab-mcp-core-server*' }; if ($$procs) { Write-Host 'WARNING: Found leaked MATLAB processes:'; $$procs | Format-Table Id,ProcessName,StartTime; exit 1 } else { Write-Host 'No leaked MATLAB processes found.' }"
+
+define CHECK_MATLAB_LEAKS_CMD
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& {
+    Write-Host 'Waiting for processes to settle...';
+    Start-Sleep -Seconds 5;
+    Write-Host 'Checking for leaked MATLAB processes...';
+    `$$p = Get-Process -Name MATLAB -ErrorAction SilentlyContinue |
+        Where-Object { `$$_.CommandLine -like '*matlab-mcp-core-server*' };
+    if (`$$p) {
+        Write-Host 'WARNING: Found leaked MATLAB processes:';
+        `$$p | Format-Table Id,ProcessName,StartTime;
+        exit 1
+    } else {
+        Write-Host 'No leaked MATLAB processes found.'
+    }
+}"
+endef
+
 else
-	@sleep 5
-	@echo "Checking for leaked MATLAB processes..."
-	@leaked=$$(pgrep -a -f -l 'addpath\(sessionPath\);matlab_mcp\.initializeMCP\(\);clear sessionPath;' | grep -v 'make\|grep' || true); \
-	if [ -n "$$leaked" ]; then \
-		echo "WARNING: Found leaked MATLAB processes:"; \
-		echo "$$leaked"; \
-		exit 1; \
-	else \
-		echo "No leaked MATLAB processes found."; \
-	fi
+
+define CHECK_MATLAB_LEAKS_CMD
+echo "Waiting for processes to settle...";
+sleep 5;
+echo "Checking for leaked MATLAB processes...";
+leaked=$$(pgrep -a -f -l 'addpath\(sessionPath\);matlab_mcp\.initializeMCP\(\);clear sessionPath;' | grep -v 'make\|grep' || true);
+if [ -n "$$leaked" ]; then
+    echo "WARNING: Found leaked MATLAB processes:";
+    echo "$$leaked";
+    exit 1;
+else
+    echo "No leaked MATLAB processes found.";
+fi
+endef
+
 endif
+
+CHECK_MATLAB_LEAKS := $(strip $(CHECK_MATLAB_LEAKS_CMD))

@@ -10,6 +10,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
+	configmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/config"
+	definitionmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/definition"
 	internaltoolsmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/mcp/tools"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
 	adaptormocks "github.com/matlab/matlab-mcp-core-server/mocks/wire/adaptor"
@@ -515,6 +517,12 @@ func TestServer_StartAndWaitForCompletion_WithToolsProvider(t *testing.T) {
 	mockLoggerFactory := &adaptormocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockConfig := &configmocks.MockGenericConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
+	defer mockMessageCatalog.AssertExpectations(t)
+
 	mockTool := &server.MockTool{}
 	defer mockTool.AssertExpectations(t)
 
@@ -524,7 +532,9 @@ func TestServer_StartAndWaitForCompletion_WithToolsProvider(t *testing.T) {
 	ctx := t.Context()
 
 	internalToolProviderResources := definition.ToolsProviderResources{
-		LoggerFactory: mockLoggerFactory,
+		LoggerFactory:  mockLoggerFactory,
+		Config:         mockConfig,
+		MessageCatalog: mockMessageCatalog,
 	}
 
 	features := definition.Features{}
@@ -551,7 +561,7 @@ func TestServer_StartAndWaitForCompletion_WithToolsProvider(t *testing.T) {
 		Return(nil).
 		Once()
 
-	mockTool.On("toInternal", mockLoggerFactory).
+	mockTool.On("toInternal", mockLoggerFactory, mockConfig, mockMessageCatalog).
 		Return(mockInternalTool).
 		Once()
 

@@ -32,26 +32,18 @@ func main() {
 				return nil, err
 			}
 
-			logger.With(customParameter.GetID(), customParameterValue).Info("Config value from dependency provider")
+			logger.
+				With(customParameter.GetID(), customParameterValue).
+				Info("Config value from dependency provider")
 
 			return nil, nil
 		},
 
-		ToolsProvider: func(toolsProviderResources server.ToolsProviderResources[any]) []server.Tool {
-			logger := toolsProviderResources.Logger()
-			cfg := toolsProviderResources.Config()
-
-			// This is purely for example purposes.
-			// You should retrieve config values in the DependenciesProvider or during tool handlers.
-			customParameter := CustomParameter()
-			customParameterValue, err := config.Get(cfg, customParameter)
-			if err != nil {
-				return nil
+		ToolsProvider: func(_ server.ToolsProviderResources[any]) []server.Tool {
+			return []server.Tool{
+				NewGreetTool(),
+				NewGreetStructuredTool(),
 			}
-
-			logger.With(customParameter.GetID(), customParameterValue).Info("Config value from tools provider")
-
-			return nil
 		},
 	}
 	serverInstance := server.New(serverDefinition)

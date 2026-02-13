@@ -3,14 +3,8 @@
 package sdk_test
 
 import (
-	"context"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/tests/functional/sdk/testbinaries"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
 	"github.com/stretchr/testify/suite"
@@ -34,16 +28,8 @@ func TestServerWithCustomToolsTestSuite(t *testing.T) {
 
 func (s *ServerWithCustomToolsTestSuite) TestSDK_CustomTools_HappyPath() {
 	// Connect to a session
-	logFolder, err := os.MkdirTemp("", "server_session") // Can't use s.T().Tempdir() because too long for socket path
-	s.Require().NoError(err)
-	defer s.Require().NoError(os.RemoveAll(logFolder))
-
-	instanceID := "123"
-
 	client := mcpclient.NewClient(s.T().Context(), s.serverDetails.BinaryLocation(), nil,
 		"--log-level=debug",
-		"--log-folder="+logFolder,
-		"--server-instance-id="+instanceID,
 	)
 
 	session, err := client.CreateSession(s.T().Context())
@@ -72,24 +58,4 @@ func (s *ServerWithCustomToolsTestSuite) TestSDK_CustomTools_HappyPath() {
 	}
 	s.Require().NoError(session.UnmarshalStructuredContent(structuredResult, &output), "should unmarshal structured content")
 	s.Require().Equal(expectedTextOutput, output.Response, "should return greeting message")
-
-	// Check the logger is wired correctly
-	logFile := filepath.Join(logFolder, "server-"+instanceID+".log")
-
-	ctx, cancel := context.WithTimeout(s.T().Context(), 2*time.Second) // Timeout for the logs to write to disk
-	defer cancel()
-
-	_, err = retry.Retry(ctx, func() (struct{}, bool, error) {
-		logContent, err := os.ReadFile(logFile) //nolint:gosec // G304: logFile is a controlled test path
-		if err != nil {
-			return struct{}{}, false, err
-		}
-
-		foundUnstructuredLogEntry := strings.Contains(string(logContent), "Greeting user: "+name)
-		foundStructuredLogEntry := strings.Contains(string(logContent), "Greeting user structurally: "+name)
-
-		return struct{}{}, foundUnstructuredLogEntry && foundStructuredLogEntry, nil
-	}, retry.NewLinearRetryStrategy(200*time.Millisecond))
-
-	s.Require().NoError(err)
 }

@@ -2,7 +2,10 @@
 
 package tools
 
-import "github.com/matlab/matlab-mcp-core-server/pkg/logger"
+import (
+	"github.com/matlab/matlab-mcp-core-server/pkg/config"
+	"github.com/matlab/matlab-mcp-core-server/pkg/logger"
+)
 
 type Definition struct {
 	Name        string
@@ -11,8 +14,9 @@ type Definition struct {
 	Annotations annotations
 }
 
-type CallRequest struct {
-	Logger logger.Logger
+type CallRequest interface {
+	Logger() logger.Logger
+	Config() config.Config
 }
 
 type RichContent struct {

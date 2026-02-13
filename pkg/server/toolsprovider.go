@@ -5,13 +5,11 @@ package server
 import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
 	internaltools "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
-	"github.com/matlab/matlab-mcp-core-server/pkg/config"
 	"github.com/matlab/matlab-mcp-core-server/pkg/logger"
 )
 
 type ToolsProviderResources[Dependencies any] struct {
 	logger       logger.Logger
-	config       config.Config
 	dependencies Dependencies
 }
 
@@ -24,17 +22,12 @@ func newToolsProviderResources[Dependencies any](resources definition.ToolsProvi
 
 	return ToolsProviderResources[Dependencies]{
 		logger:       newLoggerAdaptor(resources.Logger),
-		config:       newConfigAdaptor(resources.Config, resources.MessageCatalog),
 		dependencies: dependencies,
 	}
 }
 
 func (r ToolsProviderResources[Dependencies]) Logger() logger.Logger {
 	return r.logger
-}
-
-func (r ToolsProviderResources[Dependencies]) Config() config.Config {
-	return r.config
 }
 
 func (r ToolsProviderResources[Dependencies]) Dependencies() Dependencies {
@@ -51,6 +44,10 @@ func (p ToolsProvider[Dependencies]) toInternal() definition.ToolsProvider {
 
 		tools := p(newToolsProviderResources[Dependencies](resources))
 
-		return toolArray(tools).toInternal(resources.LoggerFactory)
+		return toolArray(tools).toInternal(
+			resources.LoggerFactory,
+			resources.Config,
+			resources.MessageCatalog,
+		)
 	}
 }
