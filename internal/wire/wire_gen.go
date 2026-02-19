@@ -22,6 +22,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
@@ -125,7 +126,8 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	matlabStartingDirSelector := matlabstartingdirselector.New(factory, osFacade)
 	globalMATLAB := globalmatlab.New(matlabManager, matlabRootSelector, matlabStartingDirSelector, factory)
 	tool2 := evalmatlabcode3.New(loggerFactory, factory, evalmatlabcodeUsecase, globalMATLAB)
-	checkmatlabcodeUsecase := checkmatlabcode.New(pathValidator)
+	analyzer := codeanalyzer.New()
+	checkmatlabcodeUsecase := checkmatlabcode.New(pathValidator, analyzer)
 	checkmatlabcodeTool := checkmatlabcode2.New(loggerFactory, checkmatlabcodeUsecase, globalMATLAB)
 	detectmatlabtoolboxesUsecase := detectmatlabtoolboxes.New()
 	detectmatlabtoolboxesTool := detectmatlabtoolboxes2.New(loggerFactory, detectmatlabtoolboxesUsecase, globalMATLAB)

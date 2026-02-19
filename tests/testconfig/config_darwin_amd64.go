@@ -6,4 +6,5 @@ const (
 	MATLABMCPCoreServerBinariesFilename = "matlab-mcp-core-server"
 	OSDescriptor                        = "maci64"
 	MATLABExeName                       = "matlab"
+	ExecutableExtension                 = ""
 )

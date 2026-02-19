@@ -48,9 +48,44 @@ func TestTool_Handler_HappyPath(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	const scriptPath = "/path/to/script.m"
-	expectedCheckCodeOutput := []string{"Line 1: Warning message", "Line 3: Error message"}
-	expectedResponse := checkmatlabcodeusecase.ReturnArgs{
-		CheckCodeOutput: expectedCheckCodeOutput,
+	usecaseCodeIssues := []checkmatlabcodeusecase.CodeIssue{
+		{
+			Description: "Warning message",
+			Line:        1,
+			StartColumn: 1,
+			EndColumn:   10,
+			Severity:    "warning",
+			Fixable:     false,
+		},
+		{
+			Description: "Error message",
+			Line:        3,
+			StartColumn: 5,
+			EndColumn:   15,
+			Severity:    "error",
+			Fixable:     true,
+		},
+	}
+	usecaseResponse := checkmatlabcodeusecase.ReturnArgs{
+		CodeIssues: usecaseCodeIssues,
+	}
+	expectedCodeIssues := []checkmatlabcode.CodeIssue{
+		{
+			Description: "Warning message",
+			Line:        1,
+			StartColumn: 1,
+			EndColumn:   10,
+			Severity:    "warning",
+			Fixable:     false,
+		},
+		{
+			Description: "Error message",
+			Line:        3,
+			StartColumn: 5,
+			EndColumn:   15,
+			Severity:    "error",
+			Fixable:     true,
+		},
 	}
 	args := checkmatlabcode.Args{
 		ScriptPath: scriptPath,
@@ -63,7 +98,7 @@ func TestTool_Handler_HappyPath(t *testing.T) {
 
 	mockUsecase.EXPECT().
 		Execute(ctx, mockLogger.AsMockArg(), mockMATLABSessionClient, checkmatlabcodeusecase.Args{ScriptPath: scriptPath}).
-		Return(expectedResponse, nil).
+		Return(usecaseResponse, nil).
 		Once()
 
 	// Act
@@ -71,8 +106,7 @@ func TestTool_Handler_HappyPath(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
-	expectedCleanedOutput := []string{"Line 1: Warning message", "Line 3: Error message"}
-	assert.Equal(t, expectedCleanedOutput, result.CheckCodeOutput, "Check code output should match")
+	assert.Equal(t, expectedCodeIssues, result.CodeIssues, "Code issues should match")
 }
 
 func TestTool_Handler_EmptyOutput(t *testing.T) {
@@ -89,9 +123,9 @@ func TestTool_Handler_EmptyOutput(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	const scriptPath = "/path/to/script.m"
-	var expectedCheckCodeOutput []string
+	var expectedCodeIssues []checkmatlabcodeusecase.CodeIssue
 	expectedResponse := checkmatlabcodeusecase.ReturnArgs{
-		CheckCodeOutput: expectedCheckCodeOutput,
+		CodeIssues: expectedCodeIssues,
 	}
 	args := checkmatlabcode.Args{
 		ScriptPath: scriptPath,
@@ -112,8 +146,8 @@ func TestTool_Handler_EmptyOutput(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
-	assert.NotNil(t, result.CheckCodeOutput, "Check code output should not be nil")
-	assert.Empty(t, result.CheckCodeOutput, "Check code output should be empty")
+	assert.NotNil(t, result.CodeIssues, "Code issues should not be nil")
+	assert.Empty(t, result.CodeIssues, "Code issues should be empty")
 }
 
 func TestTool_Handler_ClientError(t *testing.T) {
@@ -145,8 +179,8 @@ func TestTool_Handler_ClientError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return an error")
-	assert.NotNil(t, result.CheckCodeOutput, "Check code output should not be nil")
-	assert.Empty(t, result.CheckCodeOutput, "Check code output should be empty on error")
+	assert.NotNil(t, result.CodeIssues, "Code issues should not be nil")
+	assert.Empty(t, result.CodeIssues, "Code issues should be empty on error")
 }
 
 func TestTool_Handler_UsecaseError(t *testing.T) {
@@ -183,8 +217,8 @@ func TestTool_Handler_UsecaseError(t *testing.T) {
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return an error")
-	assert.NotNil(t, result.CheckCodeOutput, "Check code output should not be nil")
-	assert.Empty(t, result.CheckCodeOutput, "Check code output should be empty on error")
+	assert.NotNil(t, result.CodeIssues, "Code issues should not be nil")
+	assert.Empty(t, result.CodeIssues, "Code issues should be empty on error")
 }
 
 func TestCheckMATLABCode_Annotations(t *testing.T) {

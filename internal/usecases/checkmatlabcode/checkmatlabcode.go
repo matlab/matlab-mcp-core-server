@@ -1,77 +1,68 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package checkmatlabcode
 
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
+
+// CodeIssue represents a single code issue found by the code analysis
+type CodeIssue struct {
+	Description string
+	Line        int
+	StartColumn int
+	EndColumn   int
+	Severity    string
+	Fixable     bool
+}
 
 type Args struct {
 	ScriptPath string
 }
 
 type ReturnArgs struct {
-	CheckCodeOutput []string
+	CodeIssues []CodeIssue
 }
 
 type PathValidator interface {
 	ValidateMATLABScript(filePath string) (string, error)
 }
 
+type CodeAnalyzer interface {
+	AnalyzeCode(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient, scriptPath string) ([]CodeIssue, error)
+}
+
 type Usecase struct {
 	pathValidator PathValidator
+	codeAnalyzer  CodeAnalyzer
 }
 
 func New(
 	pathValidator PathValidator,
+	codeAnalyzer CodeAnalyzer,
 ) *Usecase {
 	return &Usecase{
 		pathValidator: pathValidator,
+		codeAnalyzer:  codeAnalyzer,
 	}
 }
 
-func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, client entities.MATLABSessionClient, checkcodeRequest Args) (ReturnArgs, error) {
+func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, client entities.MATLABSessionClient, request Args) (ReturnArgs, error) {
 	sessionLogger.Debug("Entering CheckMATLABCode Usecase")
 	defer sessionLogger.Debug("Exiting CheckMATLABCode Usecase")
 
-	validatedPath, err := u.pathValidator.ValidateMATLABScript(checkcodeRequest.ScriptPath)
+	validatedPath, err := u.pathValidator.ValidateMATLABScript(request.ScriptPath)
 	if err != nil {
 		return ReturnArgs{}, fmt.Errorf("path validation failed: %w", err)
 	}
 
-	request := entities.EvalRequest{
-		Code: fmt.Sprintf("checkcode('%s')", strings.ReplaceAll(validatedPath, "'", "''")), // Escape single quotes
-	}
-	response, err := client.EvalWithCapture(ctx, sessionLogger, request)
+	issues, err := u.codeAnalyzer.AnalyzeCode(ctx, sessionLogger, client, validatedPath)
 	if err != nil {
 		return ReturnArgs{}, err
 	}
 
-	output := response.ConsoleOutput
-	if output == "" {
-		output = "No issues found by checkcode"
-	}
-
-	return ReturnArgs{
-		CheckCodeOutput: splitAndCleanLines(output),
-	}, nil
-}
-
-func splitAndCleanLines(text string) []string {
-	lines := strings.Split(text, "\n")
-	result := []string{}
-
-	for _, line := range lines {
-		// Trim whitespace and skip empty lines
-		trimmed := strings.TrimSpace(line)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	return result
+	return ReturnArgs{CodeIssues: issues}, nil
 }

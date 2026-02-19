@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package checkmatlabcode
 
@@ -36,7 +36,7 @@ func Handler(usecase Usecase, globalMATLAB entities.GlobalMATLAB) basetool.Handl
 
 		// Not returning nil for empty slices, to comply with MCP spec.
 		mcpCompliantZeroValue := ReturnArgs{
-			CheckCodeOutput: []string{},
+			CodeIssues: []CodeIssue{},
 		}
 
 		client, err := globalMATLAB.Client(ctx, sessionLogger)
@@ -51,12 +51,23 @@ func Handler(usecase Usecase, globalMATLAB entities.GlobalMATLAB) basetool.Handl
 			return mcpCompliantZeroValue, err
 		}
 
-		if checkcodeResponse.CheckCodeOutput == nil {
-			return mcpCompliantZeroValue, nil
+		// Convert the usecase response to our tool response format
+		result := ReturnArgs{
+			CodeIssues: make([]CodeIssue, len(checkcodeResponse.CodeIssues)),
 		}
 
-		return ReturnArgs{
-			CheckCodeOutput: checkcodeResponse.CheckCodeOutput,
-		}, nil
+		// Copy the code issues from the usecase response
+		for i, issue := range checkcodeResponse.CodeIssues {
+			result.CodeIssues[i] = CodeIssue{
+				Description: issue.Description,
+				Line:        issue.Line,
+				StartColumn: issue.StartColumn,
+				EndColumn:   issue.EndColumn,
+				Severity:    issue.Severity,
+				Fixable:     issue.Fixable,
+			}
+		}
+
+		return result, nil
 	}
 }

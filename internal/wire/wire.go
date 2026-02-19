@@ -15,6 +15,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
 	files "github.com/matlab/matlab-mcp-core-server/internal/adaptors/filesystem/files"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabstartingdirselector"
@@ -192,6 +193,9 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		checkmatlabcode.New,
 		wire.Bind(new(checkmatlabcode.PathValidator), new(*pathvalidator.PathValidator)),
+		wire.Bind(new(checkmatlabcode.CodeAnalyzer), new(*codeanalyzer.Analyzer)),
+
+		codeanalyzer.New,
 
 		detectmatlabtoolboxessinglesessiontool.New,
 		wire.Bind(new(detectmatlabtoolboxessinglesessiontool.Usecase), new(*detectmatlabtoolboxes.Usecase)),

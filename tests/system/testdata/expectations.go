@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package testdata
 
@@ -21,14 +21,10 @@ var TestMathFunctions = Expectation{
 
 // CheckCode expectations
 
-// CleanCodeMessage is returned by checkcode when no issues are found
-const CleanCodeMessage = "No issues found by checkcode"
-
-// ProblematicCodeIssues contains substrings that should appear in checkcode output
+// ProblematicCodeExpectedLines contains line numbers that should appear in checkcode output
 // for problematic_code.m across all supported MATLAB versions.
-// Note: Exact wording varies by MATLAB version, so we use common substrings.
-var ProblematicCodeIssues = []string{
-	"L 8",  // unused variable
-	"L 17", // missing semicolon / unused variable
-	"L 31", // preallocating warning
+var ProblematicCodeExpectedLines = []int{
+	8,  // unused variable
+	17, // missing semicolon / unused variable
+	31, // preallocating warning
 }

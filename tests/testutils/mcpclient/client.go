@@ -180,8 +180,18 @@ func (s *MCPClientSession) EvaluateCode(ctx context.Context, code string, projec
 	return s.GetTextContent(result)
 }
 
+// CodeIssue represents a structured code issue returned by check_matlab_code.
+type CodeIssue struct {
+	Description string `json:"description"`
+	Line        int    `json:"line"`
+	StartColumn int    `json:"start_column"`
+	EndColumn   int    `json:"end_column"`
+	Severity    string `json:"severity"`
+	Fixable     bool   `json:"fixable"`
+}
+
 // CheckCode checks MATLAB code
-func (s *MCPClientSession) CheckCode(ctx context.Context, scriptPath string) ([]string, error) {
+func (s *MCPClientSession) CheckCode(ctx context.Context, scriptPath string) ([]CodeIssue, error) {
 	result, err := s.CallTool(ctx, "check_matlab_code", map[string]any{
 		"script_path": scriptPath,
 	})
@@ -189,13 +199,13 @@ func (s *MCPClientSession) CheckCode(ctx context.Context, scriptPath string) ([]
 		return nil, err
 	}
 	var output struct {
-		CheckCodeMessages []string `json:"checkcode_messages"`
+		CodeIssues []CodeIssue `json:"code_issues"`
 	}
 	err = s.UnmarshalStructuredContent(result, &output)
 	if err != nil {
 		return nil, err
 	}
-	return output.CheckCodeMessages, nil
+	return output.CodeIssues, nil
 }
 
 // RunFile runs a MATLAB file

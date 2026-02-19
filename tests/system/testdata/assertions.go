@@ -1,11 +1,11 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package testdata
 
 import (
-	"strings"
 	"testing"
 
+	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,18 +24,23 @@ func (e Expectation) Assert(t testing.TB, output string) {
 }
 
 // AssertProblematicCodeIssues validates that checkcode found the expected issues.
-func AssertProblematicCodeIssues(t testing.TB, messages []string) {
+func AssertProblematicCodeIssues(t testing.TB, issues []mcpclient.CodeIssue) {
 	t.Helper()
-	require.NotEmpty(t, ProblematicCodeIssues, "expected issues must be defined")
-	allMessages := strings.Join(messages, "\n")
-	assert.NotContains(t, allMessages, CleanCodeMessage, "problematic code should have issues")
-	for _, expectedIssue := range ProblematicCodeIssues {
-		assert.Contains(t, allMessages, expectedIssue)
+	require.NotEmpty(t, issues, "problematic code should have issues")
+	require.NotEmpty(t, ProblematicCodeExpectedLines, "expected lines must be defined")
+
+	issueLines := make([]int, len(issues))
+	for i, issue := range issues {
+		issueLines[i] = issue.Line
+	}
+
+	for _, expectedLine := range ProblematicCodeExpectedLines {
+		assert.Contains(t, issueLines, expectedLine, "should report issue on line %d", expectedLine)
 	}
 }
 
 // AssertCleanCode validates that checkcode found no issues.
-func AssertCleanCode(t testing.TB, messages []string) {
+func AssertCleanCode(t testing.TB, issues []mcpclient.CodeIssue) {
 	t.Helper()
-	assert.Contains(t, messages, CleanCodeMessage, "clean code should have no issues")
+	assert.Empty(t, issues, "clean code should have no issues")
 }

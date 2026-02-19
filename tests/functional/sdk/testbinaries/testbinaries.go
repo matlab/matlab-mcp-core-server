@@ -13,6 +13,8 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/matlab/matlab-mcp-core-server/tests/testconfig"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,7 +121,7 @@ func buildSDKServer(t *testing.T, serverFolder string) string {
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "go mod tidy failed: %s", string(output))
 
-	serverBinaryPath := filepath.Join(tempDir, "test_server")
+	serverBinaryPath := filepath.Join(tempDir, "test_server"+testconfig.ExecutableExtension)
 
 	cmd = exec.Command("go", //nolint:gosec // Trusted variable
 		"build",
