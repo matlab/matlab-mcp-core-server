@@ -120,7 +120,7 @@ Customize the behavior of the server by providing arguments in the `args` array 
 ## Tools
 
 1. `detect_matlab_toolboxes`
-    - Lists installed MATLAB toolboxes with version information.
+    - Returns information about installed MATLAB and toolboxes, including version numbers.  
 
 1. `check_matlab_code`
     - Performs static code analysis on a MATLAB script. Returns warnings about coding style, potential errors, deprecated functions, performance issues, and best practice violations. This is a non-destructive, read-only operation that helps identify code quality issues without executing the script.
