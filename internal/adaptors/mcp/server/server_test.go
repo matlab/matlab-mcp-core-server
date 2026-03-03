@@ -67,7 +67,7 @@ func TestServer_Run_HappyPath(t *testing.T) {
 	defer mockAdditionalTool.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
-	expectedMCPServer := &mcp.Server{}
+	expectedMCPServer := mcp.NewServer(&mcp.Implementation{Name: "test"}, nil)
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
@@ -224,7 +224,7 @@ func TestServer_Run_ToolAddToServerReturnsError(t *testing.T) {
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedError := assert.AnError
-	expectedMCPServer := &mcp.Server{}
+	expectedMCPServer := mcp.NewServer(&mcp.Implementation{Name: "test"}, nil)
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
@@ -275,7 +275,7 @@ func TestServer_Run_ResourceAddToServerReturnsError(t *testing.T) {
 
 	mockLogger := testutils.NewInspectableLogger()
 	expectedError := assert.AnError
-	expectedMCPServer := &mcp.Server{}
+	expectedMCPServer := mcp.NewServer(&mcp.Implementation{Name: "test"}, nil)
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
@@ -327,7 +327,7 @@ func TestServer_Run_HandlesNoToolsOrResources(t *testing.T) {
 	defer mockConfigurator.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
-	expectedMCPServer := &mcp.Server{}
+	expectedMCPServer := mcp.NewServer(&mcp.Implementation{Name: "test"}, nil)
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
@@ -394,7 +394,7 @@ func TestServer_Run_GetToolsToAddError(t *testing.T) {
 	defer mockConfigurator.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
-	expectedMCPServer := &mcp.Server{}
+	expectedMCPServer := mcp.NewServer(&mcp.Implementation{Name: "test"}, nil)
 	expectedError := assert.AnError
 
 	mockLoggerFactory.EXPECT().
