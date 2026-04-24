@@ -40,6 +40,7 @@ type Config interface {
 
 	// Logger
 	LogLevel() entities.LogLevel
+	DuplicateLogsToStderr() bool
 	RecordToLogger(logger entities.Logger)
 
 	// MATLAB

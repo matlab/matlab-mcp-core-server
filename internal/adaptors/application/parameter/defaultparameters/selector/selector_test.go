@@ -122,7 +122,7 @@ func TestSelector_DefaultParameters_MATLABEnabled(t *testing.T) {
 	parameters := sut.DefaultParameters()
 
 	// Assert
-	assert.Len(t, parameters, 22)
+	assert.Len(t, parameters, 23)
 
 	for _, p := range parameters {
 		assert.True(t, p.GetActive(), "parameter %s should be active", p.GetID())
@@ -144,6 +144,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 		"DisableTelemetry":                   true,
 		"BaseDir":                            true,
 		"LogLevel":                           true,
+		"DuplicateLogsToStderr":              true,
 		"WatchdogMode":                       true,
 		"ServerInstanceID":                   true,
 		"TelemetryCollectorEndpoint":         true,
@@ -177,7 +178,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 	parameters := sut.DefaultParameters()
 
 	// Assert
-	assert.Len(t, parameters, 22)
+	assert.Len(t, parameters, 23)
 
 	for _, p := range parameters {
 		expectedState, exists := expectedActiveStateByParameterID[p.GetID()]

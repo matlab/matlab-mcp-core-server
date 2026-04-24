@@ -101,6 +101,19 @@ func LogLevel() *parameter.Parameter[string] {
 	)
 }
 
+func DuplicateLogsToStderr() *parameter.Parameter[bool] {
+	return parameter.NewParameter(
+		/* id */ "DuplicateLogsToStderr",
+		/* flagName */ "duplicate-logs-to-stderr",
+		/* hiddenFlag */ true,
+		/* envVarName */ "MW_MCP_SERVER_DUPLICATE_LOGS_TO_STDERR",
+		/* descriptionKey */ messages.CLIMessages_InternalUseDescription,
+		/* defaultValue */ false,
+		/* recordToLog */ true,
+		/* piiSafe */ true,
+	)
+}
+
 func InitializeMATLABOnStartup() *parameter.Parameter[bool] {
 	return parameter.NewParameter(
 		/* id */ "InitializeMATLABOnStartup",

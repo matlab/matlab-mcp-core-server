@@ -171,6 +171,50 @@ func (_c *MockConfig_DisableTelemetry_Call) RunAndReturn(run func() bool) *MockC
 	return _c
 }
 
+// DuplicateLogsToStderr provides a mock function for the type MockConfig
+func (_mock *MockConfig) DuplicateLogsToStderr() bool {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DuplicateLogsToStderr")
+	}
+
+	var r0 bool
+	if returnFunc, ok := ret.Get(0).(func() bool); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	return r0
+}
+
+// MockConfig_DuplicateLogsToStderr_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DuplicateLogsToStderr'
+type MockConfig_DuplicateLogsToStderr_Call struct {
+	*mock.Call
+}
+
+// DuplicateLogsToStderr is a helper method to define mock.On call
+func (_e *MockConfig_Expecter) DuplicateLogsToStderr() *MockConfig_DuplicateLogsToStderr_Call {
+	return &MockConfig_DuplicateLogsToStderr_Call{Call: _e.mock.On("DuplicateLogsToStderr")}
+}
+
+func (_c *MockConfig_DuplicateLogsToStderr_Call) Run(run func()) *MockConfig_DuplicateLogsToStderr_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockConfig_DuplicateLogsToStderr_Call) Return(b bool) *MockConfig_DuplicateLogsToStderr_Call {
+	_c.Call.Return(b)
+	return _c
+}
+
+func (_c *MockConfig_DuplicateLogsToStderr_Call) RunAndReturn(run func() bool) *MockConfig_DuplicateLogsToStderr_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EmbeddedConnectorDetailsTimeout provides a mock function for the type MockConfig
 func (_mock *MockConfig) EmbeddedConnectorDetailsTimeout() time.Duration {
 	ret := _mock.Called()

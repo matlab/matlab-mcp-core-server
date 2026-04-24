@@ -40,6 +40,7 @@ func (s *Selector) DefaultParameters() []entities.Parameter {
 		defaultparameters.InstallMATLABAddOnMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.LogLevel(),
+		defaultparameters.DuplicateLogsToStderr(),
 		defaultparameters.WatchdogMode(),
 		defaultparameters.ServerInstanceID(),
 		defaultparameters.DisableTelemetry(),

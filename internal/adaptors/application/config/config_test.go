@@ -29,6 +29,7 @@ func defaultParameters() []entities.Parameter {
 		defaultparameters.ServerInstanceID(),
 
 		defaultparameters.LogLevel(),
+		defaultparameters.DuplicateLogsToStderr(),
 
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.PreferredLocalMATLABRoot(),
@@ -72,6 +73,7 @@ func TestNewConfig_InvalidParameterType(t *testing.T) {
 		{key: defaultparameters.ServerInstanceID().GetID(), invalidValue: 123, expectedType: "string"},
 
 		{key: defaultparameters.LogLevel().GetID(), invalidValue: 123, expectedType: "string"},
+		{key: defaultparameters.DuplicateLogsToStderr().GetID(), invalidValue: "false", expectedType: "bool"},
 
 		{key: defaultparameters.UseSingleMATLABSession().GetID(), invalidValue: "true", expectedType: "bool"},
 		{key: defaultparameters.InitializeMATLABOnStartup().GetID(), invalidValue: "false", expectedType: "bool"},
@@ -140,6 +142,7 @@ func TestNewConfig_MissingParameter(t *testing.T) {
 		defaultparameters.BaseDir(),
 		defaultparameters.ServerInstanceID(),
 		defaultparameters.LogLevel(),
+		defaultparameters.DuplicateLogsToStderr(),
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.InitializeMATLABOnStartup(),
 		defaultparameters.PreferredLocalMATLABRoot(),
@@ -662,12 +665,14 @@ func TestConfig_RecordToLogger_HappyPath(t *testing.T) {
 		defaultparameters.MATLABSessionMode().GetID():                string(entities.MATLABSessionModeNew),
 		defaultparameters.MATLABSessionConnectionTimeout().GetID():   5 * time.Second,
 		defaultparameters.MATLABSessionDiscoveryTimeout().GetID():    30 * time.Second,
+		defaultparameters.DuplicateLogsToStderr().GetID():            false,
 	}
 
 	parameters := []entities.Parameter{
 		defaultparameters.DisableTelemetry(),
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.LogLevel(),
+		defaultparameters.DuplicateLogsToStderr(),
 		defaultparameters.PreferredLocalMATLABRoot(),
 		defaultparameters.PreferredMATLABStartingDirectory(),
 		defaultparameters.InitializeMATLABOnStartup(),
@@ -864,6 +869,7 @@ func TestConfig_AsPIISafeJSONString_HappyPath(t *testing.T) {
 		defaultparameters.WatchdogMode(),
 		defaultparameters.TelemetryCollectionInterval(),
 		defaultparameters.TelemetryCollectorEndpointInsecure(),
+		defaultparameters.DuplicateLogsToStderr(),
 	}
 	for _, param := range piiSafeParams {
 		var expected any

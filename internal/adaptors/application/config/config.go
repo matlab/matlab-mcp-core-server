@@ -24,7 +24,8 @@ type validatedArguments struct {
 	serverInstanceID string
 
 	// Logger
-	logLevel entities.LogLevel
+	logLevel              entities.LogLevel
+	duplicateLogsToStderr bool
 
 	// MATLAB
 	useSingleMATLABSession           bool
@@ -97,6 +98,10 @@ func (c *config) Version() string {
 
 func (c *config) LogLevel() entities.LogLevel {
 	return c.logLevel
+}
+
+func (c *config) DuplicateLogsToStderr() bool {
+	return c.duplicateLogsToStderr
 }
 
 func (c *config) VersionMode() bool {
@@ -268,6 +273,11 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, messages.New_StartupErrors_InvalidLogLevel_Error(logLevel)
 	}
 
+	duplicateLogsToStderr, err := get(rawCfg, defaultparameters.DuplicateLogsToStderr())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
 	useSingleMATLABSession, err := get(rawCfg, defaultparameters.UseSingleMATLABSession())
 	if err != nil {
 		return validatedArguments{}, err
@@ -386,7 +396,8 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		serverInstanceID: serverInstanceID,
 
 		// Logger
-		logLevel: entities.LogLevel(logLevel),
+		logLevel:              entities.LogLevel(logLevel),
+		duplicateLogsToStderr: duplicateLogsToStderr,
 
 		// MATLAB
 		useSingleMATLABSession:           useSingleMATLABSession,
