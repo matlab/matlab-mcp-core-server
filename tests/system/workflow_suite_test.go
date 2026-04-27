@@ -44,93 +44,108 @@ type WorkflowTestSuite struct {
 // - run_matlab_file (script execution)
 // - run_matlab_test_file (test execution)
 func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
-	ctx := s.T().Context()
+	for _, tc := range []struct {
+		displayMode     string
+		expectedDesktop string
+	}{
+		{displayMode: "desktop", expectedDesktop: "1"},
+		{displayMode: "nodesktop", expectedDesktop: "0"},
+	} {
+		s.Run(tc.displayMode, func() {
+			ctx := s.T().Context()
 
-	// Provide the test data directory as an MCP root so the server uses it as
-	// MATLAB's starting directory (fallback when no --initial-working-folder is set).
-	// File URIs require the path to start with "/" (e.g., file:///C:/path on Windows).
-	slashPath := filepath.ToSlash(s.testDataDir)
-	if !strings.HasPrefix(slashPath, "/") {
-		slashPath = "/" + slashPath
+			// Provide the test data directory as an MCP root so the server uses it as
+			// MATLAB's starting directory (fallback when no --initial-working-folder is set).
+			// File URIs require the path to start with "/" (e.g., file:///C:/path on Windows).
+			slashPath := filepath.ToSlash(s.testDataDir)
+			if !strings.HasPrefix(slashPath, "/") {
+				slashPath = "/" + slashPath
+			}
+			testDataURI := "file://" + slashPath
+			sessionOpts := []mcpclient.CreateSessionOption{
+				mcpclient.WithRoots(&mcp.Root{URI: testDataURI, Name: "test-data"}),
+			}
+			session := s.CreateMCPSession(ctx, nil, sessionOpts, "--matlab-display-mode="+tc.displayMode)
+			defer s.CleanupSession(session, true)
+
+			// Step 1: Read coding guidelines (AI references standards before writing code)
+			guidelines, err := session.ReadResource(ctx, "guidelines://coding")
+			s.Require().NoError(err, "should read coding guidelines resource")
+			s.Contains(guidelines, "MATLAB Coding Standards", "should contain coding standards title")
+
+			// Step 2: Feature discovery - check what toolboxes are available
+			info, err := session.DetectToolboxes(ctx)
+			s.Require().NoError(err, "should detect toolboxes")
+			s.Contains(info, "MATLAB Version:", "should discover MATLAB version")
+
+			// Step 2b: Verify MATLAB display mode matches the requested mode
+			output, err := session.EvaluateCode(ctx, "disp(desktop('-inuse'))")
+			s.Require().NoError(err, "should evaluate desktop check")
+			s.Equal(tc.expectedDesktop, strings.TrimSpace(output), "desktop('-inuse') should reflect the requested display mode")
+
+			// Step 3a: Iterative development with explicit integer math
+			output, err = session.EvaluateCode(ctx, `a = int32(2); b = int32(3);`)
+			s.Require().NoError(err)
+			s.Empty(output, "semicolon-terminated statements should produce no output")
+
+			// Step 3b: Verify variables persist and computation works
+			output, err = session.EvaluateCode(ctx, `
+				c = a + b;
+				fprintf('a=%d\n', a);
+				fprintf('b=%d\n', b);
+				fprintf('c=%d\n', c);
+			`)
+			s.Require().NoError(err)
+			s.Require().NotEmpty(output, "fprintf should produce output")
+			lines := strings.Split(output, "\n")
+			s.Contains(lines, "a=2", "variable 'a' should persist on its own line")
+			s.Contains(lines, "b=3", "variable 'b' should persist on its own line")
+			s.Contains(lines, "c=5", "should compute 2 + 3 = 5 on its own line")
+
+			// Step 4: Verify MATLAB started in the MCP root directory
+			// The server should have used the client's root as MATLAB's initial working folder.
+			output, err = session.EvaluateCode(ctx, "pwd")
+			s.Require().NoError(err)
+			s.Contains(output, s.testDataDir, "MATLAB should start in the MCP root directory (test data dir)")
+
+			// Verify the test script is visible from the root directory
+			scriptName := strings.TrimSuffix(filepath.Base(s.testScriptPath()), filepath.Ext(s.testScriptPath()))
+			output, err = session.EvaluateCode(ctx, "which "+scriptName)
+			s.Require().NoError(err)
+			s.Contains(output, s.testScriptPath(), "script should be found from the MCP root directory")
+
+			// Step 4b: Verify projectPath parameter changes MATLAB's working directory
+			tmpDir := s.T().TempDir()
+			output, err = session.EvaluateCode(ctx, "pwd", tmpDir)
+			s.Require().NoError(err)
+			s.Contains(output, tmpDir, "projectPath should change MATLAB's working directory")
+
+			output, err = session.EvaluateCode(ctx, "which "+scriptName)
+			s.Require().NoError(err)
+			s.Contains(output, "'"+scriptName+"' not found", "script should not be found after cd to temp dir")
+
+			// Step 5: Code quality checking - analyze existing code for issues
+			// First check code with problems to see what issues are detected
+			problematicMessages, err := session.CheckCode(ctx, s.problematicCodePath())
+			s.Require().NoError(err, "should check code without error")
+			testdata.AssertProblematicCodeIssues(s.T(), problematicMessages)
+
+			// Then check well-written code
+			cleanMessages, err := session.CheckCode(ctx, s.testMathFunctionsPath())
+			s.Require().NoError(err, "should check code without error")
+			testdata.AssertCleanCode(s.T(), cleanMessages)
+
+			// Step 6: Script execution - run a MATLAB script file
+			scriptOutput, err := session.RunFile(ctx, s.testScriptPath())
+			s.Require().NoError(err, "should execute script file without error")
+			testdata.TestScript.Assert(s.T(), scriptOutput)
+
+			// Step 7: Test execution - run test suite (TDD workflow)
+			testOutput, err := session.RunTestFile(ctx, s.testMathFunctionsPath())
+			s.Require().NoError(err, "should execute test suite without error")
+			testdata.TestMathFunctions.Assert(s.T(), testOutput)
+		})
 	}
-	testDataURI := "file://" + slashPath
-	sessionOpts := []mcpclient.CreateSessionOption{
-		mcpclient.WithRoots(&mcp.Root{URI: testDataURI, Name: "test-data"}),
-	}
-	session := s.CreateMCPSession(ctx, nil, sessionOpts)
-	defer s.CleanupSession(session, true)
-
-	// Step 1: Read coding guidelines (AI references standards before writing code)
-	guidelines, err := session.ReadResource(ctx, "guidelines://coding")
-	s.Require().NoError(err, "should read coding guidelines resource")
-	s.Contains(guidelines, "MATLAB Coding Standards", "should contain coding standards title")
-
-	// Step 2: Feature discovery - check what toolboxes are available
-	info, err := session.DetectToolboxes(ctx)
-	s.Require().NoError(err, "should detect toolboxes")
-	s.Contains(info, "MATLAB Version:", "should discover MATLAB version")
-
-	// Step 3a: Iterative development with explicit integer math
-	output, err := session.EvaluateCode(ctx, `a = int32(2); b = int32(3);`)
-	s.Require().NoError(err)
-	s.Empty(output, "semicolon-terminated statements should produce no output")
-
-	// Step 3b: Verify variables persist and computation works
-	output, err = session.EvaluateCode(ctx, `
-		c = a + b;
-		fprintf('a=%d\n', a);
-		fprintf('b=%d\n', b);
-		fprintf('c=%d\n', c);
-	`)
-	s.Require().NoError(err)
-	s.Require().NotEmpty(output, "fprintf should produce output")
-	lines := strings.Split(output, "\n")
-	s.Contains(lines, "a=2", "variable 'a' should persist on its own line")
-	s.Contains(lines, "b=3", "variable 'b' should persist on its own line")
-	s.Contains(lines, "c=5", "should compute 2 + 3 = 5 on its own line")
-
-	// Step 4: Verify MATLAB started in the MCP root directory
-	// The server should have used the client's root as MATLAB's initial working folder.
-	output, err = session.EvaluateCode(ctx, "pwd")
-	s.Require().NoError(err)
-	s.Contains(output, s.testDataDir, "MATLAB should start in the MCP root directory (test data dir)")
-
-	// Verify the test script is visible from the root directory
-	scriptName := strings.TrimSuffix(filepath.Base(s.testScriptPath()), filepath.Ext(s.testScriptPath()))
-	output, err = session.EvaluateCode(ctx, "which "+scriptName)
-	s.Require().NoError(err)
-	s.Contains(output, s.testScriptPath(), "script should be found from the MCP root directory")
-
-	// Step 4b: Verify projectPath parameter changes MATLAB's working directory
-	tmpDir := s.T().TempDir()
-	output, err = session.EvaluateCode(ctx, "pwd", tmpDir)
-	s.Require().NoError(err)
-	s.Contains(output, tmpDir, "projectPath should change MATLAB's working directory")
-
-	output, err = session.EvaluateCode(ctx, "which "+scriptName)
-	s.Require().NoError(err)
-	s.Contains(output, "'"+scriptName+"' not found", "script should not be found after cd to temp dir")
-
-	// Step 5: Code quality checking - analyze existing code for issues
-	// First check code with problems to see what issues are detected
-	problematicMessages, err := session.CheckCode(ctx, s.problematicCodePath())
-	s.Require().NoError(err, "should check code without error")
-	testdata.AssertProblematicCodeIssues(s.T(), problematicMessages)
-
-	// Then check well-written code
-	cleanMessages, err := session.CheckCode(ctx, s.testMathFunctionsPath())
-	s.Require().NoError(err, "should check code without error")
-	testdata.AssertCleanCode(s.T(), cleanMessages)
-
-	// Step 6: Script execution - run a MATLAB script file
-	scriptOutput, err := session.RunFile(ctx, s.testScriptPath())
-	s.Require().NoError(err, "should execute script file without error")
-	testdata.TestScript.Assert(s.T(), scriptOutput)
-
-	// Step 7: Test execution - run test suite (TDD workflow)
-	testOutput, err := session.RunTestFile(ctx, s.testMathFunctionsPath())
-	s.Require().NoError(err, "should execute test suite without error")
-	testdata.TestMathFunctions.Assert(s.T(), testOutput)
 }
 
 // TestParallelExperimentationWorkflow simulates a developer running isolated

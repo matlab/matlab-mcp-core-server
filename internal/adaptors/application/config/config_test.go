@@ -245,9 +245,12 @@ func TestNewConfig_InvalidLogLevel(t *testing.T) {
 
 	programName := "testprocess"
 	args := []string{programName}
+	invalidLevel := "invalid-level"
 
 	parsedArgs := configDefaultParsedArgs()
-	parsedArgs[defaultparameters.LogLevel().GetID()] = "invalid-level"
+	parsedArgs[defaultparameters.LogLevel().GetID()] = invalidLevel
+
+	expectedError := messages.New_StartupErrors_InvalidLogLevel_Error(invalidLevel)
 
 	mockOSLayer.EXPECT().
 		Args().
@@ -259,7 +262,43 @@ func TestNewConfig_InvalidLogLevel(t *testing.T) {
 		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
 		Once()
 
-	expectedError := messages.New_StartupErrors_InvalidLogLevel_Error("invalid-level")
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.Equal(t, expectedError, err)
+	assert.Nil(t, cfg, "Config should be nil")
+}
+
+func TestNewConfig_InvalidDisplayMode(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+	invalidMode := "invalid-mode"
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.MATLABDisplayMode().GetID()] = invalidMode
+
+	expectedError := messages.New_StartupErrors_InvalidDisplayMode_Error(invalidMode)
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
 
 	// Act
 	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
@@ -282,9 +321,12 @@ func TestNewConfig_InvalidMATLABSessionMode(t *testing.T) {
 
 	programName := "testprocess"
 	args := []string{programName}
+	invalidMode := "invalid-mode"
 
 	parsedArgs := configDefaultParsedArgs()
-	parsedArgs[defaultparameters.MATLABSessionMode().GetID()] = "invalid-mode"
+	parsedArgs[defaultparameters.MATLABSessionMode().GetID()] = invalidMode
+
+	expectedError := messages.New_StartupErrors_InvalidMATLABSessionMode_Error(invalidMode)
 
 	mockOSLayer.EXPECT().
 		Args().
@@ -295,8 +337,6 @@ func TestNewConfig_InvalidMATLABSessionMode(t *testing.T) {
 		Parse(args[1:]).
 		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
 		Once()
-
-	expectedError := messages.New_StartupErrors_InvalidMATLABSessionMode_Error("invalid-mode")
 
 	// Act
 	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
