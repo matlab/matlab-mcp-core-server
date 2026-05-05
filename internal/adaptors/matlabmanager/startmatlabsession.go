@@ -37,6 +37,9 @@ func (m *MATLABManager) StartMATLABSession(ctx context.Context, sessionLogger en
 		}
 		embeddedConnectorClient, err := m.clientFactory.New(embeddedConnectorEndpoint)
 		if err != nil {
+			if cleanupErr := sessionCleanup(); cleanupErr != nil {
+				sessionLogger.WithError(cleanupErr).Error("Failed to clean up session after client factory error")
+			}
 			return zeroValue, err
 		}
 		client = newMATLABSessionClientWithCleanup(embeddedConnectorClient, sessionCleanup)

@@ -158,7 +158,8 @@ func TestMATLABManager_StartMATLABSession_ClientFactoryError(t *testing.T) {
 		Host: "localhost",
 		Port: "12345",
 	}
-	sessionCleanupFunc := func() error { return nil }
+	cleanupCalled := false
+	sessionCleanupFunc := func() error { cleanupCalled = true; return nil }
 	expectedError := assert.AnError
 
 	expectedLocalSessionDetails := datatypes.LocalSessionDetails{
@@ -191,6 +192,7 @@ func TestMATLABManager_StartMATLABSession_ClientFactoryError(t *testing.T) {
 	// Assert
 	require.ErrorIs(t, err, expectedError)
 	assert.Empty(t, sessionID)
+	assert.True(t, cleanupCalled, "session cleanup should be called when client factory fails")
 }
 
 func TestMATLABManager_StartMATLABSession_AttachToExistingSession_HappyPath(t *testing.T) {

@@ -3,7 +3,9 @@
 package mockmatlab
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -14,6 +16,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mockmatlab/mockruntime"
+	"github.com/matlab/matlab-mcp-core-server/tests/testutils/sessiondetails"
 )
 
 const (
@@ -50,9 +53,10 @@ func StartupFailureConfig() Config {
 }
 
 type Session struct {
-	cmd        *exec.Cmd
-	SessionDir string
-	APIKey     string
+	cmd               *exec.Cmd
+	SessionDir        string
+	APIKey            string
+	connectionDetails embeddedconnector.ConnectionDetails
 }
 
 func StartSession(ctx context.Context, installation *Installation, cfg Config) (*Session, error) {
@@ -120,7 +124,81 @@ func (s *Session) WaitForReady(ctx context.Context) (embeddedconnector.Connectio
 		return embeddedconnector.ConnectionDetails{}, fmt.Errorf("timeout waiting for mock MATLAB to become ready")
 	}
 
+	s.connectionDetails = details
 	return details, nil
+}
+
+// ToSessionDetailsJSON returns a JSON string in the format expected by
+// --matlab-session-connection-details. The certificate field is the file path
+// to the PEM cert in the session directory.
+func (s *Session) ToSessionDetailsJSON() (string, error) {
+	return sessiondetails.MarshalJSON(
+		s.connectionDetails.Port,
+		s.CertificatePath(),
+		s.APIKey,
+		s.cmd.Process.Pid,
+	)
+}
+
+// CertificatePath returns the path to the PEM certificate file in the session directory.
+func (s *Session) CertificatePath() string {
+	return filepath.Join(s.SessionDir, certificateFile)
+}
+
+// ShareMATLABSession publishes session details to the standard discovery
+// location under homeDir, mimicking what a real MATLAB session would do.
+func (s *Session) ShareMATLABSession(homeDir string) (string, error) {
+	detailsJSON, err := s.ToSessionDetailsJSON()
+	if err != nil {
+		return "", err
+	}
+	return sessiondetails.Publish(homeDir, detailsJSON)
+}
+
+// ReceivedRequest represents a single request logged by the mock MATLAB process.
+type ReceivedRequest struct {
+	Timestamp   time.Time `json:"timestamp"`
+	MessageType string    `json:"messageType"`
+	Content     string    `json:"content"`
+}
+
+// ReceivedRequests reads all requests logged by this mock MATLAB session.
+func (s *Session) ReceivedRequests() ([]ReceivedRequest, error) {
+	logPath := filepath.Join(s.SessionDir, "requests.jsonl")
+	f, err := os.Open(logPath) //nolint:gosec // Test utility reading from session temp dir
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to open request log: %w", err)
+	}
+	defer f.Close() //nolint:errcheck // Read-only file handle in test utility
+
+	var requests []ReceivedRequest
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		var entry ReceivedRequest
+		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
+			return nil, fmt.Errorf("failed to parse request log entry: %w", err)
+		}
+		requests = append(requests, entry)
+	}
+	return requests, scanner.Err()
+}
+
+// ReceivedEvals returns only the Eval requests received by this mock, with their mcode content.
+func (s *Session) ReceivedEvals() ([]ReceivedRequest, error) {
+	all, err := s.ReceivedRequests()
+	if err != nil {
+		return nil, err
+	}
+	var evals []ReceivedRequest
+	for _, r := range all {
+		if r.MessageType == "Eval" || r.MessageType == "FEval" {
+			evals = append(evals, r)
+		}
+	}
+	return evals, nil
 }
 
 func (s *Session) Stop() error {

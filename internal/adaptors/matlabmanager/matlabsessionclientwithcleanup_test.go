@@ -38,7 +38,8 @@ func TestMATLABSessionClientWithoutCleanup_StopSession_NoOp(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	// Assertions are verified via deferred mock expectations.
+	_, hasDebugLog := mockLogger.DebugLogs()["Skipping session stop for externally managed MATLAB session"]
+	assert.True(t, hasDebugLog, "should log that session stop was skipped")
 }
 
 func TestNewMATLABSessionClientWithCleanup_HappyPath(t *testing.T) {

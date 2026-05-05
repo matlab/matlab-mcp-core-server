@@ -24,6 +24,7 @@ func newMATLABSessionClientWithoutCleanup(matlabSessionClient entities.MATLABSes
 }
 
 func (c *matlabSessionClientWithoutCleanup) StopSession(ctx context.Context, sessionLogger entities.Logger) error {
+	sessionLogger.Debug("Skipping session stop for externally managed MATLAB session")
 	return nil
 }
 
