@@ -33,6 +33,7 @@ To assist your agent in using MATLAB and Simulink, you can use skills from [MATL
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [GitHub Copilot in Visual Studio Code](#github-copilot-in-visual-studio-code)
+  - [Codex](#codex)
 - [Arguments](#arguments)
 - [Tools](#tools)
 - [Resources](#resources)
@@ -113,6 +114,32 @@ In your VS Code workspace, create a file named `.vscode/mcp.json`. Insert the fo
 }
 ```
 For more information about using MCP servers in VS Code, see [Add and Manage MCP servers in VS Code (VS Code)](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file).
+
+### Codex
+
+In your terminal, run the following, remembering to insert the full path to the server binary you acquired in the setup:
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary
+```
+
+You can customize the server by specifying optional [Arguments](#arguments). For example:
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-folder=/home/username/myproject
+```
+
+> [!NOTE]
+> **Windows users:** Codex does not forward the `WINDIR` environment variable, which you need to run MATLAB and Simulink (see #32).
+>
+> To add the variable, open your Codex config file at `C:\Users\<username>\.codex\config.toml`, and add `env_vars = ["WINDIR"]` to the `[mcp_servers.matlab]` section:
+>
+> ```toml
+> [mcp_servers.matlab]
+> command = 'C:\fullpath\to\matlab-mcp-server-windows-x64.exe'
+> args = []
+> env_vars = ["WINDIR"]
+> ```
 
 ## Arguments
 
