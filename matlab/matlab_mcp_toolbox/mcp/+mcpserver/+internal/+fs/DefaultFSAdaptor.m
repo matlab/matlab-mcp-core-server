@@ -7,7 +7,8 @@ classdef DefaultFSAdaptor < mcpserver.internal.fs.FSAdaptor
 
     properties (GetAccess = private, SetAccess = immutable)
         FSFacade(1, 1) mcpserver.internal.facade.fs.FSFacade = mcpserver.internal.facade.fs.DefaultFSFacade()
-        PermissionManager(1, 1) mcpserver.internal.fs.internal.permissionmanager.PermissionManager = mcpserver.internal.fs.internal.permissionmanager.DefaultPermissionManager()
+        PermissionManager(1, 1) mcpserver.internal.fs.internal.permissionmanager.PermissionManager = ...
+            mcpserver.internal.fs.internal.permissionmanager.createPermissionManager()
     end
 
     methods
