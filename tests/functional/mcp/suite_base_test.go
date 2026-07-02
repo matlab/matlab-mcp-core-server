@@ -117,3 +117,14 @@ func (s *MCPTestSuite) WaitForStartupInfo() fakematlab.StartupInfo {
 	}, 30*time.Second, 500*time.Millisecond, "fake MATLAB should have written its startup info")
 	return startupInfo
 }
+
+// normalizedPath returns a cleaned, lowercased, symlink-resolved absolute path
+// for comparison. EvalSymlinks handles macOS, where /var is a symlink to /private/var.
+func (s *MCPTestSuite) normalizedPath(dir string) string {
+	s.T().Helper()
+	resolved, err := filepath.EvalSymlinks(dir)
+	s.Require().NoError(err)
+	abs, err := filepath.Abs(resolved)
+	s.Require().NoError(err)
+	return strings.ToLower(filepath.Clean(abs))
+}

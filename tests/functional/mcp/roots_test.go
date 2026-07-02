@@ -3,8 +3,6 @@
 package mcp_test
 
 import (
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpclient"
@@ -89,12 +87,4 @@ func (s *RootsTestSuite) TestNoRootsCapability_MATLABStillLaunches() {
 	startupInfo := s.WaitForStartupInfo()
 	s.NotEmpty(startupInfo.WorkingDir, "MATLAB should have a working directory even without roots capability")
 	s.NotEmpty(startupInfo.Args, "fake MATLAB should have received command-line arguments")
-}
-
-// normalizedPath returns a cleaned, lowercased absolute path for comparison.
-func (s *RootsTestSuite) normalizedPath(dir string) string {
-	s.T().Helper()
-	abs, err := filepath.Abs(dir)
-	s.Require().NoError(err)
-	return strings.ToLower(filepath.Clean(abs))
 }
