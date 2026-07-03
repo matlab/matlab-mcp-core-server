@@ -16,8 +16,8 @@ classdef evaluateWithCaptureErrorReportingTest < matlab.unittest.TestCase
                 "evaluateWithCaptureErrorReportingTest_" + matlab.lang.internal.uuid));
             mkdir(testCase.ScratchDir);
             addpath(testCase.ScratchDir);
-            testCase.addTeardown(@() rmpath(testCase.ScratchDir));
             testCase.addTeardown(@() rmdir(testCase.ScratchDir, 's'));
+            testCase.addTeardown(@() rmpath(testCase.ScratchDir));
         end
     end
 

@@ -315,14 +315,13 @@ classdef evaluateWithCaptureTest < matlab.mock.TestCase
             if ~isfolder(scratchDir)
                 mkdir(scratchDir);
             end
-            cleanup = onCleanup(@() rmdir(scratchDir, 's'));
             funcPath = fullfile(scratchDir, "userFunc.m");
             fid = fopen(funcPath, 'w');
             fprintf(fid, '%s\n', "function userFunc()", ...
                 "    error('user:err', 'inside user function');", "end");
             fclose(fid);
             addpath(scratchDir);
-            removePath = onCleanup(@() rmpath(scratchDir));
+            cleanup = onCleanup(@() cleanupScratch(scratchDir));
 
             % Act & Assert
             try
@@ -727,4 +726,13 @@ classdef evaluateWithCaptureTest < matlab.mock.TestCase
         end
     end
 
+end
+
+function cleanupScratch(scratchDir)
+    if any(strcmp(strsplit(path, pathsep), char(scratchDir)))
+        rmpath(scratchDir);
+    end
+    if isfolder(scratchDir)
+        rmdir(scratchDir, 's');
+    end
 end

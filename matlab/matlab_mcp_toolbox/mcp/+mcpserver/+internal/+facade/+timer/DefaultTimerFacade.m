@@ -14,11 +14,15 @@ classdef DefaultTimerFacade < mcpserver.internal.facade.timer.TimerFacade
         end
 
         function Start(obj)
-            start(obj.Timer);
+            if ~isempty(obj.Timer) && isvalid(obj.Timer)
+                start(obj.Timer);
+            end
         end
 
         function Stop(obj)
-            stop(obj.Timer);
+            if ~isempty(obj.Timer) && isvalid(obj.Timer)
+                stop(obj.Timer);
+            end
         end
 
         function delete(obj)
