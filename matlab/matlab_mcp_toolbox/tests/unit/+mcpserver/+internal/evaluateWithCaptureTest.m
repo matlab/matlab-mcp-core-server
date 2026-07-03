@@ -298,6 +298,56 @@ classdef evaluateWithCaptureTest < matlab.mock.TestCase
             end
         end
 
+        function testEvaluateWithCapture_UserError_PreservesUserStack(testCase)
+            % An error raised by user code from a function should surface
+            % its stack frames to the caller, so the LLM can see file/line
+            % context. CustomStackException must trim evaluateWithCapture's
+            % own frame while preserving the user frames beneath it.
+
+            % Arrange
+            [mockController, ~] = testCase.createMockVisibilityController(false);
+            [mockCaptureFacade, ~] = testCase.createMockCaptureFacade();
+            capture = mcpserver.internal.capture.DefaultOutputCapture(Facade=mockCaptureFacade);
+            [mockDisplayer, ~] = testCase.createMockEventDisplayer();
+
+            % Define a user function on the path so its frame appears on the stack.
+            scratchDir = fullfile(tempdir, "evaluateWithCaptureTest_userStack");
+            if ~isfolder(scratchDir)
+                mkdir(scratchDir);
+            end
+            cleanup = onCleanup(@() rmdir(scratchDir, 's'));
+            funcPath = fullfile(scratchDir, "userFunc.m");
+            fid = fopen(funcPath, 'w');
+            fprintf(fid, '%s\n', "function userFunc()", ...
+                "    error('user:err', 'inside user function');", "end");
+            fclose(fid);
+            addpath(scratchDir);
+            removePath = onCleanup(@() rmpath(scratchDir));
+
+            % Act & Assert
+            try
+                mcpserver.internal.evaluateWithCapture( ...
+                    "userFunc()", ...
+                    ShowFigureWindows=false, ...
+                    DisplayCapturedEvents=true, ...
+                    DisplayDuringExecution=false, ...
+                    FigureVisibilityController=mockController, ...
+                    OutputCapture=capture, ...
+                    EventDisplayer=mockDisplayer ...
+                );
+                testCase.verifyFail("Should have thrown an error");
+            catch ME
+                testCase.verifyNotEmpty(ME.stack, ...
+                    "User function frame should be preserved on the stack");
+                testCase.verifyTrue(any({ME.stack.name} == "userFunc"), ...
+                    "Stack should contain the user function frame");
+                testCase.verifyFalse(any({ME.stack.name} == "evaluateWithCapture"), ...
+                    "evaluateWithCapture frame should be trimmed from the user-visible stack");
+                testCase.verifyEqual(ME.message, 'inside user function', ...
+                    "Message should be the clean original message");
+            end
+        end
+
         function testEvaluateWithCapture_UserError_EventsStillCollected(testCase)
             % Arrange
             expectedEvents = struct('type', {'stdout'}, 'payload', {'partial output'});

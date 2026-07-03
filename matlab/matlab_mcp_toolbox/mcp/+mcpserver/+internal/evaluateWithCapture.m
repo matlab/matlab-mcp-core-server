@@ -78,7 +78,9 @@ function results = evaluateWithCapture(code, options)
     results = options.OutputBuilder.build(rawEvents);
 
     if ~isempty(userError)
-        throwAsCaller(mcpserver.internal.error.ExceptionReport.stripInternalFrames( ...
+        % Construct + throwAsCaller must be in the same function scope so
+        % CustomStackException honors the trimmed stack.
+        throwAsCaller(mcpserver.internal.error.CustomStackException.trimmedBefore( ...
             userError, "evaluateWithCapture"));
     end
 end
