@@ -460,10 +460,11 @@ func adjustDefaults(args validatedArguments, specifiedParameters []string) valid
 }
 
 func checkArgumentCompatibility(args validatedArguments, specifiedParameters []string) messages.Error {
-	// Connection details are only meaningful in "existing" mode.
-	// Reject if the user explicitly set both connection details and a non-existing session mode.
+	// Connection details are meaningful in "existing" or "auto" mode.
+	// Reject if the user explicitly sets both connection details and new session mode.
 	if slices.Contains(specifiedParameters, defaultparameters.MATLABSessionConnectionDetails().GetID()) &&
-		args.matlabSessionMode != entities.MATLABSessionModeExisting {
+		args.matlabSessionMode != entities.MATLABSessionModeExisting &&
+		args.matlabSessionMode != entities.MATLABSessionModeAuto {
 		return messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
 			defaultparameters.MATLABSessionConnectionDetails().GetFlagName(),
 			string(args.matlabSessionMode),

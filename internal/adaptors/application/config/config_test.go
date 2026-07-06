@@ -1164,7 +1164,7 @@ func TestNewConfig_AutoSessionMode_InferredExistingRejectsDisallowedParameters(t
 	assert.Nil(t, cfg)
 }
 
-func TestNewConfig_ConnectionDetailsNotAllowedInAutoSessionMode(t *testing.T) {
+func TestNewConfig_ConnectionDetailsAllowedInAutoSessionMode(t *testing.T) {
 	// Arrange
 	mockOSLayer := &configmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
@@ -1197,17 +1197,13 @@ func TestNewConfig_ConnectionDetailsNotAllowedInAutoSessionMode(t *testing.T) {
 		Return([]entities.Parameter{}, parsedArgs, specifiedParameters, nil).
 		Once()
 
-	expectedError := messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
-		defaultparameters.MATLABSessionConnectionDetails().GetFlagName(),
-		string(entities.MATLABSessionModeAuto),
-	)
-
 	// Act
 	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
 
 	// Assert
-	require.Equal(t, expectedError, err)
-	assert.Nil(t, cfg)
+	require.NoError(t, err)
+	assert.Equal(t, entities.MATLABSessionModeAuto, cfg.MATLABSessionMode())
+	assert.Equal(t, `{"port":31515}`, cfg.MATLABSessionConnectionDetails())
 }
 
 func TestNewConfig_ConnectionDetailsNotAllowedInNewSessionMode(t *testing.T) {
