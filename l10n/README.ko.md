@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
+- Commit: 0787d1db1390ed8bb21432078ec2d83e69cde5d3
 -->
 
 # MATLAB MCP Server
@@ -40,6 +40,7 @@ MathWorks®의 공식 MATLAB MCP Server를 사용하여 AI 애플리케이션에
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [Visual Studio Code의 GitHub Copilot](#visual-studio-code의-github-copilot)
+  - [Codex](#codex)
 - [인수](#인수)
 - [툴](#툴)
 - [리소스](#리소스)
@@ -120,6 +121,32 @@ VS Code 작업 영역에서 `.vscode/mcp.json` 파일을 생성하십시오. 다
 }
 ```
 VS Code에서 MCP 서버를 사용하는 방법에 대한 자세한 내용은 [Add and Manage MCP servers in VS Code (VS Code)](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file)를 참조하십시오.
+
+### Codex
+
+터미널에서 다음을 실행하십시오. 설정 단계에서 다운로드한 서버 바이너리의 전체 경로를 지정해야 합니다.
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary
+```
+
+선택적 [인수](#인수)를 지정하여 서버를 사용자 지정할 수 있습니다. 예:
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-folder=/home/username/myproject
+```
+
+> [!NOTE]
+> **Windows 사용자:** Codex는 환경 변수 `WINDIR`을 전달하지 않습니다. MATLAB 및 Simulink를 실행하려면 이 변수가 필요합니다(#32 참조).
+>
+> 이 변수를 추가하려면 `C:\Users\<username>\.codex\config.toml`에 있는 Codex 구성 파일을 열고 `[mcp_servers.matlab]` 섹션에 `env_vars = ["WINDIR"]`을 추가하십시오.
+>
+> ```toml
+> [mcp_servers.matlab]
+> command = 'C:\fullpath\to\matlab-mcp-server-windows-x64.exe'
+> args = []
+> env_vars = ["WINDIR"]
+> ```
 
 ## 인수
 

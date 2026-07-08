@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
+- Commit: 0787d1db1390ed8bb21432078ec2d83e69cde5d3
 -->
 
 # MATLAB MCP Server
@@ -40,6 +40,7 @@ MathWorks® 公式の MATLAB MCP Server を使用して、AI アプリケーシ�
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [Visual Studio Code の GitHub Copilot](#visual-studio-code-の-github-copilot)
+  - [Codex](#codex)
 - [引数](#引数)
 - [ツール](#ツール)
 - [リソース](#リソース)
@@ -121,7 +122,31 @@ VS Code ワークスペースに `.vscode/mcp.json` という名前のファイ�
 ```
 VS Code で MCP サーバーを使用する方法の詳細については、「[Add and Manage MCP servers in VS Code (VS Code)](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file)」を参照してください。
 
+### Codex
 
+ターミナルで以下を実行します。必ずセットアップで取得したサーバー バイナリの絶対パスを指定してください。
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary
+```
+
+オプションの[引数](#引数)を指定してサーバーをカスタマイズできます。以下に例を示します。
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-folder=/home/username/myproject
+```
+
+> [!NOTE]
+> **Windows ユーザー:** Codex は `WINDIR` 環境変数を転送しません。MATLAB および Simulink の実行にはこの変数が必要です (#32 を参照)。
+>
+> この変数を追加するには、`C:\Users\<username>\.codex\config.toml` にある Codex 構成ファイルを開き、`[mcp_servers.matlab]` セクションに `env_vars = ["WINDIR"]` を追加します。
+>
+> ```toml
+> [mcp_servers.matlab]
+> command = 'C:\fullpath\to\matlab-mcp-server-windows-x64.exe'
+> args = []
+> env_vars = ["WINDIR"]
+> ```
 
 ## 引数
 

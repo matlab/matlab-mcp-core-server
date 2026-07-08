@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
+- Commit: 0787d1db1390ed8bb21432078ec2d83e69cde5d3
 -->
 
 # MATLAB MCP Server
@@ -20,13 +20,13 @@ Source English Markdown:
 >
 > | 变更 | 所需操作 |
 > |:-------:|:---------------:|
-> | **二进制文件名称**<br>新格式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>示例: `matlab-mcp-server-windows-x64.exe` | 在 AI 应用程序的配置设置 (通常为 `.json` 文件) 中更新二进制文件的名称。 |
+> | **二进制文件名称**<br>新格式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>示例: `matlab-mcp-server-windows-x64.exe` | 在 AI 应用的配置设置 (通常为 `.json` 文件) 中更新二进制文件的名称。 |
 > | **工具箱**<br>  已更新并更名: `MATLAB MCP Core Server Toolbox` → **`MATLAB MCP Server Toolbox`** | 运行 `./matlab-mcp-server --setup-matlab` 以安装最新版本的工具箱。连接到现有 MATLAB 会话时需要此工具箱。有关详细信息，请参阅[参量](#参量)部分中的 `matlab-session-mode`。 |
 > | **仓库 URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 无需任何操作。GitHub 会自动重定向。 |
 > | **MCP 捆绑包**<br>已更新并重命名: `matlab-mcp-core-server.mcpb` → **`matlab-mcp-server.mcpb`** | 如果您在 v0.11.0 之前使用 MATLAB MCP 捆绑包在 Claude Desktop 中安装了 MCP 服务器，请先卸载服务器，然后从[最新版本](https://github.com/matlab/matlab-mcp-server/releases/latest)页面下载新的 `matlab-mcp-server.mcpb` 捆绑包并重新安装服务器。有关详细信息，请参阅 [Claude Desktop](#claude-desktop) 部分。 |
 > | **Go 模块**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 如果您在 Go 工程中使用了 MATLAB MCP Core Server 模块，请更新 `go.mod` 中的模块名称以及您的导入声明。 |
 
-使用 MathWorks® 官方的 MATLAB MCP Server，通过 AI 应用程序运行 MATLAB®。MATLAB MCP Server 允许您的 AI 应用程序执行以下操作:
+使用 MathWorks® 官方的 MATLAB MCP Server，通过 AI 应用运行 MATLAB®。MATLAB MCP Server 允许您的 AI 应用执行以下操作:
 
 - 启动和退出 MATLAB。
 - 编写和运行 MATLAB 代码。
@@ -40,6 +40,7 @@ Source English Markdown:
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [GitHub Copilot in Visual Studio Code](#github-copilot-in-visual-studio-code)
+  - [Codex](#codex)
 - [参量](#参量)
 - [工具](#工具)
 - [资源](#资源)
@@ -51,7 +52,7 @@ Source English Markdown:
 ## 设置
 
 1. 安装 [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) R2021a 或更高版本，并将其添加到系统 PATH 环境变量中。MATLAB MCP Server 支持过去五年内的 MATLAB 版本。
-1. 该服务器支持任何使用模型上下文协议的 AI 应用程序。要为 Claude Desktop 设置 MATLAB MCP Server，请跳至 [Claude Desktop](#claude-desktop) 的说明。要为其他应用程序设置服务器，请按照以下说明操作:
+1. 该服务器支持任何使用模型上下文协议的 AI 应用。要为 Claude Desktop 设置 MATLAB MCP Server，请跳至 [Claude Desktop](#claude-desktop) 的说明。要为其他应用设置服务器，请按照以下说明操作:
 
    - 对于 Windows 或 Linux，请[**下载最新版本**](https://github.com/matlab/matlab-mcp-server/releases/latest)。(或者，您也可以**从源代码编译**: 安装 [Go](https://go.dev/doc/install) 并使用 `go install github.com/matlab/matlab-mcp-server/cmd/matlab-mcp-server@latest` 来编译二进制文件)。
     
@@ -70,7 +71,7 @@ Source English Markdown:
       chmod +x ~/Downloads/matlab-mcp-server
       ```
 
-1. 将 MATLAB MCP Server 添加到您的 AI 应用程序中。您可以在 AI 应用程序的文档中找到有关添加 MCP 服务器的说明。有关使用 Claude Code®、Claude Desktop® 和 GitHub Copilot in Visual Studio® Code 的示例说明，请参阅下文。请注意，您可以通过指定可选[参量](#参量)来自定义服务器。
+1. 将 MATLAB MCP Server 添加到您的 AI 应用中。您可以在 AI 应用的文档中找到有关添加 MCP 服务器的说明。有关使用 Claude Code®、Claude Desktop® 和 GitHub Copilot in Visual Studio® Code 的示例说明，请参阅下文。请注意，您可以通过指定可选[参量](#参量)来自定义服务器。
 
 ### Claude Code
 
@@ -121,12 +122,38 @@ claude mcp remove matlab
 ```
 有关在 VS Code 中使用 MCP 服务器的更多信息，请参阅 [Add and Manage MCP servers in VS Code (VS Code)](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file)。
 
+### Codex
+
+在终端中运行以下命令，请在其中插入您在设置过程中获取的服务器二进制文件的完整路径:
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary
+```
+
+您可以通过指定可选[参量](#参量)来自定义服务器。例如:
+
+```sh
+codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-folder=/home/username/myproject
+```
+
+> [!NOTE]
+> **Windows 用户:** Codex 不会转发环境变量 `WINDIR`，而运行 MATLAB 和 Simulink 需要此变量（请参阅 #32）。
+>
+> 要添加此变量，请打开位于 `C:\Users\<username>\.codex\config.toml` 的 Codex 配置文件，并将 `env_vars = ["WINDIR"]` 添加到 `[mcp_servers.matlab]` 部分:
+>
+> ```toml
+> [mcp_servers.matlab]
+> command = 'C:\fullpath\to\matlab-mcp-server-windows-x64.exe'
+> args = []
+> env_vars = ["WINDIR"]
+> ```
+
 ## 参量
 
 通过以下方式之一指定参量来自定义服务器的行为:
-- 在 AI 应用程序的配置设置(通常为 `.json` 文件)中植入参量。
+- 在 AI 应用的配置设置(通常为 `.json` 文件)中植入参量。
 - 启动服务器时，以命令行接口 (CLI) 标志的形式输入参量。 
-- 使用环境变量，可在 CLI 或应用程序的配置设置中进行指定。要从 CLI 标志派生环境变量名称，请添加前缀 `MW_MCP_SERVER_`，转换为大写，并将连字符 (`-`) 替换为下划线 (`_`)。例如，参量 `--matlab-root` 对应的环境变量为 `MW_MCP_SERVER_MATLAB_ROOT`。如果同时使用两者，CLI 标志将优先于环境变量。
+- 使用环境变量，可在 CLI 或应用的配置设置中进行指定。要从 CLI 标志派生环境变量名称，请添加前缀 `MW_MCP_SERVER_`，转换为大写，并将连字符 (`-`) 替换为下划线 (`_`)。例如，参量 `--matlab-root` 对应的环境变量为 `MW_MCP_SERVER_MATLAB_ROOT`。如果同时使用两者，CLI 标志将优先于环境变量。
 
 | 参量 | 说明 | 示例 |
 | ------------- | ------------- | ------------- |
@@ -134,10 +161,10 @@ claude mcp remove matlab
 | version | 显示 MATLAB MCP Server 的版本。 | `--version` |
 | matlab-root | 指定要启动的 MATLAB 的完整路径。路径中不要包含 `/bin`。默认情况下，服务器会尝试在系统的 PATH 环境变量中查找第一个 MATLAB。 | Windows: `--matlab-root=C:\Program Files\MATLAB\R2026a` <br><br> Linux/macOS: `--matlab-root=/home/usr/MATLAB/R2026a`<br><br>作为环境变量: <br>`MW_MCP_SERVER_MATLAB_ROOT=/home/usr/MATLAB/R2026a` |
 | initialize-matlab-on-startup | 要在启动服务器后立即初始化 MATLAB，请将此参量设置为 `true`。默认情况下，MATLAB 仅在调用第一个工具时启动。 | `--initialize-matlab-on-startup=true` |
-| initial-working-folder | 指定 MATLAB 启动时指向的工作文件夹。如果未指定值，MATLAB 会启动在 AI 应用程序的第一个 [Root (MCP)](https://modelcontextprotocol.io/specification/latest/client/roots) 路径处。如果您尚未定义 root，MATLAB 会启动在以下位置: <br> <ul><li>Linux: `/home/username` </li><li> Windows: `C:\Users\username\Documents`</li><li>Mac: `/Users/username/Documents`</li></ul> | Windows: `--initial-working-folder=C:\\Users\\username\\MyProject` <br><br> Linux/macOS: `--initial-working-folder=/Users/username/MyProject` |
-| matlab-display-mode | 指定是否显示 MATLAB 桌面。使用 `desktop` 模式(默认)将显示 MATLAB 桌面。使用 `nodesktop` 模式仅从 AI 应用程序使用 MATLAB，而不显示 MATLAB 桌面。请注意，在 `nodesktop` 模式下，需要图形界面的命令(例如 `edit`、`open`、`open_system`、`uifigure` 和 `appdesigner`)仍将在桌面上打开 MATLAB 窗口。 | `--matlab-display-mode=nodesktop` |
+| initial-working-folder | 指定 MATLAB 启动时指向的工作文件夹。如果未指定值，MATLAB 会启动在 AI 应用的第一个 [Root (MCP)](https://modelcontextprotocol.io/specification/latest/client/roots) 路径处。如果您尚未定义 root，MATLAB 会启动在以下位置: <br> <ul><li>Linux: `/home/username` </li><li> Windows: `C:\Users\username\Documents`</li><li>Mac: `/Users/username/Documents`</li></ul> | Windows: `--initial-working-folder=C:\\Users\\username\\MyProject` <br><br> Linux/macOS: `--initial-working-folder=/Users/username/MyProject` |
+| matlab-display-mode | 指定是否显示 MATLAB 桌面。使用 `desktop` 模式(默认)将显示 MATLAB 桌面。使用 `nodesktop` 模式仅从 AI 应用使用 MATLAB，而不显示 MATLAB 桌面。请注意，在 `nodesktop` 模式下，需要图形界面的命令(例如 `edit`、`open`、`open_system`、`uifigure` 和 `appdesigner`)仍将在桌面上打开 MATLAB 窗口。 | `--matlab-display-mode=nodesktop` |
 | matlab-session-mode | 指定 MCP 服务器是启动新的 MATLAB 还是连接到现有的 MATLAB 会话 (支持 MATLAB R2023a 及更高版本)。默认为 **`auto`** 模式。<br><br> **`new` 模式:** MCP 服务器启动新的 MATLAB 会话。<br><br>**`auto` 模式 (默认):** 服务器尝试连接到现有 MATLAB 会话，您必须已按照 `existing` 模式的说明配置该会话。如果服务器找不到现有 MATLAB 会话，则启动新会话。<br><br>**`existing` 模式:** 服务器尝试连接到现有 MATLAB 会话。您必须提前配置好 MATLAB 会话才能使用此模式，步骤如下:<br><br><ol><li>如果您首次使用 `existing` 模式，请运行 `./matlab-mcp-server --setup-matlab`。<br><br>此命令会在 MATLAB 中安装一个名为 MATLAB MCP Server Toolbox 的附加功能。您可以使用此表中的其他参量来自定义命令。例如，要指定使用哪个 MATLAB 来安装工具箱，可以使用 `./matlab-mcp-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a`。<br><br>对于 Claude Desktop，在运行 `./matlab-mcp-server --setup-matlab` 之前，您必须按照[设置](#设置)中的说明下载 MATLAB MCP Server 二进制文件。<br><br></li><li>在正在运行的 MATLAB 会话的命令行窗口中，运行 `shareMATLABSession()`。当您使用 `--matlab-session-mode=existing` 或 `--matlab-session-mode=auto` 启动服务器时，MCP 服务器将连接到此 MATLAB 会话。如果您正在运行多个 MATLAB 会话，服务器将连接到您最近运行 `shareMATLABSession()` 命令的 MATLAB 会话。<br><br>作为手动运行 `shareMATLABSession()` 的替代方法，您可以将此命令添加到您的 MATLAB [Startup 脚本 (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html) 中。</li></ol> | `--matlab-session-mode=existing` |
-| extension-file | 要使用自定义 MCP 工具，请提供定义工具的 JSON 文件的路径。您还可以使用多个扩展文件。有关使用自定义工具的详细信息，请参阅[在 MATLAB MCP Server 中使用自定义工具](guides/custom-tools.zh-cn.md)。 | <br><br>Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` <br><br> **使用多个扩展文件:**<br><br>Windows:`--extension-file=C:\\path\\to\\tools-1.json --extension-file=C:\\path\\to\\tools-2.json`<br><br>Linux/macOS:`--extension-file=/path/to/tools1.json --extension-file=/path/to/tools2.json` <br><br> **使用环境变量:** <br><br> Windows: `MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\tools1.json;C:\Users\name\tools2.json` <br><br> Linux/macOS: `MW_MCP_SERVER_EXTENSION_FILE=/path/to/tools1.json:/path/to/tools2.json` |
+| extension-file | 要使用自定义 MCP 工具，请提供定义工具的 JSON 文件的路径。您还可以使用多个扩展文件。有关使用自定义工具的详细信息，请参阅[在 MATLAB MCP Server 中使用自定义工具](guides/custom-tools.zh-cn.md)。 | <br><br>Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` <br><br> **使用多个扩展文件:**<br><br>Windows:`--extension-file=C:\\path\\to\\tools-1.json --extension-file=C:\\path\\to\\tools-2.json`<br><br>Linux/macOS:`--extension-file=/path/to/tools1.json --extension-file=/path/to/tools2.json` <br><br> **使用环境变量:** <br><br> Windows: `MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\tools1.json;C:\Users\name\tools2.json` <br><br> Linux/macOS: `MW_MCP_SERVER_EXTENSION_FILE=/path/to/tools1.json:/path/to/tools2.json`|
 | log-folder | 指定 MCP 服务器存储日志文件的文件夹。如果未指定，服务器将使用操作系统的默认临时文件夹。 | Windows: `--log-folder=C:\\Users\\name\\AppData\\Local\\Temp` <br><br> Linux/macOS: `--log-folder=/tmp/my-logs`  |
 | log-level | MCP 服务器的日志级别。有效值按详细程度递减依次为 `debug`、`info`、`warn` 和 `error`。 | `--log-level=debug` |
 | disable-telemetry | 要禁用匿名数据收集，请将此参量设置为 `true`。有关详细信息，请参阅[数据收集](#数据收集)。 | `--disable-telemetry=true` |
@@ -170,7 +197,7 @@ claude mcp remove matlab
 
 ## 资源
 
-MCP 服务器提供了 [Resources (MCP)](https://modelcontextprotocol.io/specification/latest/server/resources)，以帮助您的 AI 应用程序编写 MATLAB 代码。要查看使用此资源的说明，请参阅 AI 应用程序中有关如何使用资源的文档。
+MCP 服务器提供了 [Resources (MCP)](https://modelcontextprotocol.io/specification/latest/server/resources)，以帮助您的 AI 应用编写 MATLAB 代码。要查看使用此资源的说明，请参阅 AI 应用中有关如何使用资源的文档。
 
 1. `matlab_coding_guidelines`
     - 提供全面的 MATLAB 编码标准，以提高代码的可读性、可维护性和协作性。这些规范涵盖命名约定、格式、注释、性能优化和错误处理。
