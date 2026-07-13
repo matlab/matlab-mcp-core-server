@@ -15,17 +15,6 @@ Source English Markdown:
   <a href="README.zh-cn.md">简体中文</a>
 </p>
 
-> [!WARNING]
-> v0.11.0 より、MATLAB MCP Core Server は MATLAB MCP Server に名称が変更されました。この変更以降に最新バージョンのサーバーを使用するには、設定を更新する必要があります。
->
-> | 変更点 | 必要な対応 |
-> |:-------:|:---------------:|
-> | **バイナリ名**<br>新しい形式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>例: `matlab-mcp-server-windows-x64.exe` | AI アプリケーションの構成設定 (通常は `.json` ファイル) でバイナリ名を更新してください。 |
-> | **ツールボックス**<br>更新および名称変更: `MATLAB MCP Core Server Toolbox` → **`MATLAB MCP Server Toolbox`** | `./matlab-mcp-server --setup-matlab` を実行して最新バージョンのツールボックスをインストールしてください。既存の MATLAB セッションに接続するにはツールボックスが必要です。詳細については、「[引数](#引数)」セクションの `matlab-session-mode` を参照してください。 |
-> | **リポジトリ URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 不要。GitHub が自動的にリダイレクトします。 |
-> | **MCP バンドル**<br>更新および名称変更: `matlab-mcp-core-server.mcpb` → **`matlab-mcp-server.mcpb`** | v0.11.0 より前に MATLAB MCP バンドルを使用して Claude Desktop に MCP サーバーをインストールした場合は、まずサーバーをアンインストールし、次に[最新リリース](https://github.com/matlab/matlab-mcp-server/releases/latest) ページから新しい `matlab-mcp-server.mcpb` バンドルをダウンロードして、サーバーを再インストールしてください。詳細については、「[Claude Desktop](#claude-desktop)」セクションを参照してください。|
-> | **Go モジュール**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Go プロジェクトで MATLAB MCP Core Server モジュールを使用している場合は、`go.mod` 内のモジュール名とインポート宣言を更新してください。 |
-
 MathWorks® 公式の MATLAB MCP Server を使用して、AI アプリケーションから MATLAB® を実行できます。MATLAB MCP Server を使用すると、AI アプリケーションから以下の操作が可能になります。
 
 - MATLAB の起動と終了。
