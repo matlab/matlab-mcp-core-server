@@ -5,7 +5,7 @@ package evalmatlabcode
 const (
 	name        = "evaluate_matlab_code"
 	title       = "Evaluate MATLAB Code"
-	description = "Evaluate a string of MATLAB code (`code`) in an existing MATLAB session. Optionally specify a project folder (`project_path`) to set as the current working folder before execution. Returns the command window output from code execution."
+	description = "Evaluate a string of MATLAB code (`code`) in an existing MATLAB session. Optionally specify a project folder (`project_path`) to set as the current working folder before execution. Returns the command window output from code execution. WARNING: Do not use `restoredefaultpath` as it will remove the MCP server functions from the path and break this tool's ability to communicate with MATLAB."
 )
 
 type Args struct {

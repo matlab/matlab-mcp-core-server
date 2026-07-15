@@ -425,6 +425,51 @@ func TestClient_EvalWithCapture_DoErrors(t *testing.T) {
 	assert.Empty(t, response)
 }
 
+func TestClient_EvalWithCapture_MCPPackageUnavailable(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
+	defer mockHttpClient.AssertExpectations(t)
+
+	expectedErrorMessage := "Undefined function 'matlab_mcp.mcpEval' for input arguments of type 'char'."
+
+	faultMessage := embeddedconnector.Fault{Message: expectedErrorMessage}
+	faultBytes, _ := json.Marshal(faultMessage)
+
+	responsePayload := embeddedconnector.ConnectorPayload{
+		Messages: embeddedconnector.ConnectorMessage{
+			FevalResponse: []embeddedconnector.FevalResponseMessage{
+				{
+					IsError:       true,
+					MessageFaults: []json.RawMessage{faultBytes},
+				},
+			},
+		},
+	}
+	responseBody, _ := json.Marshal(responsePayload)
+
+	mockHttpClient.EXPECT().
+		Do(mock.MatchedBy(validateConnectorRequest)).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil).
+		Once()
+
+	client := embeddedconnector.Client{}
+	client.SetHttpClient(mockHttpClient)
+
+	// Act
+	response, err := client.EvalWithCapture(t.Context(), mockLogger, entities.EvalRequest{
+		Code: "restoredefaultpath",
+	})
+
+	// Assert
+	require.ErrorIs(t, err, embeddedconnector.ErrMCPPackageUnavailable)
+	assert.Empty(t, response)
+}
+
 func TestClient_EvalWithCapture_ContextPropagation(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()

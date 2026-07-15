@@ -5,7 +5,7 @@ package evalmatlabcode
 const (
 	name        = "eval_in_matlab_session"
 	title       = "Evaluate MATLAB Code in a MATLAB Session"
-	description = "Evaluate a string of MATLAB code (`code`) in an existing MATLAB session, given its session ID (`session_id`). Optionally specify a project folder (`project_path`) to set as the working folder before execution."
+	description = "Evaluate a string of MATLAB code (`code`) in an existing MATLAB session, given its session ID (`session_id`). Optionally specify a project folder (`project_path`) to set as the working folder before execution. WARNING: Do not use `restoredefaultpath` as it will remove the MCP server functions from the path and break this tool's ability to communicate with MATLAB."
 )
 
 type Args struct {

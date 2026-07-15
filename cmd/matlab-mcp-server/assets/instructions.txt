@@ -17,3 +17,4 @@ Best practices and safety:
 
 - Always inspect tool outputs and catch errors. If execution fails, ask the user for clarification.
 - Do not run untrusted code that could alter the file system or environment settings, without explicit consent from the user.
+- Do not use commands that reset MATLAB's search path (e.g. `restoredefaultpath`) as they remove the MCP server functions from the path and permanently break communication with the MATLAB session.
