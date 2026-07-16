@@ -140,6 +140,64 @@ func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
 	assert.Equal(t, expectedResponse, response, "Response should match expected value")
 }
 
+func TestUsecase_Execute_InvalidMATLABFileName(t *testing.T) {
+	tests := []struct {
+		name     string
+		fileName string
+	}{
+		{
+			name:     "Name with spaces",
+			fileName: "my script",
+		},
+		{
+			name:     "Name starting with a digit",
+			fileName: "1script",
+		},
+		{
+			name:     "Name with a hyphen",
+			fileName: "my-script",
+		},
+		{
+			name:     "Name with a dot",
+			fileName: "my.script",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			mockLogger := testutils.NewInspectableLogger()
+
+			mockPathValidator := &mocks.MockPathValidator{}
+			defer mockPathValidator.AssertExpectations(t)
+
+			mockClient := &entitiesmocks.MockMATLABSessionClient{}
+			defer mockClient.AssertExpectations(t)
+
+			ctx := t.Context()
+			scriptDir := filepath.Join("some", "path", "to")
+			scriptPath := filepath.Join(scriptDir, tt.fileName+".m")
+
+			usecaseRequest := runmatlabfile.Args{ScriptPath: scriptPath}
+
+			mockPathValidator.EXPECT().
+				ValidateMATLABScript(scriptPath).
+				Return(scriptPath, nil).
+				Once()
+
+			usecase := runmatlabfile.New(mockPathValidator)
+
+			// Act
+			response, err := usecase.Execute(ctx, mockLogger, mockClient, usecaseRequest)
+
+			// Assert
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid MATLAB file name")
+			assert.Empty(t, response, "Response should be empty")
+		})
+	}
+}
+
 func TestUsecase_Execute_ValidateMATLABScriptError(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
