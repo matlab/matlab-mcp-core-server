@@ -10,6 +10,8 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 type LoggerFactory interface {
@@ -42,7 +44,7 @@ func NewFactory(
 	}
 }
 
-func (f *Factory) New(exporter otel.MetricExporter) (otel.MeterProvider, messages.Error) {
+func (f *Factory) New(exporter otel.MetricExporter, serviceName, serviceVersion string) (otel.MeterProvider, messages.Error) {
 	logger, messagesErr := f.loggerFactory.GetGlobalLogger()
 	if messagesErr != nil {
 		return nil, messagesErr
@@ -59,7 +61,14 @@ func (f *Factory) New(exporter otel.MetricExporter) (otel.MeterProvider, message
 	collectionInterval := cfg.TelemetryCollectionInterval()
 	logger.With("interval", collectionInterval.String()).Debug("Configuring telemetry collection interval")
 
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName(serviceName),
+		semconv.ServiceVersion(serviceVersion),
+	)
+
 	concreteMeterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(res),
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(
 			exporter,
 			sdkmetric.WithInterval(collectionInterval),

@@ -4,10 +4,6 @@ package messages
 
 import "fmt"
 
-type LocaleSpecificCatalog interface {
-	Get(MessageKey) string
-}
-
 // FromError retrieves the message corresponding to the passed error from the message catalog.
 // The holes in the message are filled from the error attributes.
 func FromError(catalog LocaleSpecificCatalog, err Error) string {

@@ -137,8 +137,18 @@ func TestFactory_Telemetry_HappyPath(t *testing.T) {
 		Return(mockExporter, nil).
 		Once()
 
+	mockServerDefinition.EXPECT().
+		Name().
+		Return("matlab-mcp-server").
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("1.0.0").
+		Once()
+
 	mockMeterProviderFactory.EXPECT().
-		New(mockExporter).
+		New(mockExporter, "matlab-mcp-server", "1.0.0").
 		Return(noopMeterProvider, nil).
 		Once()
 
@@ -699,8 +709,18 @@ func TestFactory_Telemetry_MeterProviderCreationError(t *testing.T) {
 		Return(mockExporter, nil).
 		Once()
 
+	mockServerDefinition.EXPECT().
+		Name().
+		Return("matlab-mcp-server").
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("1.0.0").
+		Once()
+
 	mockMeterProviderFactory.EXPECT().
-		New(mockExporter).
+		New(mockExporter, "matlab-mcp-server", "1.0.0").
 		Return(nil, expectedError).
 		Once()
 
@@ -797,8 +817,18 @@ func TestFactory_Telemetry_InstrumentCreationError(t *testing.T) {
 		Return(mockExporter, nil).
 		Once()
 
+	mockServerDefinition.EXPECT().
+		Name().
+		Return("matlab-mcp-server").
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("1.0.0").
+		Once()
+
 	mockMeterProviderFactory.EXPECT().
-		New(mockExporter).
+		New(mockExporter, "matlab-mcp-server", "1.0.0").
 		Return(noopMeterProvider, nil).
 		Once()
 
@@ -901,8 +931,18 @@ func TestFactory_Telemetry_IsSingleton(t *testing.T) {
 		Return(mockExporter, nil).
 		Once()
 
+	mockServerDefinition.EXPECT().
+		Name().
+		Return("matlab-mcp-server").
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("1.0.0").
+		Once()
+
 	mockMeterProviderFactory.EXPECT().
-		New(mockExporter).
+		New(mockExporter, "matlab-mcp-server", "1.0.0").
 		Return(noopMeterProvider, nil).
 		Once()
 

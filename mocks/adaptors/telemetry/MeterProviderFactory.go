@@ -38,8 +38,8 @@ func (_m *MockMeterProviderFactory) EXPECT() *MockMeterProviderFactory_Expecter 
 }
 
 // New provides a mock function for the type MockMeterProviderFactory
-func (_mock *MockMeterProviderFactory) New(exporter otel.MetricExporter) (otel.MeterProvider, messages.Error) {
-	ret := _mock.Called(exporter)
+func (_mock *MockMeterProviderFactory) New(exporter otel.MetricExporter, serviceName string, serviceVersion string) (otel.MeterProvider, messages.Error) {
+	ret := _mock.Called(exporter, serviceName, serviceVersion)
 
 	if len(ret) == 0 {
 		panic("no return value specified for New")
@@ -47,18 +47,18 @@ func (_mock *MockMeterProviderFactory) New(exporter otel.MetricExporter) (otel.M
 
 	var r0 otel.MeterProvider
 	var r1 messages.Error
-	if returnFunc, ok := ret.Get(0).(func(otel.MetricExporter) (otel.MeterProvider, messages.Error)); ok {
-		return returnFunc(exporter)
+	if returnFunc, ok := ret.Get(0).(func(otel.MetricExporter, string, string) (otel.MeterProvider, messages.Error)); ok {
+		return returnFunc(exporter, serviceName, serviceVersion)
 	}
-	if returnFunc, ok := ret.Get(0).(func(otel.MetricExporter) otel.MeterProvider); ok {
-		r0 = returnFunc(exporter)
+	if returnFunc, ok := ret.Get(0).(func(otel.MetricExporter, string, string) otel.MeterProvider); ok {
+		r0 = returnFunc(exporter, serviceName, serviceVersion)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(otel.MeterProvider)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(otel.MetricExporter) messages.Error); ok {
-		r1 = returnFunc(exporter)
+	if returnFunc, ok := ret.Get(1).(func(otel.MetricExporter, string, string) messages.Error); ok {
+		r1 = returnFunc(exporter, serviceName, serviceVersion)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(messages.Error)
@@ -74,18 +74,30 @@ type MockMeterProviderFactory_New_Call struct {
 
 // New is a helper method to define mock.On call
 //   - exporter otel.MetricExporter
-func (_e *MockMeterProviderFactory_Expecter) New(exporter interface{}) *MockMeterProviderFactory_New_Call {
-	return &MockMeterProviderFactory_New_Call{Call: _e.mock.On("New", exporter)}
+//   - serviceName string
+//   - serviceVersion string
+func (_e *MockMeterProviderFactory_Expecter) New(exporter interface{}, serviceName interface{}, serviceVersion interface{}) *MockMeterProviderFactory_New_Call {
+	return &MockMeterProviderFactory_New_Call{Call: _e.mock.On("New", exporter, serviceName, serviceVersion)}
 }
 
-func (_c *MockMeterProviderFactory_New_Call) Run(run func(exporter otel.MetricExporter)) *MockMeterProviderFactory_New_Call {
+func (_c *MockMeterProviderFactory_New_Call) Run(run func(exporter otel.MetricExporter, serviceName string, serviceVersion string)) *MockMeterProviderFactory_New_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 otel.MetricExporter
 		if args[0] != nil {
 			arg0 = args[0].(otel.MetricExporter)
 		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
 		run(
 			arg0,
+			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -96,7 +108,7 @@ func (_c *MockMeterProviderFactory_New_Call) Return(meterProvider otel.MeterProv
 	return _c
 }
 
-func (_c *MockMeterProviderFactory_New_Call) RunAndReturn(run func(exporter otel.MetricExporter) (otel.MeterProvider, messages.Error)) *MockMeterProviderFactory_New_Call {
+func (_c *MockMeterProviderFactory_New_Call) RunAndReturn(run func(exporter otel.MetricExporter, serviceName string, serviceVersion string) (otel.MeterProvider, messages.Error)) *MockMeterProviderFactory_New_Call {
 	_c.Call.Return(run)
 	return _c
 }

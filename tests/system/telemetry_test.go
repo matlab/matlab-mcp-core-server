@@ -45,8 +45,19 @@ func (s *TelemetryTestSuite) TestTelemetry() {
 	s.Require().Equal(1, metrics.MetricCount())
 
 	// Check some additional details, to make sure we sending the correct telemetry
-	metric := metrics.ResourceMetrics().
-		At(0).
+	resourceMetric := metrics.ResourceMetrics().At(0)
+
+	resourceAttrs := resourceMetric.Resource().Attributes()
+
+	serviceName, exists := resourceAttrs.Get("service.name")
+	s.True(exists, "service.name resource attribute should exist")
+	s.Equal("matlab-mcp-server", serviceName.Str())
+
+	serviceVersion, exists := resourceAttrs.Get("service.version")
+	s.True(exists, "service.version resource attribute should exist")
+	s.NotEmpty(serviceVersion.Str(), "service.version resource attribute should not be empty")
+
+	metric := resourceMetric.
 		ScopeMetrics().
 		At(0).
 		Metrics().

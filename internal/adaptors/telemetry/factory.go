@@ -31,7 +31,7 @@ type ExporterFactory interface {
 }
 
 type MeterProviderFactory interface {
-	New(exporter otel.MetricExporter) (otel.MeterProvider, messages.Error)
+	New(exporter otel.MetricExporter, serviceName, serviceVersion string) (otel.MeterProvider, messages.Error)
 }
 
 type InstrumentFactory interface {
@@ -160,7 +160,7 @@ func (f *Factory) newOTELTelemetry() (Telemetry, messages.Error) {
 		}
 
 		logger.Debug("Creating OTEL meter provider")
-		concreteMeterProvider, err := f.meterProviderFactory.New(exporter)
+		concreteMeterProvider, err := f.meterProviderFactory.New(exporter, f.serverDefinition.Name(), cfg.Version())
 		if err != nil {
 			return nil, err
 		}

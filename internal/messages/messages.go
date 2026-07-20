@@ -6,6 +6,11 @@ type messageMap map[messageKey]string
 
 type localeMap map[localeKey]messageMap
 
+// LocaleSpecificCatalog provides access to the messages for a single locale.
+type LocaleSpecificCatalog interface {
+	Get(MessageKey) string
+}
+
 var messages_en_US = messageMap{
 	AddonManagerErrors_InstallFailed:                        `Failed to install MATLAB Add-On. For details, see the server log in "%[1]s".`,
 	CLIMessages_BaseDirDescription:                          `The folder where this MCP server stores log files. If not specified, the server uses the default temp folder of your operating system.`,

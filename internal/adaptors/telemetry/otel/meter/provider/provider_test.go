@@ -78,7 +78,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	factory := provider.NewFactory(mockLoggerFactory, mockConfigFactory, mockLifecycleSignaler)
 
 	// Act
-	result, err := factory.New(mockExporter)
+	result, err := factory.New(mockExporter, "matlab-mcp-server", "1.0.0")
 
 	// Assert
 	require.NoError(t, err, "Error should be nil")
@@ -109,7 +109,7 @@ func TestFactory_New_LoggerError(t *testing.T) {
 	factory := provider.NewFactory(mockLoggerFactory, mockConfigFactory, mockLifecycleSignaler)
 
 	// Act
-	result, err := factory.New(mockExporter)
+	result, err := factory.New(mockExporter, "matlab-mcp-server", "1.0.0")
 
 	// Assert
 	require.Nil(t, result)
@@ -147,7 +147,7 @@ func TestFactory_New_ConfigError(t *testing.T) {
 	factory := provider.NewFactory(mockLoggerFactory, mockConfigFactory, mockLifecycleSignaler)
 
 	// Act
-	result, err := factory.New(mockExporter)
+	result, err := factory.New(mockExporter, "matlab-mcp-server", "1.0.0")
 
 	// Assert
 	require.Nil(t, result, "MeterProvider should be nil when config fails")
