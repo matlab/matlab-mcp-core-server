@@ -118,7 +118,19 @@ $(TEST_TARGETS): export MCPB_ARTIFACT_PATH := $(or $(MCPB_ARTIFACT_PATH),$(MCPB_
 
 # --- Build flags ---
 
-BUILD_FLAGS := -trimpath
+# Make sure we do not have incompatible build flags set. 
+# DEBUG and RELEASE are mutually exclusive.
+ifneq ($(and $(filter true,$(DEBUG)), $(filter true,$(RELEASE))),)
+$(error DEBUG and RELEASE cannot both be true)
+endif
+
+ifeq ($(DEBUG),true)
+	# Used for debugging the MCP server - use something like
+	# dlv attach $(pgrep -f "matlab-mcp-server") --headless --listen=:2345 --api-version=2
+	BUILD_FLAGS := -gcflags="all=-N -l"
+else
+	BUILD_FLAGS := -trimpath
+endif
 
 ifeq ($(RELEASE),true)
 	LDFLAGS_ARG := -ldflags "-s -w"

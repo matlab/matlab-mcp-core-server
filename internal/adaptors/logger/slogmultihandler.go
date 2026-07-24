@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package logger
 
@@ -46,18 +46,22 @@ func (h *SlogMultiHandler) Handle(ctx context.Context, record slog.Record) error
 	return err
 }
 
-func (h *SlogMultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	for i, handler := range h.handlers {
-		h.handlers[i] = handler.WithAttrs(attrs)
-	}
+// For both WithAttrs and WithGroup - see https://go.dev/src/log/slog/handler.go
+// The contract of both these methods is that they will create a new handler that
+// does not mutate the original handler.
 
-	return h
+func (h *SlogMultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandlers := make([]Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		newHandlers[i] = handler.WithAttrs(attrs)
+	}
+	return &SlogMultiHandler{handlers: newHandlers}
 }
 
 func (h *SlogMultiHandler) WithGroup(name string) slog.Handler {
+	newHandlers := make([]Handler, len(h.handlers))
 	for i, handler := range h.handlers {
-		h.handlers[i] = handler.WithGroup(name)
+		newHandlers[i] = handler.WithGroup(name)
 	}
-
-	return h
+	return &SlogMultiHandler{handlers: newHandlers}
 }

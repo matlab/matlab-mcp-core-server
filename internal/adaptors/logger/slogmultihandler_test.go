@@ -3,6 +3,7 @@
 package logger_test
 
 import (
+	"bytes"
 	"log/slog"
 	"testing"
 
@@ -273,10 +274,10 @@ func TestSlogMultiHandler_WithAttrs_CallsAllHandlers(t *testing.T) {
 	result := multiHandler.WithAttrs(expectedAttrs)
 
 	// Assert
-	assert.Equal(t, multiHandler, result, "WithAttrs should return the same multiHandler instance")
+	assert.NotSame(t, multiHandler, result, "WithAttrs should not return the same multiHandler instance")
 }
 
-func TestSlogMultiHandler_WithAttrs_NoHandlers_ReturnsItself(t *testing.T) {
+func TestSlogMultiHandler_WithAttrs_NoHandlers_DoesNotReturnsItself(t *testing.T) {
 	// Arrange
 	attrs := []slog.Attr{
 		slog.String("key1", "value1"),
@@ -288,7 +289,22 @@ func TestSlogMultiHandler_WithAttrs_NoHandlers_ReturnsItself(t *testing.T) {
 	result := multiHandler.WithAttrs(attrs)
 
 	// Assert
-	assert.Equal(t, multiHandler, result, "WithAttrs should return the same multiHandler instance")
+	assert.NotEqual(t, multiHandler, result, "WithAttrs should return a new handler instance")
+}
+
+func TestSlogMultiHandler_WithAttrs_DoesNotMutateParent(t *testing.T) {
+	// Arrange
+	var buf bytes.Buffer
+	child := slog.NewJSONHandler(&buf, nil)
+	multiHandler := logger.NewMultiHandler(child)
+	parent := slog.New(multiHandler)
+
+	// Act - derive a child logger, then log through the parent
+	_ = parent.With("child-attr", "child-value")
+	parent.Info("parent-message")
+
+	// Assert - the parent's output must not carry the derived logger's attribute
+	assert.NotContains(t, buf.String(), "child-attr")
 }
 
 func TestSlogMultiHandler_WithGroup_CallsAllHandlers(t *testing.T) {
@@ -317,10 +333,10 @@ func TestSlogMultiHandler_WithGroup_CallsAllHandlers(t *testing.T) {
 	result := multiHandler.WithGroup(expectedGroupName)
 
 	// Assert
-	assert.Equal(t, multiHandler, result, "WithGroup should return the same multiHandler instance")
+	assert.NotSame(t, multiHandler, result, "WithGroup should return a new handler instance")
 }
 
-func TestSlogMultiHandler_WithGroup_NoHandlers_ReturnsItself(t *testing.T) {
+func TestSlogMultiHandler_WithGroup_NoHandlers_DoesNotReturnsItself(t *testing.T) {
 	// Arrange
 	groupName := "test-group"
 
@@ -330,5 +346,5 @@ func TestSlogMultiHandler_WithGroup_NoHandlers_ReturnsItself(t *testing.T) {
 	result := multiHandler.WithGroup(groupName)
 
 	// Assert
-	assert.Equal(t, multiHandler, result, "WithGroup should return the same multiHandler instance")
+	assert.NotSame(t, multiHandler, result, "WithGroup should return a new handler instance")
 }
