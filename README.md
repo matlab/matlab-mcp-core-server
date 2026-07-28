@@ -1,5 +1,7 @@
 # MATLAB MCP Server
 
+[![MCP Toplist](https://mcptoplist.com/badge/pulsemcp%2Fmathworks-matlab.svg)](https://mcptoplist.com/server/pulsemcp%2Fmathworks-matlab)
+
 <p align="center">
   English •
   <a href="l10n/README.es.md">Español</a> •
