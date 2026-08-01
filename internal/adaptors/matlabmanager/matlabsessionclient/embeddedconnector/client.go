@@ -120,9 +120,6 @@ func (c *Client) EvalWithCapture(ctx context.Context, logger entities.Logger, in
 
 	response, err := c.FEval(ctx, logger, fevalRequest)
 	if err != nil {
-		if isMCPPackageUnavailableError(err) {
-			return entities.EvalResponse{}, ErrMCPPackageUnavailable
-		}
 		return entities.EvalResponse{}, err
 	}
 
