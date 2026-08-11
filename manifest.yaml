@@ -1,0 +1,18 @@
+# Copyright 2026 The MathWorks, Inc.
+schema_version: 1
+
+display-name: "MATLAB MCP Server"
+description: "Model Context Protocol server for MATLAB"
+
+mcp-servers:
+  - name: matlab
+    display-name: "matlab-mcp-server"
+    binary:
+      linux_x64: <repo>/releases/download/<version>/matlab-mcp-server-linux-x64
+      windows_x64: <repo>/releases/download/<version>/matlab-mcp-server-windows-x64.exe
+      macos_arm64: <repo>/releases/download/<version>/matlab-mcp-server-macos-arm64
+      macos_x64: <repo>/releases/download/<version>/matlab-mcp-server-macos-x64
+
+matlab-packages:
+  - name: matlab-mcp-server
+    source: <repo>/releases/download/<version>/MATLABMCPServerToolbox.mltbx
