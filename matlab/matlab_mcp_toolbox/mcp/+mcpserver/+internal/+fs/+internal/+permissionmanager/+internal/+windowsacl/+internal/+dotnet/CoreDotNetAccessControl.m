@@ -21,12 +21,11 @@ classdef CoreDotNetAccessControl < handle & mcpserver.internal.fs.internal.permi
     methods
         function obj = CoreDotNetAccessControl(options)
             arguments
-                options.?mcpserver.internal.fs.internal.permissionmanager.internal.windowsacl.internal.dotnet.CoreDotNetAccessControl
+                options.DotNetFacade(1, 1) mcpserver.internal.facade.dotnet.DotNetFacade = ...
+                    mcpserver.internal.facade.dotnet.DefaultDotNetFacade()
             end
 
-            for prop = string(fieldnames(options).')
-                obj.(prop) = options.(prop);
-            end
+            obj.DotNetFacade = options.DotNetFacade;
         end
 
         function setAccessControl(obj, target, security)
