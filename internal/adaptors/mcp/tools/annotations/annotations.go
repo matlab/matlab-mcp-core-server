@@ -49,3 +49,29 @@ func NewDestructiveAnnotations() annotations {
 		openWorld:   true,
 	}
 }
+
+// NewIdempotentWriteAnnotations creates annotations for tools that write or
+// overwrite local state but produce the same result when called repeatedly
+// with the same arguments (e.g. running an analysis that overwrites a results
+// directory).
+func NewIdempotentWriteAnnotations() annotations {
+	return annotations{
+		readOnly:    false,
+		destructive: true,
+		idempotent:  true,
+		openWorld:   false,
+	}
+}
+
+// NewReadOnlyOpenWorldAnnotations creates annotations for tools that query
+// external services without modifying any state (local or remote). Do not use
+// this for tools that mutate remote state: the read-only hint tells hosts they
+// may skip user confirmation, so misusing it lets writes through silently.
+func NewReadOnlyOpenWorldAnnotations() annotations {
+	return annotations{
+		readOnly:    true,
+		destructive: false,
+		idempotent:  false,
+		openWorld:   true,
+	}
+}

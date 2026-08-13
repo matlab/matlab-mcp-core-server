@@ -28,6 +28,48 @@ func (a ReadOnlyAnnotation) ToToolAnnotations() *mcp.ToolAnnotations {
 	return internalannotations.NewReadOnlyAnnotations().ToToolAnnotations()
 }
 
+type DestructiveAnnotation struct {
+	publictypes.AnnotationSeal
+}
+
+var _ ConvertibleAnnotation = DestructiveAnnotation{}
+
+func NewDestructiveAnnotations() DestructiveAnnotation {
+	return DestructiveAnnotation{}
+}
+
+func (a DestructiveAnnotation) ToToolAnnotations() *mcp.ToolAnnotations {
+	return internalannotations.NewDestructiveAnnotations().ToToolAnnotations()
+}
+
+type IdempotentWriteAnnotation struct {
+	publictypes.AnnotationSeal
+}
+
+var _ ConvertibleAnnotation = IdempotentWriteAnnotation{}
+
+func NewIdempotentWriteAnnotations() IdempotentWriteAnnotation {
+	return IdempotentWriteAnnotation{}
+}
+
+func (a IdempotentWriteAnnotation) ToToolAnnotations() *mcp.ToolAnnotations {
+	return internalannotations.NewIdempotentWriteAnnotations().ToToolAnnotations()
+}
+
+type ReadOnlyOpenWorldAnnotation struct {
+	publictypes.AnnotationSeal
+}
+
+var _ ConvertibleAnnotation = ReadOnlyOpenWorldAnnotation{}
+
+func NewReadOnlyOpenWorldAnnotations() ReadOnlyOpenWorldAnnotation {
+	return ReadOnlyOpenWorldAnnotation{}
+}
+
+func (a ReadOnlyOpenWorldAnnotation) ToToolAnnotations() *mcp.ToolAnnotations {
+	return internalannotations.NewReadOnlyOpenWorldAnnotations().ToToolAnnotations()
+}
+
 func newDefaultAnnotation() ReadOnlyAnnotation {
 	return NewReadOnlyAnnotations()
 }

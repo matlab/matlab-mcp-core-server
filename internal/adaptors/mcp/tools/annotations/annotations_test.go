@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package annotations
 
@@ -60,6 +60,62 @@ func TestToToolAnnotations_Destructive(t *testing.T) {
 	assert.False(t, result.ReadOnlyHint, "ReadOnlyHint should be false")
 	assert.NotNil(t, result.DestructiveHint, "DestructiveHint pointer should not be nil")
 	assert.True(t, *result.DestructiveHint, "DestructiveHint value should be true")
+	assert.False(t, result.IdempotentHint, "IdempotentHint should be false")
+	assert.NotNil(t, result.OpenWorldHint, "OpenWorldHint pointer should not be nil")
+	assert.True(t, *result.OpenWorldHint, "OpenWorldHint value should be true")
+}
+
+func TestNewIdempotentWriteAnnotations(t *testing.T) {
+	// Act
+	result := NewIdempotentWriteAnnotations()
+
+	// Assert
+	assert.False(t, result.readOnly, "readOnly should be false")
+	assert.True(t, result.destructive, "destructive should be true")
+	assert.True(t, result.idempotent, "idempotent should be true")
+	assert.False(t, result.openWorld, "openWorld should be false")
+}
+
+func TestNewReadOnlyOpenWorldAnnotations(t *testing.T) {
+	// Act
+	result := NewReadOnlyOpenWorldAnnotations()
+
+	// Assert
+	assert.True(t, result.readOnly, "readOnly should be true")
+	assert.False(t, result.destructive, "destructive should be false")
+	assert.False(t, result.idempotent, "idempotent should be false")
+	assert.True(t, result.openWorld, "openWorld should be true")
+}
+
+func TestToToolAnnotations_IdempotentWrite(t *testing.T) {
+	// Arrange
+	annotations := NewIdempotentWriteAnnotations()
+
+	// Act
+	result := annotations.ToToolAnnotations()
+
+	// Assert
+	assert.NotNil(t, result, "result should not be nil")
+	assert.False(t, result.ReadOnlyHint, "ReadOnlyHint should be false")
+	assert.NotNil(t, result.DestructiveHint, "DestructiveHint pointer should not be nil")
+	assert.True(t, *result.DestructiveHint, "DestructiveHint value should be true")
+	assert.True(t, result.IdempotentHint, "IdempotentHint should be true")
+	assert.NotNil(t, result.OpenWorldHint, "OpenWorldHint pointer should not be nil")
+	assert.False(t, *result.OpenWorldHint, "OpenWorldHint value should be false")
+}
+
+func TestToToolAnnotations_ReadOnlyOpenWorld(t *testing.T) {
+	// Arrange
+	annotations := NewReadOnlyOpenWorldAnnotations()
+
+	// Act
+	result := annotations.ToToolAnnotations()
+
+	// Assert
+	assert.NotNil(t, result, "result should not be nil")
+	assert.True(t, result.ReadOnlyHint, "ReadOnlyHint should be true")
+	assert.NotNil(t, result.DestructiveHint, "DestructiveHint pointer should not be nil")
+	assert.False(t, *result.DestructiveHint, "DestructiveHint value should be false")
 	assert.False(t, result.IdempotentHint, "IdempotentHint should be false")
 	assert.NotNil(t, result.OpenWorldHint, "OpenWorldHint pointer should not be nil")
 	assert.True(t, *result.OpenWorldHint, "OpenWorldHint value should be true")
