@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type WriteCloser interface {
@@ -40,12 +39,15 @@ func (u *Unpacker) Unpack(archive io.ReaderAt, size int64, destDir string) error
 		return fmt.Errorf("reading archive: %w", err)
 	}
 
+	cleanDestDir := filepath.Clean(destDir)
+
 	for _, f := range r.File {
-		targetPath := filepath.Join(destDir, f.Name) //nolint:gosec // Validated on next line
-		rel, err := filepath.Rel(destDir, targetPath)
-		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		// filepath.IsLocal rejects absolute paths, ".." traversal, and reserved names, keeping
+		// targetPath within destDir. CodeQL recognises this as a sanitizer.
+		if !filepath.IsLocal(f.Name) {
 			return fmt.Errorf("illegal file path in archive: %s", f.Name)
 		}
+		targetPath := filepath.Join(cleanDestDir, f.Name) //nolint:gosec // f.Name validated by filepath.IsLocal above
 		if f.FileInfo().IsDir() {
 			if err := u.fs.MkdirAll(targetPath, 0750); err != nil {
 				return fmt.Errorf("creating directory %s: %w", f.Name, err)

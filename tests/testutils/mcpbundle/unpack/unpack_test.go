@@ -136,6 +136,20 @@ func TestUnpack_ZipSlip_RejectsPathTraversal(t *testing.T) {
 	assert.Contains(t, err.Error(), "illegal file path in archive")
 }
 
+func TestUnpack_ZipSlip_RejectsAbsolutePath(t *testing.T) {
+	archive := createZip(t, map[string]string{
+		"/etc/evil.txt": "malicious content",
+	})
+
+	fs := mocks.NewMockFileSystem(t)
+	u := unpack.NewUnpackerForTest(fs)
+
+	err := u.Unpack(bytes.NewReader(archive), int64(len(archive)), "/dest")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "illegal file path in archive")
+}
+
 func createZip(t *testing.T, entries map[string]string) []byte {
 	t.Helper()
 	return createZipWithDirs(t, entries, nil)
