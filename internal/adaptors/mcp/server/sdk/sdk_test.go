@@ -39,11 +39,14 @@ func TestNewFactory_HappyPath(t *testing.T) {
 	mockRootStore := &mocks.MockRootStore{}
 	defer mockRootStore.AssertExpectations(t)
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
 	defer mockTelemetryFactory.AssertExpectations(t)
 
 	// Act
-	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockClientInfoStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
 
 	// Assert
 	assert.NotNil(t, factory, "Factory should not be nil")
@@ -68,6 +71,9 @@ func TestFactory_NewServer_HappyPath(t *testing.T) {
 
 	mockRootStore := &mocks.MockRootStore{}
 	defer mockRootStore.AssertExpectations(t)
+
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
 
 	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
 	defer mockTelemetryFactory.AssertExpectations(t)
@@ -121,7 +127,7 @@ func TestFactory_NewServer_HappyPath(t *testing.T) {
 		Return(expectedInstructions).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockClientInfoStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
 
 	// Act
 	server, err := factory.NewServer()
@@ -148,6 +154,9 @@ func TestFactory_NewServer_ConfigError(t *testing.T) {
 	mockRootStore := &mocks.MockRootStore{}
 	defer mockRootStore.AssertExpectations(t)
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
 	defer mockTelemetryFactory.AssertExpectations(t)
 
@@ -158,7 +167,7 @@ func TestFactory_NewServer_ConfigError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockClientInfoStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
 
 	// Act
 	server, err := factory.NewServer()
@@ -188,6 +197,9 @@ func TestFactory_NewServer_LoggerError(t *testing.T) {
 	mockRootStore := &mocks.MockRootStore{}
 	defer mockRootStore.AssertExpectations(t)
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
 	defer mockTelemetryFactory.AssertExpectations(t)
 
@@ -203,7 +215,7 @@ func TestFactory_NewServer_LoggerError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockClientInfoStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
 
 	// Act
 	server, err := factory.NewServer()
@@ -233,6 +245,9 @@ func TestFactory_NewServer_TelemetryError(t *testing.T) {
 	mockRootStore := &mocks.MockRootStore{}
 	defer mockRootStore.AssertExpectations(t)
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
 	defer mockTelemetryFactory.AssertExpectations(t)
 
@@ -254,7 +269,7 @@ func TestFactory_NewServer_TelemetryError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
+	factory := sdk.NewFactory(mockConfigFactory, mockDefinition, mockRootStore, mockClientInfoStore, mockLoggerFactory, mockGlobalMATLAB, mockTelemetryFactory)
 
 	// Act
 	server, err := factory.NewServer()
@@ -846,7 +861,19 @@ func TestRecordClientConnection_HappyPath(t *testing.T) {
 		RecordClientConnection(ctx, expectedInfo).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
+	mockClientInfoStore.EXPECT().
+		SetClientInfo(entities.MCPClientInfo{
+			Name:       expectedClientName,
+			Title:      expectedClientTitle,
+			WebsiteURL: expectedClientURL,
+			Version:    expectedClientVersion,
+		}).
+		Once()
+
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)
@@ -863,6 +890,9 @@ func TestRecordClientConnection_NilInitializeParams(t *testing.T) {
 	mockTelemetry := &telemetrymocks.MockTelemetry{}
 	defer mockTelemetry.AssertExpectations(t)
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 
@@ -871,7 +901,7 @@ func TestRecordClientConnection_NilInitializeParams(t *testing.T) {
 		Return(nil).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)
@@ -891,6 +921,9 @@ func TestRecordClientConnection_NilClientInfo(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
 	mockSession.EXPECT().
 		InitializeParams().
 		Return(&mcp.InitializeParams{}).
@@ -900,7 +933,7 @@ func TestRecordClientConnection_NilClientInfo(t *testing.T) {
 		RecordClientConnection(ctx, telemetry.ClientConnectionInfo{}).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)
@@ -937,7 +970,14 @@ func TestRecordClientConnection_NilCapabilities(t *testing.T) {
 		}).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
+	mockClientInfoStore.EXPECT().
+		SetClientInfo(entities.MCPClientInfo{Name: expectedClientName, Title: ""}).
+		Once()
+
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)
@@ -977,7 +1017,10 @@ func TestRecordClientConnection_LegacyRootsOnly_Excluded(t *testing.T) {
 		RecordClientConnection(ctx, expectedInfo).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)
@@ -1018,7 +1061,10 @@ func TestRecordClientConnection_RootsV2OverridesLegacyRoots(t *testing.T) {
 		RecordClientConnection(ctx, expectedInfo).
 		Once()
 
-	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry)
+	mockClientInfoStore := &mocks.MockClientInfoStore{}
+	defer mockClientInfoStore.AssertExpectations(t)
+
+	recordClientConnection := sdk.RecordClientConnection(mockLogger, mockTelemetry, mockClientInfoStore)
 
 	// Act
 	recordClientConnection(ctx, mockSession)

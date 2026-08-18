@@ -33,6 +33,12 @@ func TestMATLABManager_ListEnvironments_HappyPath(t *testing.T) {
 	mockSessionSelector := &mocks.MockSessionSelector{}
 	defer mockSessionSelector.AssertExpectations(t)
 
+	mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+	defer mockClientInfoProvider.AssertExpectations(t)
+
+	mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+	defer mockConnectionIndicator.AssertExpectations(t)
+
 	expectedMatlabInfos := []datatypes.MatlabInfo{{
 		Location: filepath.Join("path", "to", "matlab", "R2023a"),
 		Version: datatypes.MatlabVersionInfo{
@@ -58,7 +64,7 @@ func TestMATLABManager_ListEnvironments_HappyPath(t *testing.T) {
 		Return(mockResponse).
 		Once()
 
-	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 	ctx := t.Context()
 
 	// Act
@@ -93,6 +99,12 @@ func TestMATLABManager_ListEnvironments_EmptyList(t *testing.T) {
 	mockSessionSelector := &mocks.MockSessionSelector{}
 	defer mockSessionSelector.AssertExpectations(t)
 
+	mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+	defer mockClientInfoProvider.AssertExpectations(t)
+
+	mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+	defer mockConnectionIndicator.AssertExpectations(t)
+
 	mockResponse := datatypes.ListMatlabInfo{
 		MatlabInfo: []datatypes.MatlabInfo{},
 	}
@@ -101,7 +113,7 @@ func TestMATLABManager_ListEnvironments_EmptyList(t *testing.T) {
 		Return(mockResponse).
 		Once()
 
-	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 	ctx := t.Context()
 
 	// Act

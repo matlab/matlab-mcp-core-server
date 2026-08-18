@@ -28,6 +28,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/addonmanager"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/connectionindicator"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	localmatlabsessiondirectory "github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -46,6 +47,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/clientinfostore"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/configurator"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/rootpathresolver"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/rootstore"
@@ -66,6 +68,7 @@ import (
 	runmatlabtestfilesinglesessiontool "github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/messagecatalog"
 	osadaptor "github.com/matlab/matlab-mcp-server/internal/adaptors/os"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/resourcelimit"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry/otel/instruments"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry/otel/meter/exporter"
@@ -78,7 +81,6 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-server/internal/facades/registryfacade"
 	unixfacade "github.com/matlab/matlab-mcp-server/internal/facades/unix"
-	"github.com/matlab/matlab-mcp-server/internal/adaptors/resourcelimit"
 	"github.com/matlab/matlab-mcp-server/internal/usecases/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-server/internal/usecases/detectmatlabtoolboxes"
 	"github.com/matlab/matlab-mcp-server/internal/usecases/evalcustomtool"
@@ -223,6 +225,9 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		// RootStore
 		rootstore.New,
 
+		// ClientInfoStore
+		clientinfostore.New,
+
 		// Root Path Resolver
 		rootpathresolver.New,
 		wire.Bind(new(rootpathresolver.OSLayer), new(*osfacade.OsFacade)),
@@ -232,6 +237,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(sdk.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(sdk.Definition), new(ApplicationDefinition)),
 		wire.Bind(new(sdk.RootStore), new(*rootstore.RootStore)),
+		wire.Bind(new(sdk.ClientInfoStore), new(*clientinfostore.ClientInfoStore)),
 		wire.Bind(new(sdk.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(sdk.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
 		wire.Bind(new(sdk.TelemetryFactory), new(*telemetry.Factory)),
@@ -377,6 +383,12 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(matlabmanager.MATLABSessionStore), new(*matlabsessionstore.Store)),
 		wire.Bind(new(matlabmanager.MATLABSessionClientFactory), new(*matlabsessionclient.Factory)),
 		wire.Bind(new(matlabmanager.SessionSelector), new(*sessionselector.SessionSelector)),
+		wire.Bind(new(matlabmanager.MCPClientInfoProvider), new(*clientinfostore.ClientInfoStore)),
+		wire.Bind(new(matlabmanager.ConnectionIndicator), new(*connectionindicator.ConnectionIndicator)),
+
+		// Connection Indicator
+		connectionindicator.New,
+		wire.Bind(new(connectionindicator.MessageCatalog), new(*messagecatalog.MessageCatalog)),
 
 		// Session Selector
 		sessionselector.New,

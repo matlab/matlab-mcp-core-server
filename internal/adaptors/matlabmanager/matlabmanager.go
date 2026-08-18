@@ -37,12 +37,24 @@ type SessionSelector interface {
 	SelectSessionToAttachTo(logger entities.Logger) (embeddedconnector.ConnectionDetails, error)
 }
 
+type MCPClientInfoProvider interface {
+	GetClientInfo() entities.MCPClientInfo
+}
+
+type ConnectionIndicator interface {
+	ShowGreeting(ctx context.Context, sessionLogger entities.Logger, client entities.MATLABSessionClient, greetingInfo entities.GreetingInfo) error
+	ApplyConnectedTitle(ctx context.Context, sessionLogger entities.Logger, client entities.MATLABSessionClient, greetingInfo entities.GreetingInfo) (string, error)
+	RestoreTitle(ctx context.Context, sessionLogger entities.Logger, client entities.MATLABSessionClient, originalTitle string) error
+}
+
 type MATLABManager struct {
-	configFactory   ConfigFactory
-	matlabServices  MATLABServices
-	sessionStore    MATLABSessionStore
-	clientFactory   MATLABSessionClientFactory
-	sessionSelector SessionSelector
+	configFactory       ConfigFactory
+	matlabServices      MATLABServices
+	sessionStore        MATLABSessionStore
+	clientFactory       MATLABSessionClientFactory
+	sessionSelector     SessionSelector
+	clientInfoProvider  MCPClientInfoProvider
+	connectionIndicator ConnectionIndicator
 
 	matlabSessionConnectionRetryInterval time.Duration
 }
@@ -55,13 +67,17 @@ func New(
 	sessionStore MATLABSessionStore,
 	clientFactory MATLABSessionClientFactory,
 	sessionSelector SessionSelector,
+	clientInfoProvider MCPClientInfoProvider,
+	connectionIndicator ConnectionIndicator,
 ) *MATLABManager {
 	return &MATLABManager{
-		configFactory:   configFactory,
-		matlabServices:  matlabServices,
-		sessionStore:    sessionStore,
-		clientFactory:   clientFactory,
-		sessionSelector: sessionSelector,
+		configFactory:       configFactory,
+		matlabServices:      matlabServices,
+		sessionStore:        sessionStore,
+		clientFactory:       clientFactory,
+		sessionSelector:     sessionSelector,
+		clientInfoProvider:  clientInfoProvider,
+		connectionIndicator: connectionIndicator,
 
 		matlabSessionConnectionRetryInterval: defaultMATLABSessionConnectionRetryInterval,
 	}

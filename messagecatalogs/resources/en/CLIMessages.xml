@@ -17,5 +17,7 @@
         <entry key="MATLABSessionModeDescription">Specify whether the MCP server connects to new or existing MATLAB sessions. In 'new' mode, the MCP server starts a new MATLAB session. In 'existing' mode, the server connects to an existing MATLAB session. You must configure the MATLAB session to use this mode, using the instructions in the README. In 'auto' mode (default), the server tries to connect to an existing MATLAB session as in 'existing' mode, and if unable to find one, it starts a new one.</entry>
         <entry key="ExtensionFileDescription">Use custom MCP tools by providing the path to a JSON extension file that defines the tools. Each tool maps to a MATLAB function. You can use the argument multiple times to specify multiple extension files. If you do not specify an extension file, the MCP server does not load any custom tools.</entry>
         <entry key="SuccessfullySetupMATLAB">Successfully setup MATLAB.</entry>
+        <entry key="GreetingOnConnect">{0} is connected to MATLAB via the MATLAB MCP server.\nNow you can use {0} to work with MATLAB.</entry>
+        <entry key="TitleOnConnect">Agent Connected</entry>
     </message>
 </rsccat>

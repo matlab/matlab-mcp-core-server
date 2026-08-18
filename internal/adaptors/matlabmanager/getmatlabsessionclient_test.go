@@ -41,6 +41,12 @@ func TestMATLABManager_GetMATLABSessionClient_HappyPath(t *testing.T) {
 	mockSessionSelector := &mocks.MockSessionSelector{}
 	defer mockSessionSelector.AssertExpectations(t)
 
+	mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+	defer mockClientInfoProvider.AssertExpectations(t)
+
+	mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+	defer mockConnectionIndicator.AssertExpectations(t)
+
 	mockSessionClient := &sessionstoremocks.MockMATLABSessionClientWithCleanup{}
 	defer mockSessionClient.AssertExpectations(t)
 
@@ -67,7 +73,7 @@ func TestMATLABManager_GetMATLABSessionClient_HappyPath(t *testing.T) {
 		Return(entities.PingResponse{IsAlive: true}).
 		Once()
 
-	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 
 	// Act
 	client, err := manager.GetMATLABSessionClient(ctx, mockLogger, expectedSessionID)
@@ -99,6 +105,12 @@ func TestMATLABManager_GetMATLABSessionClient_Retries(t *testing.T) {
 
 		mockSessionSelector := &mocks.MockSessionSelector{}
 		defer mockSessionSelector.AssertExpectations(t)
+
+		mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+		defer mockClientInfoProvider.AssertExpectations(t)
+
+		mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+		defer mockConnectionIndicator.AssertExpectations(t)
 
 		mockSessionClient := &sessionstoremocks.MockMATLABSessionClientWithCleanup{}
 		defer mockSessionClient.AssertExpectations(t)
@@ -133,7 +145,7 @@ func TestMATLABManager_GetMATLABSessionClient_Retries(t *testing.T) {
 			Return(entities.PingResponse{IsAlive: true}).
 			Once()
 
-		manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
+		manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 		manager.SetMATLABSessionConnectionRetryInterval(retryInterval)
 
 		// Act
@@ -168,6 +180,12 @@ func TestMATLABManager_GetMATLABSessionClient_RetryExhausted(t *testing.T) {
 		mockSessionSelector := &mocks.MockSessionSelector{}
 		defer mockSessionSelector.AssertExpectations(t)
 
+		mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+		defer mockClientInfoProvider.AssertExpectations(t)
+
+		mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+		defer mockConnectionIndicator.AssertExpectations(t)
+
 		mockSessionClient := &sessionstoremocks.MockMATLABSessionClientWithCleanup{}
 		defer mockSessionClient.AssertExpectations(t)
 
@@ -196,7 +214,7 @@ func TestMATLABManager_GetMATLABSessionClient_RetryExhausted(t *testing.T) {
 			Return(entities.PingResponse{IsAlive: false}).
 			Twice()
 
-		manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
+		manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 		manager.SetMATLABSessionConnectionRetryInterval(retryInterval)
 
 		// Act
@@ -228,6 +246,12 @@ func TestMATLABManager_GetMATLABSessionClient_ConfigFactoryError(t *testing.T) {
 	mockSessionSelector := &mocks.MockSessionSelector{}
 	defer mockSessionSelector.AssertExpectations(t)
 
+	mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+	defer mockClientInfoProvider.AssertExpectations(t)
+
+	mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+	defer mockConnectionIndicator.AssertExpectations(t)
+
 	expectedSessionID := entities.SessionID(123)
 	ctx := t.Context()
 
@@ -236,7 +260,7 @@ func TestMATLABManager_GetMATLABSessionClient_ConfigFactoryError(t *testing.T) {
 		Return(nil, messages.AnError).
 		Once()
 
-	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 
 	// Act
 	client, err := manager.GetMATLABSessionClient(ctx, mockLogger, expectedSessionID)
@@ -268,6 +292,12 @@ func TestMATLABManager_GetMATLABSessionClient_SessionStoreError(t *testing.T) {
 	mockSessionSelector := &mocks.MockSessionSelector{}
 	defer mockSessionSelector.AssertExpectations(t)
 
+	mockClientInfoProvider := &mocks.MockMCPClientInfoProvider{}
+	defer mockClientInfoProvider.AssertExpectations(t)
+
+	mockConnectionIndicator := &mocks.MockConnectionIndicator{}
+	defer mockConnectionIndicator.AssertExpectations(t)
+
 	expectedSessionID := entities.SessionID(123)
 	ctx := t.Context()
 	expectedError := assert.AnError
@@ -282,7 +312,7 @@ func TestMATLABManager_GetMATLABSessionClient_SessionStoreError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector, mockClientInfoProvider, mockConnectionIndicator)
 
 	// Act
 	client, err := manager.GetMATLABSessionClient(ctx, mockLogger, expectedSessionID)

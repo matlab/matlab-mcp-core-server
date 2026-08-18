@@ -12,11 +12,13 @@ type LocaleSpecificCatalog interface {
 }
 
 var messages_en_US = messageMap{
-	AddonManagerErrors_InstallFailed:                        `Failed to install MATLAB Add-On. For details, see the server log in "%[1]s".`,
-	CLIMessages_BaseDirDescription:                          `The folder where this MCP server stores log files. If not specified, the server uses the default temp folder of your operating system.`,
-	CLIMessages_DisableTelemetryDescription:                 `This MCP server can collect fully anonymized information about your usage of the server and send it to MathWorks. This data collection helps MathWorks improve products and is on by default. To opt out of data collection, set the argument --disable-telemetry to true.`,
-	CLIMessages_DisplayModeDescription:                      `Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. `,
-	CLIMessages_ExtensionFileDescription:                    `Use custom MCP tools by providing the path to a JSON extension file that defines the tools. Each tool maps to a MATLAB function. You can use the argument multiple times to specify multiple extension files. If you do not specify an extension file, the MCP server does not load any custom tools.`,
+	AddonManagerErrors_InstallFailed:        `Failed to install MATLAB Add-On. For details, see the server log in "%[1]s".`,
+	CLIMessages_BaseDirDescription:          `The folder where this MCP server stores log files. If not specified, the server uses the default temp folder of your operating system.`,
+	CLIMessages_DisableTelemetryDescription: `This MCP server can collect fully anonymized information about your usage of the server and send it to MathWorks. This data collection helps MathWorks improve products and is on by default. To opt out of data collection, set the argument --disable-telemetry to true.`,
+	CLIMessages_DisplayModeDescription:      `Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. `,
+	CLIMessages_ExtensionFileDescription:    `Use custom MCP tools by providing the path to a JSON extension file that defines the tools. Each tool maps to a MATLAB function. You can use the argument multiple times to specify multiple extension files. If you do not specify an extension file, the MCP server does not load any custom tools.`,
+	CLIMessages_GreetingOnConnect: `%[1]s is connected to MATLAB via the MATLAB MCP server.
+Now you can use %[1]s to work with MATLAB.`,
 	CLIMessages_HelpDescription:                             `Show this help text`,
 	CLIMessages_InitializeMATLABOnStartupDescription:        `To initialize MATLAB as soon as you start the server, set this argument to true. By default, MATLAB only starts when the first tool is called. `,
 	CLIMessages_InternalUseDescription:                      `INTERNAL USE ONLY`,
@@ -26,6 +28,7 @@ var messages_en_US = messageMap{
 	CLIMessages_PreferredMATLABStartingDirectoryDescription: `Specify the folder where MATLAB starts. If you do not provide the argument, MATLAB starts in these locations: Linux: /home/username, Windows: C:\Users\username\Documents, Mac: /Users/username/Documents.`,
 	CLIMessages_SetupMATLABDescription:                      `Set up a MATLAB installation for use with the MATLAB MCP Server.`,
 	CLIMessages_SuccessfullySetupMATLAB:                     `Successfully setup MATLAB.`,
+	CLIMessages_TitleOnConnect:                              `Agent Connected`,
 	CLIMessages_UseSingleMATLABSessionDescription:           `By default, this MCP server starts a single MATLAB session, and stops the session when the server shuts down. To allow the server to manage multiple MATLAB sessions, set this argument to false. `,
 	CLIMessages_VersionDescription:                          `Display the version of this MCP server.`,
 	StartupErrors_ArgumentNotAllowedInSessionMode:           `Error with supplied arguments: option "%[1]s" is not compatible with MATLAB session mode set to "%[2]s".`,

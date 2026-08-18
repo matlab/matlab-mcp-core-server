@@ -32,7 +32,7 @@ func LogClientDetails(logger entities.Logger) func(MCPSession) {
 	return s.logClientDetails
 }
 
-func RecordClientConnection(logger entities.Logger, tel telemetry.Telemetry) func(context.Context, MCPSession) {
-	s := &serverCallbackHandler{logger: logger, telemetry: tel}
+func RecordClientConnection(logger entities.Logger, tel telemetry.Telemetry, store ClientInfoStore) func(context.Context, MCPSession) {
+	s := &serverCallbackHandler{logger: logger, telemetry: tel, clientInfoStore: store}
 	return s.recordClientConnection
 }

@@ -6,13 +6,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/asyncrunner"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices/datatypes"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabsessionstore"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 )
 
 var ErrMATLABSessionNotAlive = errors.New("session is not alive")
+
+const greetingTimeout = 3 * time.Second
+
+const titleTimeout = 20 * time.Second
 
 func (m *MATLABManager) StartMATLABSession(ctx context.Context, sessionLogger entities.Logger, startRequest entities.SessionDetails) (entities.SessionID, error) {
 	var zeroValue entities.SessionID
@@ -42,7 +48,13 @@ func (m *MATLABManager) StartMATLABSession(ctx context.Context, sessionLogger en
 			}
 			return zeroValue, err
 		}
-		client = newMATLABSessionClientWithCleanup(embeddedConnectorClient, sessionCleanup)
+		gateClient, _, _ := m.indicateConnection(sessionLogger, embeddedConnectorClient, request.ShowMATLABDesktop)
+		client = newCleanupSessionClient(gateClient, func(ctx context.Context, sessionLogger entities.Logger) error {
+			if _, err := embeddedConnectorClient.Eval(ctx, sessionLogger, entities.EvalRequest{Code: "exit()"}); err != nil {
+				return err
+			}
+			return sessionCleanup()
+		})
 	case entities.AttachToExistingSession:
 		sessionLogger.Info("Attaching to existing session")
 
@@ -61,10 +73,53 @@ func (m *MATLABManager) StartMATLABSession(ctx context.Context, sessionLogger en
 			return zeroValue, ErrMATLABSessionNotAlive
 		}
 
-		client = newMATLABSessionClientWithoutCleanup(embeddedConnectorClient)
+		const showMATLABDesktop = true
+		gateClient, titleTask, originalTitle := m.indicateConnection(sessionLogger, embeddedConnectorClient, showMATLABDesktop)
+		client = newCleanupSessionClient(gateClient, func(ctx context.Context, sessionLogger entities.Logger) error {
+			if titleTask.Wait(ctx) && *originalTitle != "" {
+				if err := m.connectionIndicator.RestoreTitle(ctx, sessionLogger, embeddedConnectorClient, *originalTitle); err != nil {
+					sessionLogger.WithError(err).Warn("failed to restore MATLAB desktop title on detach")
+				}
+			}
+			sessionLogger.Debug("Skipping session stop for externally managed MATLAB session")
+			return nil
+		})
 	default:
 		return zeroValue, fmt.Errorf("unknown request type: %T", request)
 	}
 
-	return m.sessionStore.Add(client), nil
+	sessionID := m.sessionStore.Add(client)
+
+	return sessionID, nil
+}
+
+func (m *MATLABManager) indicateConnection(sessionLogger entities.Logger, client entities.MATLABSessionClient, showMATLABDesktop bool) (*greetingSessionClient, *asyncrunner.Task, *string) {
+	greetingInfo := m.greetingInfo(showMATLABDesktop)
+
+	greetingTask := asyncrunner.Run(context.Background(), sessionLogger, greetingTimeout,
+		"failed to display MCP connection greeting in MATLAB command window",
+		func(ctx context.Context) error {
+			return m.connectionIndicator.ShowGreeting(ctx, sessionLogger, client, greetingInfo)
+		})
+
+	var originalTitle string
+	titleTask := asyncrunner.Run(context.Background(), sessionLogger, titleTimeout,
+		"failed to set MATLAB desktop title on connect",
+		func(ctx context.Context) error {
+			title, err := m.connectionIndicator.ApplyConnectedTitle(ctx, sessionLogger, client, greetingInfo)
+			if err != nil {
+				return err
+			}
+			originalTitle = title
+			return nil
+		})
+
+	return newGreetingSessionClient(client, greetingTask), titleTask, &originalTitle
+}
+
+func (m *MATLABManager) greetingInfo(showMATLABDesktop bool) entities.GreetingInfo {
+	return entities.GreetingInfo{
+		ClientInfo:        m.clientInfoProvider.GetClientInfo(),
+		ShowMATLABDesktop: showMATLABDesktop,
+	}
 }

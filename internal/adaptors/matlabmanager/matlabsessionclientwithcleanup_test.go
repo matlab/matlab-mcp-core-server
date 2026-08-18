@@ -3,6 +3,7 @@
 package matlabmanager_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager"
@@ -13,141 +14,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewMATLABSessionClientWithoutCleanup_HappyPath(t *testing.T) {
+func TestCleanupSessionClient_New_HappyPath(t *testing.T) {
 	// Arrange
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
 
 	// Act
-	result := matlabmanager.NewMATLABSessionClientWithoutCleanup(mockClient)
+	result := matlabmanager.NewCleanupSessionClient(mockClient, func(context.Context, entities.Logger) error { return nil })
 
 	// Assert
 	require.NotNil(t, result)
 }
 
-func TestMATLABSessionClientWithoutCleanup_StopSession_NoOp(t *testing.T) {
+func TestCleanupSessionClient_StopSession_InvokesStop(t *testing.T) {
 	// Arrange
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
-
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 
-	client := matlabmanager.NewMATLABSessionClientWithoutCleanup(mockClient)
+	stopCalled := false
+	var gotCtx context.Context
+	stop := func(ctx context.Context, _ entities.Logger) error {
+		stopCalled = true
+		gotCtx = ctx
+		return nil
+	}
+
+	client := matlabmanager.NewCleanupSessionClient(mockClient, stop)
 
 	// Act
 	err := client.StopSession(ctx, mockLogger)
 
 	// Assert
 	require.NoError(t, err)
-	_, hasDebugLog := mockLogger.DebugLogs()["Skipping session stop for externally managed MATLAB session"]
-	assert.True(t, hasDebugLog, "should log that session stop was skipped")
+	assert.True(t, stopCalled, "StopSession should invoke the injected stop closure")
+	assert.Equal(t, ctx, gotCtx, "StopSession should forward its context to the stop closure")
 }
 
-func TestNewMATLABSessionClientWithCleanup_HappyPath(t *testing.T) {
+func TestCleanupSessionClient_StopSession_PropagatesError(t *testing.T) {
 	// Arrange
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
-
-	cleanupCalled := false
-	cleanup := func() error {
-		cleanupCalled = true
-		return nil
-	}
-
-	// Act
-	result := matlabmanager.NewMATLABSessionClientWithCleanup(mockClient, cleanup)
-
-	// Assert
-	require.NotNil(t, result)
-	require.False(t, cleanupCalled, "Cleanup should not be called during construction")
-}
-
-func TestMATLABSessionClientWithCleanup_StopSession_HappyPath(t *testing.T) {
-	// Arrange
-	mockClient := &entitiesmocks.MockMATLABSessionClient{}
-	defer mockClient.AssertExpectations(t)
-
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
-
-	cleanupCalled := false
-	cleanup := func() error {
-		cleanupCalled = true
-		return nil
-	}
-
-	expectedEvalRequest := entities.EvalRequest{Code: "exit()"}
-
-	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedEvalRequest).
-		Return(entities.EvalResponse{}, nil).
-		Once()
-
-	client := matlabmanager.NewMATLABSessionClientWithCleanup(mockClient, cleanup)
-
-	// Act
-	err := client.StopSession(ctx, mockLogger)
-
-	// Assert
-	require.NoError(t, err)
-	require.True(t, cleanupCalled, "Cleanup should be called")
-}
-
-func TestMATLABSessionClientWithCleanup_StopSession_EvalError(t *testing.T) {
-	// Arrange
-	mockClient := &entitiesmocks.MockMATLABSessionClient{}
-	defer mockClient.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-	ctx := t.Context()
-
-	cleanupCalled := false
-	cleanup := func() error {
-		cleanupCalled = true
-		return nil
-	}
-
-	expectedEvalRequest := entities.EvalRequest{Code: "exit()"}
 	expectedError := assert.AnError
 
-	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedEvalRequest).
-		Return(entities.EvalResponse{}, expectedError).
-		Once()
-
-	client := matlabmanager.NewMATLABSessionClientWithCleanup(mockClient, cleanup)
+	client := matlabmanager.NewCleanupSessionClient(mockClient, func(context.Context, entities.Logger) error {
+		return expectedError
+	})
 
 	// Act
 	err := client.StopSession(ctx, mockLogger)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
-	require.False(t, cleanupCalled, "Cleanup should not be called when eval fails")
-}
-
-func TestMATLABSessionClientWithCleanup_StopSession_CleanupError(t *testing.T) {
-	// Arrange
-	mockClient := &entitiesmocks.MockMATLABSessionClient{}
-	defer mockClient.AssertExpectations(t)
-
-	mockLogger := testutils.NewInspectableLogger()
-	ctx := t.Context()
-
-	expectedCleanupError := assert.AnError
-	cleanup := func() error {
-		return expectedCleanupError
-	}
-
-	expectedEvalRequest := entities.EvalRequest{Code: "exit()"}
-
-	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedEvalRequest).
-		Return(entities.EvalResponse{}, nil).
-		Once()
-
-	client := matlabmanager.NewMATLABSessionClientWithCleanup(mockClient, cleanup)
-
-	// Act
-	err := client.StopSession(ctx, mockLogger)
-
-	// Assert
-	require.ErrorIs(t, err, expectedCleanupError)
 }

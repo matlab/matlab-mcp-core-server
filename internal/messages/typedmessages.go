@@ -92,6 +92,34 @@ func New_CLIMessages_ExtensionFileDescription_Message_FromLocale(
 	return New_CLIMessages_ExtensionFileDescription_Message_FromCatalog(catalog)
 }
 
+// New_CLIMessages_GreetingOnConnect_Message_FromCatalog makes a new populated message string from key CLIMessages_GreetingOnConnect_Message using the provided catalog.
+func New_CLIMessages_GreetingOnConnect_Message_FromCatalog(
+	catalog LocaleSpecificCatalog,
+	attr0 string,
+	attr1 string,
+) string {
+	text := catalog.Get(CLIMessages_GreetingOnConnect)
+	return fmt.Sprintf(
+		text,
+		attr0,
+		attr1,
+	)
+}
+
+// New_CLIMessages_GreetingOnConnect_Message makes a new populated message string from key CLIMessages_GreetingOnConnect_Message using the provided catalog.
+func New_CLIMessages_GreetingOnConnect_Message_FromLocale(
+	locale LocaleKey,
+	attr0 string,
+	attr1 string,
+) string {
+	catalog := NewCatalog(locale)
+	return New_CLIMessages_GreetingOnConnect_Message_FromCatalog(
+		catalog,
+		attr0,
+		attr1,
+	)
+}
+
 // New_CLIMessages_HelpDescription_Message_FromCatalog makes a new populated message string from key CLIMessages_HelpDescription_Message using the provided catalog.
 func New_CLIMessages_HelpDescription_Message_FromCatalog(
 	catalog LocaleSpecificCatalog,
@@ -234,6 +262,22 @@ func New_CLIMessages_SuccessfullySetupMATLAB_Message_FromLocale(
 ) string {
 	catalog := NewCatalog(locale)
 	return New_CLIMessages_SuccessfullySetupMATLAB_Message_FromCatalog(catalog)
+}
+
+// New_CLIMessages_TitleOnConnect_Message_FromCatalog makes a new populated message string from key CLIMessages_TitleOnConnect_Message using the provided catalog.
+func New_CLIMessages_TitleOnConnect_Message_FromCatalog(
+	catalog LocaleSpecificCatalog,
+) string {
+	text := catalog.Get(CLIMessages_TitleOnConnect)
+	return text
+}
+
+// New_CLIMessages_TitleOnConnect_Message makes a new populated message string from key CLIMessages_TitleOnConnect_Message using the provided catalog.
+func New_CLIMessages_TitleOnConnect_Message_FromLocale(
+	locale LocaleKey,
+) string {
+	catalog := NewCatalog(locale)
+	return New_CLIMessages_TitleOnConnect_Message_FromCatalog(catalog)
 }
 
 // New_CLIMessages_UseSingleMATLABSessionDescription_Message_FromCatalog makes a new populated message string from key CLIMessages_UseSingleMATLABSessionDescription_Message using the provided catalog.

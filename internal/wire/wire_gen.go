@@ -29,6 +29,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/addonmanager"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/connectionindicator"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	directory2 "github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -46,6 +47,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	server3 "github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/clientinfostore"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/configurator"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/rootpathresolver"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/server/rootstore"
@@ -124,6 +126,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	socketFactory := socket.NewFactory(directoryFactory, osFacade)
 	watchdogWatchdog := watchdog.New(loggerFactory, osFacade, processHandler, processManager, handlerFactory, factory2, socketFactory)
 	rootStore := rootstore.New()
+	clientInfoStore := clientinfostore.New()
 	fileFacade := filefacade.New()
 	getter := matlabroot.New(osFacade, fileFacade)
 	ioFacade := iofacade.New()
@@ -144,13 +147,14 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	appdatadirGetter := appdatadir.New(osFacade)
 	sessionDiscoverer := sessiondiscovery.New(appdatadirGetter, osFacade)
 	sessionSelector := sessionselector.New(factory, sessionDiscoverer)
-	matlabManager := matlabmanager.New(factory, matlabServices, store, matlabsessionclientFactory, sessionSelector)
+	connectionIndicator := connectionindicator.New(messageCatalog)
+	matlabManager := matlabmanager.New(factory, matlabServices, store, matlabsessionclientFactory, sessionSelector, clientInfoStore, connectionIndicator)
 	matlabRootSelector := matlabrootselector.New(factory, matlabManager)
 	rootPathResolver := rootpathresolver.New(osFacade)
 	matlabStartingDirSelector := matlabstartingdirselector.New(factory, osFacade, rootStore, rootPathResolver)
 	sessionManager := sessionmanager.New(matlabManager, factory, matlabRootSelector, matlabStartingDirSelector)
 	globalMATLAB := globalmatlab.New(sessionManager)
-	sdkFactory := sdk.NewFactory(factory, serverDefinition, rootStore, loggerFactory, globalMATLAB, telemetryFactory)
+	sdkFactory := sdk.NewFactory(factory, serverDefinition, rootStore, clientInfoStore, loggerFactory, globalMATLAB, telemetryFactory)
 	usecase := listavailablematlabs.New(matlabManager)
 	tool := listavailablematlabs2.New(loggerFactory, usecase)
 	startmatlabsessionUsecase := startmatlabsession.New(matlabManager)

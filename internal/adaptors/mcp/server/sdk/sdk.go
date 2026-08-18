@@ -31,6 +31,10 @@ type RootStore interface {
 	UpdateRoots(roots []*mcp.Root)
 }
 
+type ClientInfoStore interface {
+	SetClientInfo(info entities.MCPClientInfo)
+}
+
 type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
@@ -52,24 +56,27 @@ type Factory struct {
 	configFactory    ConfigFactory
 	definition       Definition
 	rootStore        RootStore
+	clientInfoStore  ClientInfoStore
 	loggerFactory    LoggerFactory
 	globalMATLAB     GlobalMATLAB
 	telemetryFactory TelemetryFactory
 }
 
 type serverCallbackHandler struct {
-	config       config.Config
-	logger       entities.Logger
-	features     definition.Features
-	rootStore    RootStore
-	globalMATLAB GlobalMATLAB
-	telemetry    telemetry.Telemetry
+	config          config.Config
+	logger          entities.Logger
+	features        definition.Features
+	rootStore       RootStore
+	clientInfoStore ClientInfoStore
+	globalMATLAB    GlobalMATLAB
+	telemetry       telemetry.Telemetry
 }
 
 func NewFactory(
 	configFactory ConfigFactory,
 	definition Definition,
 	rootStore RootStore,
+	clientInfoStore ClientInfoStore,
 	loggerFactory LoggerFactory,
 	globalMATLAB GlobalMATLAB,
 	telemetryFactory TelemetryFactory,
@@ -78,6 +85,7 @@ func NewFactory(
 		configFactory:    configFactory,
 		definition:       definition,
 		rootStore:        rootStore,
+		clientInfoStore:  clientInfoStore,
 		loggerFactory:    loggerFactory,
 		globalMATLAB:     globalMATLAB,
 		telemetryFactory: telemetryFactory,
@@ -101,12 +109,13 @@ func (f *Factory) NewServer() (*mcp.Server, messages.Error) {
 	}
 
 	s := &serverCallbackHandler{
-		config:       cfg,
-		logger:       logger,
-		features:     f.definition.Features(),
-		rootStore:    f.rootStore,
-		globalMATLAB: f.globalMATLAB,
-		telemetry:    tel,
+		config:          cfg,
+		logger:          logger,
+		features:        f.definition.Features(),
+		rootStore:       f.rootStore,
+		clientInfoStore: f.clientInfoStore,
+		globalMATLAB:    f.globalMATLAB,
+		telemetry:       tel,
 	}
 
 	impl := &mcp.Implementation{
@@ -172,6 +181,14 @@ func (s *serverCallbackHandler) recordClientConnection(ctx context.Context, sess
 		info.Title = initializeParams.ClientInfo.Title
 		info.WebsiteURL = initializeParams.ClientInfo.WebsiteURL
 		info.Version = initializeParams.ClientInfo.Version
+
+		// Cache the client identity for the connection indicator to render later.
+		s.clientInfoStore.SetClientInfo(entities.MCPClientInfo{
+			Name:       info.Name,
+			Title:      info.Title,
+			WebsiteURL: info.WebsiteURL,
+			Version:    info.Version,
+		})
 	}
 
 	if initializeParams.Capabilities != nil {

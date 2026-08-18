@@ -46,10 +46,12 @@ func (s *LazyLoadTestSuite) TestLazyLoad_MATLABStartsOnFirstToolCall() {
 	s.True(instanceEvents[0].HasEvalMatching(isCdEval), "server should have sent a cd() eval to set the working directory")
 	s.True(instanceEvents[0].HasEvalMatching(hasUserCode("disp('hello')")), "should have recorded the user eval")
 	s.Equal(
-		[]string{mockruntime.EventStarted, mockruntime.EventEval, mockruntime.EventEval},
-		instanceEvents[0].EventTypes(),
-		"should have exactly: started, cd() eval, user eval",
+		[]string{mockruntime.EventStarted, mockruntime.EventFeval, mockruntime.EventEval, mockruntime.EventEval},
+		eventTypesExcludingTitle(instanceEvents[0]),
+		"excluding the desktop connection-title evals, should have exactly: started, greeting feval, cd() eval, user eval",
 	)
+	s.Equal(3, countTitleEvals(instanceEvents[0]),
+		"desktop connect should check the release to pick the title API, then read the title and write it back once each")
 }
 
 func (s *LazyLoadTestSuite) TestEagerLoad_MATLABStartsOnSessionCreation() {
@@ -72,7 +74,9 @@ func (s *LazyLoadTestSuite) TestEagerLoad_MATLABStartsOnSessionCreation() {
 	instanceEvents, err := session.ReadInstanceEvents()
 	s.Require().NoError(err)
 	s.Equal("happy", instanceEvents[0].StartedMode())
-	s.False(instanceEvents[0].HasEvent(mockruntime.EventEval), "no eval should have happened without a tool call")
+	s.False(instanceEvents[0].HasEvalMatching(isCdEval), "no cd() eval should have happened without a tool call")
+	s.Zero(instanceEvents[0].CountEvent(mockruntime.EventEval),
+		"no evals should happen before a tool call; the greeting and desktop connection title ops are fevals")
 }
 
 func (s *LazyLoadTestSuite) TestLazyLoad_SecondToolCallReusesSession() {
@@ -95,7 +99,7 @@ func (s *LazyLoadTestSuite) TestLazyLoad_SecondToolCallReusesSession() {
 	s.True(instanceEvents[0].HasEvalMatching(hasUserCode("disp('first')")), "should have recorded first user eval")
 	s.True(instanceEvents[0].HasEvalMatching(hasUserCode("disp('second')")), "should have recorded second user eval")
 	s.Equal(2, instanceEvents[0].CountEvent(mockruntime.EventEval)-countCdEvals(instanceEvents[0]),
-		"should have exactly two user evals (excluding cd)")
+		"should have exactly two user evals (excluding cd evals)")
 }
 
 func (s *LazyLoadTestSuite) TestReconnection_AfterExit_MATLABRestartsOnNextToolCall() {
@@ -151,4 +155,32 @@ func countCdEvals(ie mockruntime.InstanceEvents) int {
 		}
 	}
 	return n
+}
+
+func isTitleEvent(e mockruntime.Event) bool {
+	if e.Type != mockruntime.EventFeval {
+		return false
+	}
+	return e.Function == "eval" || e.Function == "isMATLABReleaseOlderThan"
+}
+
+func countTitleEvals(ie mockruntime.InstanceEvents) int {
+	n := 0
+	for _, e := range ie.Events {
+		if isTitleEvent(e) {
+			n++
+		}
+	}
+	return n
+}
+
+func eventTypesExcludingTitle(ie mockruntime.InstanceEvents) []string {
+	var types []string
+	for _, e := range ie.Events {
+		if isTitleEvent(e) {
+			continue
+		}
+		types = append(types, e.Type)
+	}
+	return types
 }

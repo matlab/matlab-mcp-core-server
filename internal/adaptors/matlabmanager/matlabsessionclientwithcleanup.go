@@ -8,38 +8,18 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 )
 
-type matlabSessionClientWithoutCleanup struct {
+type cleanupSessionClient struct {
 	entities.MATLABSessionClient
+	stop func(ctx context.Context, sessionLogger entities.Logger) error
 }
 
-type matlabSessionClientWithCleanup struct {
-	entities.MATLABSessionClient
-	sessionCleanup func() error
-}
-
-func newMATLABSessionClientWithoutCleanup(matlabSessionClient entities.MATLABSessionClient) *matlabSessionClientWithoutCleanup {
-	return &matlabSessionClientWithoutCleanup{
-		MATLABSessionClient: matlabSessionClient,
+func newCleanupSessionClient(client entities.MATLABSessionClient, stop func(ctx context.Context, sessionLogger entities.Logger) error) *cleanupSessionClient {
+	return &cleanupSessionClient{
+		MATLABSessionClient: client,
+		stop:                stop,
 	}
 }
 
-func (c *matlabSessionClientWithoutCleanup) StopSession(ctx context.Context, sessionLogger entities.Logger) error {
-	sessionLogger.Debug("Skipping session stop for externally managed MATLAB session")
-	return nil
-}
-
-func newMATLABSessionClientWithCleanup(matlabSessionClient entities.MATLABSessionClient, sessionCleanup func() error) *matlabSessionClientWithCleanup {
-	return &matlabSessionClientWithCleanup{
-		MATLABSessionClient: matlabSessionClient,
-		sessionCleanup:      sessionCleanup,
-	}
-}
-
-func (c *matlabSessionClientWithCleanup) StopSession(ctx context.Context, sessionLogger entities.Logger) error {
-	_, err := c.Eval(ctx, sessionLogger, entities.EvalRequest{Code: "exit()"})
-	if err != nil {
-		return err
-	}
-
-	return c.sessionCleanup()
+func (c *cleanupSessionClient) StopSession(ctx context.Context, sessionLogger entities.Logger) error {
+	return c.stop(ctx, sessionLogger)
 }
