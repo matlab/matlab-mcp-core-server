@@ -11,6 +11,7 @@ classdef (Abstract) ConnectorFacade
         location = getCertificateLocation(obj)
         value = getConfig(obj, key)
         setConfig(obj, key, value)
+        url = getBaseUrl(obj)
     end
 
 end

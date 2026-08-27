@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -29,12 +30,14 @@ type ConnectionDetails struct {
 	Port           string
 	APIKey         string
 	CertificatePEM []byte
+	BasePath       string
 }
 
 type Client struct {
 	host       string
 	port       string
 	apiKey     string
+	basePath   string
 	httpClient httpclient.HttpClient
 
 	pingRetry   time.Duration
@@ -54,6 +57,7 @@ func NewClient(
 		host:       endpoint.Host,
 		port:       endpoint.Port,
 		apiKey:     endpoint.APIKey,
+		basePath:   endpoint.BasePath,
 		httpClient: httpClient,
 
 		pingRetry:   defaultPingRetry,
@@ -240,13 +244,24 @@ func (c *Client) pingMATLAB(ctx context.Context, logger entities.Logger) (bool, 
 }
 
 func (c *Client) sendRequestToEvaluationEndpoint(ctx context.Context, logger entities.Logger, payload ConnectorPayload) (ConnectorPayload, error) {
-	endpoint := fmt.Sprintf("https://%s:%s/messageservice/json/secure", c.host, c.port)
+	endpoint, err := c.messageServiceEndpoint("secure")
+	if err != nil {
+		return ConnectorPayload{}, err
+	}
 	return c.sendRequest(ctx, logger, endpoint, payload)
 }
 
 func (c *Client) sendRequestToStateEndpoint(ctx context.Context, logger entities.Logger, payload ConnectorPayload) (ConnectorPayload, error) {
-	endpoint := fmt.Sprintf("https://%s:%s/messageservice/json/state", c.host, c.port)
+	endpoint, err := c.messageServiceEndpoint("state")
+	if err != nil {
+		return ConnectorPayload{}, err
+	}
 	return c.sendRequest(ctx, logger, endpoint, payload)
+}
+
+func (c *Client) messageServiceEndpoint(channel string) (string, error) {
+	base := fmt.Sprintf("https://%s:%s", c.host, c.port)
+	return url.JoinPath(base, c.basePath, "messageservice", "json", channel)
 }
 
 func (c *Client) sendRequest(ctx context.Context, logger entities.Logger, endpoint string, payload ConnectorPayload) (ConnectorPayload, error) {

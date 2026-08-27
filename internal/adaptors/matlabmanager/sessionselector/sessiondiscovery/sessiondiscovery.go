@@ -5,8 +5,10 @@ package sessiondiscovery
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/matlabmanager/matlabsessionclient/embeddedconnector"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
@@ -29,6 +31,7 @@ type sessionDetailsJSON struct {
 	Certificate string      `json:"certificate"`
 	APIKey      string      `json:"apiKey"`
 	PID         json.Number `json:"pid"`
+	BasePath    string      `json:"basePath"`
 }
 
 type SessionDiscoverer struct {
@@ -78,12 +81,36 @@ func (d *SessionDiscoverer) FromSessionDetails(logger entities.Logger, sessionDe
 		return zeroValue, ErrInvalidSessionDetails
 	}
 
+	parsed, err := url.Parse(details.BasePath)
+	if err != nil {
+		logger.Debug("Failed to parse base path")
+		return zeroValue, ErrInvalidSessionDetails
+	}
+	if parsed.Scheme != "" || parsed.Host != "" || parsed.RawQuery != "" || parsed.Fragment != "" {
+		logger.Debug("Base path must be a path only")
+		return zeroValue, ErrInvalidSessionDetails
+	}
+	if hasRelativeSegment(parsed.Path) {
+		logger.Debug("Base path must not contain relative segments")
+		return zeroValue, ErrInvalidSessionDetails
+	}
+
 	return embeddedconnector.ConnectionDetails{
 		Host:           "localhost",
 		Port:           port,
 		APIKey:         details.APIKey,
 		CertificatePEM: certificatePEM,
+		BasePath:       details.BasePath,
 	}, nil
+}
+
+func hasRelativeSegment(path string) bool {
+	for _, segment := range strings.Split(path, "/") {
+		if segment == "." || segment == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *SessionDiscoverer) DiscoverSessions(logger entities.Logger) []embeddedconnector.ConnectionDetails {

@@ -68,6 +68,121 @@ func TestSessionDiscoverer_FromSessionDetails_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedPort, result.Port)
 	assert.Equal(t, expectedAPIKey, result.APIKey)
 	assert.Equal(t, expectedCertPEM, result.CertificatePEM)
+	assert.Empty(t, result.BasePath)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_BasePathPassedThrough(t *testing.T) {
+	// The base path is stored verbatim; normalisation of slashes happens
+	// later when the endpoint URL is built via url.JoinPath.
+	testCases := []struct {
+		name     string
+		basePath string
+	}{
+		{name: "LeadingAndTrailingSlash", basePath: "/matlab/"},
+		{name: "NoLeadingSlash", basePath: "proxy/matlab/"},
+		{name: "NoTrailingSlash", basePath: "/user/foo"},
+		{name: "BareSlash", basePath: "/"},
+		{name: "Empty", basePath: ""},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+			defer mockAppDataDirGetter.AssertExpectations(t)
+
+			mockOSLayer := &mocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
+
+			mockLogger := testutils.NewInspectableLogger()
+
+			expectedCertPath := filepath.Join("path", "to", "cert.pem")
+			expectedCertPEM := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+			expectedPort := "31515"
+			expectedAPIKey := "test-api-key"
+
+			sessionJSON := marshallSessionDetails(t, map[string]any{
+				"port":        31515,
+				"certificate": expectedCertPath,
+				"apiKey":      expectedAPIKey,
+				"pid":         12345,
+				"basePath":    tc.basePath,
+			})
+
+			mockOSLayer.EXPECT().
+				ReadFile(expectedCertPath).
+				Return(expectedCertPEM, nil).
+				Once()
+
+			discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+			// Act
+			result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+			// Assert
+			require.NoError(t, err)
+			assert.Equal(t, "localhost", result.Host)
+			assert.Equal(t, expectedPort, result.Port)
+			assert.Equal(t, expectedAPIKey, result.APIKey)
+			assert.Equal(t, expectedCertPEM, result.CertificatePEM)
+			assert.Equal(t, tc.basePath, result.BasePath)
+		})
+	}
+}
+
+func TestSessionDiscoverer_FromSessionDetails_InvalidBasePath(t *testing.T) {
+	// A base path carrying a scheme, host, query or fragment could redirect
+	// requests away from the local session and must be rejected.
+	testCases := []struct {
+		name     string
+		basePath string
+	}{
+		{name: "WithScheme", basePath: "https://evil.example.com/matlab/"},
+		{name: "WithHost", basePath: "//evil.example.com/matlab/"},
+		{name: "WithQuery", basePath: "/matlab/?redirect=evil"},
+		{name: "WithFragment", basePath: "/matlab/#frag"},
+		{name: "WithDotSegment", basePath: "/matlab/./session/"},
+		{name: "WithDotDotSegment", basePath: "/user/alice/../bob/"},
+		{name: "WithEncodedDotDotSegment", basePath: "/user/alice/%2e%2e/bob/"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+			defer mockAppDataDirGetter.AssertExpectations(t)
+
+			mockOSLayer := &mocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
+
+			mockLogger := testutils.NewInspectableLogger()
+
+			expectedCertPath := filepath.Join("path", "to", "cert.pem")
+			expectedCertPEM := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+			sessionJSON := marshallSessionDetails(t, map[string]any{
+				"port":        31515,
+				"certificate": expectedCertPath,
+				"apiKey":      "test-api-key",
+				"pid":         12345,
+				"basePath":    tc.basePath,
+			})
+
+			mockOSLayer.EXPECT().
+				ReadFile(expectedCertPath).
+				Return(expectedCertPEM, nil).
+				Once()
+
+			discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+			// Act
+			result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+			// Assert
+			require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
+			assert.Empty(t, result.Host)
+		})
+	}
 }
 
 func TestSessionDiscoverer_FromSessionDetails_InvalidJSON(t *testing.T) {

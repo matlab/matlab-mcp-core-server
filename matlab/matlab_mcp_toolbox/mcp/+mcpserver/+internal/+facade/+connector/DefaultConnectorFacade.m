@@ -24,6 +24,10 @@ classdef DefaultConnectorFacade < mcpserver.internal.facade.connector.ConnectorF
         function setConfig(~, key, value)
             connector.internal.setConfig(key, value);
         end
+
+        function url = getBaseUrl(~)
+            url = connector.getBaseUrl();
+        end
     end
 
 end
