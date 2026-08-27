@@ -250,6 +250,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		// Tools
 		wire.Bind(new(basetool.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(basetool.TelemetryFactory), new(*telemetry.Factory)),
 
 		listavailablematlabstool.New,
 		wire.Bind(new(listavailablematlabstool.Usecase), new(*listavailablematlabs.Usecase)),

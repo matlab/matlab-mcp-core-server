@@ -155,7 +155,7 @@ func TestFactory_Telemetry_HappyPath(t *testing.T) {
 	mockInstrumentFactory.EXPECT().
 		NewInt64Counter(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(mockInt64Counter, nil).
-		Twice()
+		Times(3)
 
 	factory := telemetry.NewFactory(
 		mockLoggerFactory,
@@ -430,7 +430,7 @@ func TestFactory_Telemetry_TelemetryDisabled(t *testing.T) {
 			mock.Anything,
 		).
 		Return(mockInt64Counter, nil).
-		Twice()
+		Times(3)
 
 	factory := telemetry.NewFactory(
 		mockLoggerFactory,
@@ -528,7 +528,7 @@ func TestFactory_Telemetry_EmptyCollectorEndpoint(t *testing.T) {
 			mock.Anything,
 		).
 		Return(mockInt64Counter, nil).
-		Twice()
+		Times(3)
 
 	factory := telemetry.NewFactory(
 		mockLoggerFactory,
@@ -949,7 +949,7 @@ func TestFactory_Telemetry_IsSingleton(t *testing.T) {
 	mockInstrumentFactory.EXPECT().
 		NewInt64Counter(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(mockInt64Counter, nil).
-		Twice()
+		Times(3)
 
 	factory := telemetry.NewFactory(
 		mockLoggerFactory,
@@ -1034,4 +1034,16 @@ func TestFactory_Telemetry_SingletonPreservesError(t *testing.T) {
 	require.ErrorIs(t, firstErr, expectedError)
 	assert.Nil(t, secondResult)
 	require.ErrorIs(t, secondErr, expectedError)
+}
+
+func TestToolSource_String(t *testing.T) {
+	cases := map[telemetry.ToolSource]string{
+		telemetry.ToolSourceBuiltin:   "builtin",
+		telemetry.ToolSourceExtension: "extension",
+		telemetry.ToolSource(2):       "unknown",
+	}
+
+	for source, expected := range cases {
+		assert.Equal(t, expected, source.String())
+	}
 }

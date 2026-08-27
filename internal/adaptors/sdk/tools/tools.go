@@ -24,6 +24,7 @@ type ConvertibleTool interface {
 	ToInternal(
 		toolCallRequestFactory ToolCallRequestFactory,
 		loggerFactory basetool.LoggerFactory,
+		telemetryFactory basetool.TelemetryFactory,
 		config internalconfig.GenericConfig,
 		messageCatalog definition.MessageCatalog,
 	) internaltools.Tool

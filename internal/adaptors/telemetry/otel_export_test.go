@@ -20,3 +20,7 @@ func NewOTELTelemetryForTesting(
 ) (Telemetry, messages.Error) {
 	return newOTELTelemetry(logger, meter, instrumentFactory, cfg, dir, osLayer, osVersionProvider, serverDefinition)
 }
+
+func SHA256Prefix16ForTesting(name string) string {
+	return sha256Prefix16(name)
+}

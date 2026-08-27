@@ -21,11 +21,14 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
 	// Act
-	tool := listavailablematlabs.New(mockLoggerFactory, mockUsecase)
+	tool := listavailablematlabs.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -103,13 +106,16 @@ func TestListAvailableMATLABs_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
 
 	// Act
-	tool := listavailablematlabs.New(mockLoggerFactory, mockUsecase)
+	tool := listavailablematlabs.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have read-only annotations")

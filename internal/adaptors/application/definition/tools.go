@@ -17,7 +17,8 @@ type ToolsProviderResources struct {
 	Dependencies any
 
 	// We're forced to do this, because we can't deps inject in basetool, due to generics in golang MCP SDK
-	LoggerFactory basetool.LoggerFactory
+	LoggerFactory    basetool.LoggerFactory
+	TelemetryFactory basetool.TelemetryFactory
 }
 
 type ToolsProvider func(resources ToolsProviderResources) []tools.Tool
@@ -28,6 +29,7 @@ func NewToolsProviderResources(
 	messageCatalog MessageCatalog,
 	dependencies any,
 	loggerFactory basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 ) ToolsProviderResources {
 	return ToolsProviderResources{
 		Logger:         logger,
@@ -36,6 +38,7 @@ func NewToolsProviderResources(
 
 		Dependencies: dependencies,
 
-		LoggerFactory: loggerFactory,
+		LoggerFactory:    loggerFactory,
+		TelemetryFactory: telemetryFactory,
 	}
 }

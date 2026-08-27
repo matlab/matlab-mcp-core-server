@@ -33,6 +33,7 @@ func NewStructured[ToolInput, ToolOutput any](definition publictypes.ToolDefinit
 func (t *ToolWithStructuredContentOutput[ToolInput, ToolOutput]) ToInternal(
 	toolCallRequestFactory ToolCallRequestFactory,
 	loggerFactoryInstance basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	config internalconfig.GenericConfig,
 	messageCatalog definition.MessageCatalog,
 ) internaltools.Tool {
@@ -47,6 +48,7 @@ func (t *ToolWithStructuredContentOutput[ToolInput, ToolOutput]) ToInternal(
 		t.definition.Description,
 		annotations,
 		loggerFactoryInstance,
+		telemetryFactory,
 		adaptStructuredHandler(toolCallRequestFactory, config, messageCatalog, t.handler),
 	)
 }

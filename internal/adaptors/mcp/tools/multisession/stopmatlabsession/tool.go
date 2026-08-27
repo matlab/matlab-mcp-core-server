@@ -20,10 +20,11 @@ type Tool struct {
 
 func New(
 	loggerFactory basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	usecase Usecase,
 ) *Tool {
 	return &Tool{
-		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewDestructiveAnnotations(), loggerFactory, Handler(usecase)),
+		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewDestructiveAnnotations(), loggerFactory, telemetryFactory, Handler(usecase)),
 	}
 }
 

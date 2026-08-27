@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/google/jsonschema-go/jsonschema"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/facades/mcpfacade"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -24,15 +25,17 @@ func NewToolWithStructuredContent[ToolInput, ToolOutput any](
 	description string,
 	annotations AnnotationProvider,
 	loggerFactory LoggerFactory,
+	telemetryFactory TelemetryFactory,
 	handler func(context.Context, entities.Logger, ToolInput) (ToolOutput, error),
 ) ToolWithStructuredContentOutput[ToolInput, ToolOutput] {
 	return ToolWithStructuredContentOutput[ToolInput, ToolOutput]{
 		tool: tool[ToolInput, ToolOutput]{
-			name:          name,
-			title:         title,
-			description:   description,
-			annotations:   annotations,
-			loggerFactory: loggerFactory,
+			name:             name,
+			title:            title,
+			description:      description,
+			annotations:      annotations,
+			loggerFactory:    loggerFactory,
+			telemetryFactory: telemetryFactory,
 			// Manually inject adder as only have type information at compile time
 			toolAdder: mcpfacade.NewToolAdder[ToolInput, ToolOutput](),
 		},
@@ -83,6 +86,10 @@ func (t ToolWithStructuredContentOutput[ToolInput, ToolOutput]) Handler() mcp.To
 		logger = logger.With("tool-name", t.name)
 		logger.Debug("Handling tool call request")
 		defer logger.Debug("Handled tool call request")
+
+		if err := t.recordToolCall(ctx, telemetry.ToolSourceBuiltin); err != nil {
+			logger.WithError(err).Warn("Telemetry unavailable during tool invocation")
+		}
 
 		if t.structuredContentHandler == nil {
 			err := fmt.Errorf(UnexpectedErrorPrefixForLLM + "no structured handler available")

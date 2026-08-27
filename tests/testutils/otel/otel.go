@@ -3,6 +3,7 @@
 package otel
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -98,24 +99,57 @@ func (c *Collector) Stop(t *testing.T) {
 	c.containerID = ""
 }
 
-func (c *Collector) WaitForTelemetry(t *testing.T, timeout time.Duration) {
+func (c *Collector) WaitForMetrics(t *testing.T, timeout time.Duration, cond func(Telemetry) bool, msgAndArgs ...any) Telemetry {
 	t.Helper()
 
+	if len(msgAndArgs) == 0 {
+		msgAndArgs = []any{fmt.Sprintf("telemetry did not satisfy the expected condition: %s", c.telemetryFile)}
+	}
+
 	pollInterval := 100 * time.Millisecond
+	var exports Telemetry
 	require.Eventually(t, func() bool {
-		info, err := os.Stat(c.telemetryFile)
-		return err == nil && info.Size() > 0
-	}, timeout, pollInterval, "telemetry file was not written: %s", c.telemetryFile)
+		got, err := c.ReadTelemetry()
+		if err != nil {
+			return false
+		}
+		exports = got
+		return cond(got)
+	}, timeout, pollInterval, msgAndArgs...)
+
+	return exports
 }
 
-func (c *Collector) ReadTelemetry(t *testing.T) (pmetric.Metrics, error) {
+func (c *Collector) ReadTelemetry() (Telemetry, error) {
 	data, err := os.ReadFile(c.telemetryFile)
 	if err != nil {
-		return pmetric.Metrics{}, err
+		return nil, err
+	}
+
+	// The file exporter writes one JSON export per flush as newline-delimited JSON.
+	var lines [][]byte
+	for line := range bytes.SplitSeq(data, []byte("\n")) {
+		if len(bytes.TrimSpace(line)) > 0 {
+			lines = append(lines, line)
+		}
 	}
 
 	unmarshaler := &pmetric.JSONUnmarshaler{}
-	return unmarshaler.UnmarshalMetrics(data)
+	var exports []pmetric.Metrics
+	for i, line := range lines {
+		metrics, err := unmarshaler.UnmarshalMetrics(line)
+		if err != nil {
+			// Only the final line can be a partial write from an in-progress
+			// flush; a parse failure on any earlier line is genuine corruption.
+			if i == len(lines)-1 {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse telemetry export %d: %w", i, err)
+		}
+		exports = append(exports, metrics)
+	}
+
+	return exports, nil
 }
 
 func (c *Collector) waitForReady(parent context.Context) error {

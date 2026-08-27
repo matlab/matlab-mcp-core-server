@@ -52,6 +52,7 @@ func (f *Factory[Dependencies]) New(provider ToolsProvider[Dependencies]) defini
 			internalTools = append(internalTools, convertible.ToInternal(
 				f.toolCallRequestFactory,
 				internalResources.LoggerFactory,
+				internalResources.TelemetryFactory,
 				internalResources.Config,
 				internalResources.MessageCatalog,
 			))

@@ -4,6 +4,8 @@ package telemetry
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry/otel"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry/otel/instruments"
@@ -36,6 +38,7 @@ type otelTelemetry struct {
 	// Instruments
 	serverStartCounter      instruments.Int64Counter
 	clientConnectionCounter instruments.Int64Counter
+	toolCallRequestCounter  instruments.Int64Counter
 }
 
 func newOTELTelemetry(
@@ -92,6 +95,28 @@ func (t *otelTelemetry) RecordServerStart(ctx context.Context) {
 	t.serverStartCounter.Add(ctx, 1, attributes.AsOTEL())
 }
 
+func (t *otelTelemetry) RecordToolCallRequest(ctx context.Context, toolName string, source ToolSource) {
+	t.logger.With("tool-name", toolName).With("tool-source", source).Debug("Recording tool call request metric")
+	attributes := NewAttributes(t.logger)
+
+	attributes.AddString("server.instance_id", t.directory.ID())
+	attributes.AddString("tool.name", toolNameAttribute(toolName, source))
+
+	t.toolCallRequestCounter.Add(ctx, 1, attributes.AsOTEL())
+}
+
+func toolNameAttribute(toolName string, source ToolSource) string {
+	if source == ToolSourceExtension {
+		return sha256Prefix16(toolName)
+	}
+	return toolName
+}
+
+func sha256Prefix16(name string) string {
+	sum := sha256.Sum256([]byte(name))
+	return hex.EncodeToString(sum[:])[:16]
+}
+
 func (t *otelTelemetry) RecordClientConnection(ctx context.Context, info ClientConnectionInfo) {
 	t.logger.Debug("Recording client connection metric")
 	attributes := NewAttributes(t.logger)
@@ -124,6 +149,13 @@ func (t *otelTelemetry) createInstruments(logger entities.Logger) messages.Error
 		return messages.New_StartupErrors_TelemetryInitializationFailed_Error()
 	}
 	t.clientConnectionCounter = clientConnectionCounter
+
+	toolCallRequestCounter, err := t.instrumentFactory.NewInt64Counter(t.meter, "tool.calls_request", "Number of tool invocations", "{call}")
+	if err != nil {
+		logger.WithError(err).Error("Failed to create tool call request counter")
+		return messages.New_StartupErrors_TelemetryInitializationFailed_Error()
+	}
+	t.toolCallRequestCounter = toolCallRequestCounter
 
 	return nil
 }

@@ -51,6 +51,9 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
 
@@ -64,10 +67,11 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	defer mockTool.AssertExpectations(t)
 
 	expectedInternalResources := definition.ToolsProviderResources{
-		Logger:         testutils.NewInspectableLogger(),
-		Config:         mockConfig,
-		MessageCatalog: mockMessageCatalog,
-		LoggerFactory:  mockLoggerFactory,
+		Logger:           testutils.NewInspectableLogger(),
+		Config:           mockConfig,
+		MessageCatalog:   mockMessageCatalog,
+		LoggerFactory:    mockLoggerFactory,
+		TelemetryFactory: mockTelemetryFactory,
 	}
 
 	mockResourcesFactory.EXPECT().
@@ -76,7 +80,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 		Once()
 
 	mockTool.EXPECT().
-		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).
+		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).
 		Return(mockInternalTool).
 		Once()
 
@@ -110,6 +114,9 @@ func TestFactory_New_EmptyTools(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
 
@@ -117,10 +124,11 @@ func TestFactory_New_EmptyTools(t *testing.T) {
 	defer mockMessageCatalog.AssertExpectations(t)
 
 	expectedInternalResources := definition.ToolsProviderResources{
-		Logger:         testutils.NewInspectableLogger(),
-		Config:         mockConfig,
-		MessageCatalog: mockMessageCatalog,
-		LoggerFactory:  mockLoggerFactory,
+		Logger:           testutils.NewInspectableLogger(),
+		Config:           mockConfig,
+		MessageCatalog:   mockMessageCatalog,
+		LoggerFactory:    mockLoggerFactory,
+		TelemetryFactory: mockTelemetryFactory,
 	}
 
 	mockResourcesFactory.EXPECT().
@@ -156,6 +164,9 @@ func TestFactory_New_MultipleTools(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
 
@@ -175,10 +186,11 @@ func TestFactory_New_MultipleTools(t *testing.T) {
 	defer mockTool2.AssertExpectations(t)
 
 	expectedInternalResources := definition.ToolsProviderResources{
-		Logger:         testutils.NewInspectableLogger(),
-		Config:         mockConfig,
-		MessageCatalog: mockMessageCatalog,
-		LoggerFactory:  mockLoggerFactory,
+		Logger:           testutils.NewInspectableLogger(),
+		Config:           mockConfig,
+		MessageCatalog:   mockMessageCatalog,
+		LoggerFactory:    mockLoggerFactory,
+		TelemetryFactory: mockTelemetryFactory,
 	}
 
 	mockResourcesFactory.EXPECT().
@@ -187,12 +199,12 @@ func TestFactory_New_MultipleTools(t *testing.T) {
 		Once()
 
 	mockTool1.EXPECT().
-		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).
+		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).
 		Return(mockInternalTool1).
 		Once()
 
 	mockTool2.EXPECT().
-		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).
+		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).
 		Return(mockInternalTool2).
 		Once()
 
@@ -242,6 +254,9 @@ func TestFactory_New_NonConvertibleToolSkipped(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
 
@@ -257,10 +272,11 @@ func TestFactory_New_NonConvertibleToolSkipped(t *testing.T) {
 	nonConvertible := &nonConvertibleTool{}
 
 	expectedInternalResources := definition.ToolsProviderResources{
-		Logger:         testutils.NewInspectableLogger(),
-		Config:         mockConfig,
-		MessageCatalog: mockMessageCatalog,
-		LoggerFactory:  mockLoggerFactory,
+		Logger:           testutils.NewInspectableLogger(),
+		Config:           mockConfig,
+		MessageCatalog:   mockMessageCatalog,
+		LoggerFactory:    mockLoggerFactory,
+		TelemetryFactory: mockTelemetryFactory,
 	}
 
 	mockResourcesFactory.EXPECT().
@@ -269,7 +285,7 @@ func TestFactory_New_NonConvertibleToolSkipped(t *testing.T) {
 		Once()
 
 	mockTool.EXPECT().
-		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).
+		ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).
 		Return(mockInternalTool).
 		Once()
 

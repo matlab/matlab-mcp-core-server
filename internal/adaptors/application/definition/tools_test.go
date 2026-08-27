@@ -26,6 +26,9 @@ func TestNewToolsProviderResources_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	dependencies := &struct{ Value string }{Value: "test"}
 
 	// Act
@@ -35,6 +38,7 @@ func TestNewToolsProviderResources_HappyPath(t *testing.T) {
 		mockMessageCatalog,
 		dependencies,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Assert

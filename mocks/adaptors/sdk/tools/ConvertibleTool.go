@@ -41,16 +41,16 @@ func (_m *MockConvertibleTool) EXPECT() *MockConvertibleTool_Expecter {
 }
 
 // ToInternal provides a mock function for the type MockConvertibleTool
-func (_mock *MockConvertibleTool) ToInternal(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog) tools0.Tool {
-	ret := _mock.Called(toolCallRequestFactory, loggerFactory, config1, messageCatalog)
+func (_mock *MockConvertibleTool) ToInternal(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, telemetryFactory basetool.TelemetryFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog) tools0.Tool {
+	ret := _mock.Called(toolCallRequestFactory, loggerFactory, telemetryFactory, config1, messageCatalog)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ToInternal")
 	}
 
 	var r0 tools0.Tool
-	if returnFunc, ok := ret.Get(0).(func(tools.ToolCallRequestFactory, basetool.LoggerFactory, config.GenericConfig, definition.MessageCatalog) tools0.Tool); ok {
-		r0 = returnFunc(toolCallRequestFactory, loggerFactory, config1, messageCatalog)
+	if returnFunc, ok := ret.Get(0).(func(tools.ToolCallRequestFactory, basetool.LoggerFactory, basetool.TelemetryFactory, config.GenericConfig, definition.MessageCatalog) tools0.Tool); ok {
+		r0 = returnFunc(toolCallRequestFactory, loggerFactory, telemetryFactory, config1, messageCatalog)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(tools0.Tool)
@@ -67,13 +67,14 @@ type MockConvertibleTool_ToInternal_Call struct {
 // ToInternal is a helper method to define mock.On call
 //   - toolCallRequestFactory tools.ToolCallRequestFactory
 //   - loggerFactory basetool.LoggerFactory
+//   - telemetryFactory basetool.TelemetryFactory
 //   - config1 config.GenericConfig
 //   - messageCatalog definition.MessageCatalog
-func (_e *MockConvertibleTool_Expecter) ToInternal(toolCallRequestFactory interface{}, loggerFactory interface{}, config1 interface{}, messageCatalog interface{}) *MockConvertibleTool_ToInternal_Call {
-	return &MockConvertibleTool_ToInternal_Call{Call: _e.mock.On("ToInternal", toolCallRequestFactory, loggerFactory, config1, messageCatalog)}
+func (_e *MockConvertibleTool_Expecter) ToInternal(toolCallRequestFactory interface{}, loggerFactory interface{}, telemetryFactory interface{}, config1 interface{}, messageCatalog interface{}) *MockConvertibleTool_ToInternal_Call {
+	return &MockConvertibleTool_ToInternal_Call{Call: _e.mock.On("ToInternal", toolCallRequestFactory, loggerFactory, telemetryFactory, config1, messageCatalog)}
 }
 
-func (_c *MockConvertibleTool_ToInternal_Call) Run(run func(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog)) *MockConvertibleTool_ToInternal_Call {
+func (_c *MockConvertibleTool_ToInternal_Call) Run(run func(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, telemetryFactory basetool.TelemetryFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog)) *MockConvertibleTool_ToInternal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 tools.ToolCallRequestFactory
 		if args[0] != nil {
@@ -83,19 +84,24 @@ func (_c *MockConvertibleTool_ToInternal_Call) Run(run func(toolCallRequestFacto
 		if args[1] != nil {
 			arg1 = args[1].(basetool.LoggerFactory)
 		}
-		var arg2 config.GenericConfig
+		var arg2 basetool.TelemetryFactory
 		if args[2] != nil {
-			arg2 = args[2].(config.GenericConfig)
+			arg2 = args[2].(basetool.TelemetryFactory)
 		}
-		var arg3 definition.MessageCatalog
+		var arg3 config.GenericConfig
 		if args[3] != nil {
-			arg3 = args[3].(definition.MessageCatalog)
+			arg3 = args[3].(config.GenericConfig)
+		}
+		var arg4 definition.MessageCatalog
+		if args[4] != nil {
+			arg4 = args[4].(definition.MessageCatalog)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -106,7 +112,7 @@ func (_c *MockConvertibleTool_ToInternal_Call) Return(tool tools0.Tool) *MockCon
 	return _c
 }
 
-func (_c *MockConvertibleTool_ToInternal_Call) RunAndReturn(run func(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog) tools0.Tool) *MockConvertibleTool_ToInternal_Call {
+func (_c *MockConvertibleTool_ToInternal_Call) RunAndReturn(run func(toolCallRequestFactory tools.ToolCallRequestFactory, loggerFactory basetool.LoggerFactory, telemetryFactory basetool.TelemetryFactory, config1 config.GenericConfig, messageCatalog definition.MessageCatalog) tools0.Tool) *MockConvertibleTool_ToInternal_Call {
 	_c.Call.Return(run)
 	return _c
 }

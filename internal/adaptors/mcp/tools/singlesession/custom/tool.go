@@ -9,6 +9,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/basetool"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/singlesession/custom/definition"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/utils/responseconverter"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/facades/mcpfacade"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
@@ -39,12 +40,13 @@ func NewTool(
 	validatedTool definition.ValidatedTool,
 	loggerFactory basetool.LoggerFactory,
 	configFactory ConfigFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	usecase Usecase,
 	globalMATLAB entities.GlobalMATLAB,
 ) *Tool {
 	return &Tool{
 		validatedTool: validatedTool,
-		handler:       Handler(validatedTool, loggerFactory, configFactory, usecase, globalMATLAB),
+		handler:       Handler(validatedTool, loggerFactory, configFactory, telemetryFactory, usecase, globalMATLAB),
 		toolAdder:     mcpfacade.NewToolAdder[map[string]any, any](),
 	}
 }
@@ -73,6 +75,7 @@ func Handler(
 	validatedTool definition.ValidatedTool,
 	loggerFactory basetool.LoggerFactory,
 	configFactory ConfigFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	usecase Usecase,
 	globalMATLAB entities.GlobalMATLAB,
 ) mcp.ToolHandlerFor[map[string]any, any] {
@@ -87,6 +90,12 @@ func Handler(
 		logger = logger.With("tool-name", toolDef.Name)
 		logger.Debug("Handling custom tool call request")
 		defer logger.Debug("Handled custom tool call request")
+
+		if tel, err := telemetryFactory.Telemetry(); err != nil {
+			logger.WithError(err).Warn("Telemetry unavailable during tool invocation")
+		} else {
+			tel.RecordToolCallRequest(ctx, toolDef.Name, telemetry.ToolSourceExtension)
+		}
 
 		var argumentTypes map[string]string
 		if toolDef.InputSchema != nil {

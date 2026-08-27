@@ -71,7 +71,7 @@ func TestTool_AddToServer_HappyPath(t *testing.T) {
 		).
 		Once()
 
-	tool := custom.NewTool(mockValidatedTool, nil, nil, nil, nil)
+	tool := custom.NewTool(mockValidatedTool, nil, nil, nil, nil, nil)
 	tool.SetToolAdder(mockAdder)
 
 	// Act

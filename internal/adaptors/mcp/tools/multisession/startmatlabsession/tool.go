@@ -27,11 +27,12 @@ type Tool struct {
 
 func New(
 	loggerFactory basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	configFactory ConfigFactory,
 	usecase Usecase,
 ) *Tool {
 	return &Tool{
-		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewReadOnlyAnnotations(), loggerFactory, Handler(configFactory, usecase)),
+		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewReadOnlyAnnotations(), loggerFactory, telemetryFactory, Handler(configFactory, usecase)),
 	}
 }
 

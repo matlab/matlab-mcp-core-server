@@ -20,11 +20,14 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
 	// Act
-	tool := stopmatlabsession.New(mockLoggerFactory, mockUsecase)
+	tool := stopmatlabsession.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -86,13 +89,16 @@ func TestStopMATLABSession_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
 	expectedAnnotations := annotations.NewDestructiveAnnotations()
 
 	// Act
-	tool := stopmatlabsession.New(mockLoggerFactory, mockUsecase)
+	tool := stopmatlabsession.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have destructive annotations")

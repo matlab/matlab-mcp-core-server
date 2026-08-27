@@ -33,6 +33,7 @@ func NewUnstructured[ToolInput any](definition publictypes.ToolDefinition, handl
 func (t *ToolWithUnstructuredContentOutput[ToolInput]) ToInternal(
 	toolCallRequestFactory ToolCallRequestFactory,
 	loggerFactoryInstance basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	config internalconfig.GenericConfig,
 	messageCatalog definition.MessageCatalog,
 ) internaltools.Tool {
@@ -47,6 +48,7 @@ func (t *ToolWithUnstructuredContentOutput[ToolInput]) ToInternal(
 		t.definition.Description,
 		annotations,
 		loggerFactoryInstance,
+		telemetryFactory,
 		adaptUnstructuredHandler(toolCallRequestFactory, config, messageCatalog, t.handler),
 	)
 }

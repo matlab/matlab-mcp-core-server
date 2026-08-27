@@ -10,6 +10,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/application/definition"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/basetool"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -72,6 +73,7 @@ type Orchestrator struct {
 	server                Server
 	watchdogClient        WatchdogClient
 	loggerFactory         LoggerFactory
+	telemetryFactory      basetool.TelemetryFactory
 	osSignaler            OSSignaler
 	directoryFactory      DirectoryFactory
 	resourceLimitManager  ResourceLimitManager
@@ -85,6 +87,7 @@ func New(
 	server Server,
 	watchdogClient WatchdogClient,
 	loggerFactory LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	osSignaler OSSignaler,
 	directoryFactory DirectoryFactory,
 	resourceLimitManager ResourceLimitManager,
@@ -97,6 +100,7 @@ func New(
 		server:                server,
 		watchdogClient:        watchdogClient,
 		loggerFactory:         loggerFactory,
+		telemetryFactory:      telemetryFactory,
 		osSignaler:            osSignaler,
 		directoryFactory:      directoryFactory,
 		resourceLimitManager:  resourceLimitManager,
@@ -178,6 +182,7 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 		o.messageCatalog,
 		dependencies,
 		o.loggerFactory,
+		o.telemetryFactory,
 	))
 
 	serverErrC := make(chan error, 1)

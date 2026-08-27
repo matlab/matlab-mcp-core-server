@@ -24,6 +24,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -34,7 +37,7 @@ func TestNew_HappyPath(t *testing.T) {
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
 	// Act
-	tool := runmatlabfile.New(mockLoggerFactory, mockConfigFactory, mockUsecase, mockGlobalMATLAB)
+	tool := runmatlabfile.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase, mockGlobalMATLAB)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -303,6 +306,9 @@ func TestRunMATLABFile_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -315,7 +321,7 @@ func TestRunMATLABFile_Annotations(t *testing.T) {
 	expectedAnnotations := annotations.NewDestructiveAnnotations()
 
 	// Act
-	tool := runmatlabfile.New(mockLoggerFactory, mockConfigFactory, mockUsecase, mockGlobalMATLAB)
+	tool := runmatlabfile.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase, mockGlobalMATLAB)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have destructive annotations")

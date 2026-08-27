@@ -15,26 +15,29 @@ type Loader interface {
 }
 
 type Factory struct {
-	loader        Loader
-	loggerFactory basetool.LoggerFactory
-	usecase       Usecase
-	globalMATLAB  entities.GlobalMATLAB
-	configFactory ConfigFactory
+	loader           Loader
+	loggerFactory    basetool.LoggerFactory
+	telemetryFactory basetool.TelemetryFactory
+	usecase          Usecase
+	globalMATLAB     entities.GlobalMATLAB
+	configFactory    ConfigFactory
 }
 
 func NewFactory(
 	loader Loader,
 	loggerFactory basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	usecase Usecase,
 	globalMATLAB entities.GlobalMATLAB,
 	configFactory ConfigFactory,
 ) *Factory {
 	return &Factory{
-		loader:        loader,
-		loggerFactory: loggerFactory,
-		usecase:       usecase,
-		globalMATLAB:  globalMATLAB,
-		configFactory: configFactory,
+		loader:           loader,
+		loggerFactory:    loggerFactory,
+		telemetryFactory: telemetryFactory,
+		usecase:          usecase,
+		globalMATLAB:     globalMATLAB,
+		configFactory:    configFactory,
 	}
 }
 
@@ -46,7 +49,7 @@ func (f *Factory) LoadTools(filePath string) ([]tools.Tool, messages.Error) {
 
 	result := make([]tools.Tool, 0, len(validatedTools))
 	for _, vt := range validatedTools {
-		result = append(result, NewTool(vt, f.loggerFactory, f.configFactory, f.usecase, f.globalMATLAB))
+		result = append(result, NewTool(vt, f.loggerFactory, f.configFactory, f.telemetryFactory, f.usecase, f.globalMATLAB))
 	}
 
 	return result, nil

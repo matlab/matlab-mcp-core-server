@@ -8,6 +8,7 @@ import (
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/utils/responseconverter"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/facades/mcpfacade"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -26,15 +27,17 @@ func NewToolWithUnstructuredContent[ToolInput any](
 	description string,
 	annotations AnnotationProvider,
 	loggerFactory LoggerFactory,
+	telemetryFactory TelemetryFactory,
 	handler func(context.Context, entities.Logger, ToolInput) (tools.RichContent, error),
 ) ToolWithUnstructuredContentOutput[ToolInput] {
 	return ToolWithUnstructuredContentOutput[ToolInput]{
 		tool: tool[ToolInput, any]{
-			name:          name,
-			title:         title,
-			description:   description,
-			annotations:   annotations,
-			loggerFactory: loggerFactory,
+			name:             name,
+			title:            title,
+			description:      description,
+			annotations:      annotations,
+			loggerFactory:    loggerFactory,
+			telemetryFactory: telemetryFactory,
 			// Manually inject adder as only have type information at compile time
 			toolAdder: mcpfacade.NewToolAdder[ToolInput, any](),
 		},
@@ -78,6 +81,10 @@ func (t ToolWithUnstructuredContentOutput[ToolInput]) Handler() mcp.ToolHandlerF
 		logger = logger.With("tool-name", t.name)
 		logger.Debug("Handling tool call request")
 		defer logger.Debug("Handled tool call request")
+
+		if err := t.recordToolCall(ctx, telemetry.ToolSourceBuiltin); err != nil {
+			logger.WithError(err).Warn("Telemetry unavailable during tool invocation")
+		}
 
 		if t.unstructuredContentHandler == nil {
 			err := fmt.Errorf(UnexpectedErrorPrefixForLLM + "no unstructured handler available")

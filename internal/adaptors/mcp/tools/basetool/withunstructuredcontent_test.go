@@ -10,10 +10,12 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/annotations"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/basetool"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
 	"github.com/matlab/matlab-mcp-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/mcp/tools/basetool"
+	telemetrymocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/telemetry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,6 +37,9 @@ func TestNewToolWithUnstructuredContentOutput_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	handler := func(ctx context.Context, logger entities.Logger, input TestUnstructuredInput) (tools.RichContent, error) {
 		return tools.RichContent{
 			TextContent: []string{"test response"},
@@ -48,6 +53,7 @@ func TestNewToolWithUnstructuredContentOutput_HappyPath(t *testing.T) {
 		testUnstructuredToolDescription,
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -68,6 +74,9 @@ func TestToolWithUnstructuredContentOutput_AddToServer_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockAdder := &mocks.MockToolAdder[TestUnstructuredInput, any]{}
 	defer mockAdder.AssertExpectations(t)
 
@@ -87,6 +96,7 @@ func TestToolWithUnstructuredContentOutput_AddToServer_HappyPath(t *testing.T) {
 		testUnstructuredToolDescription,
 		expectedAnnotations,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -120,6 +130,14 @@ func TestToolWithUnstructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
 	expectedRichContent := tools.RichContent{
@@ -138,12 +156,22 @@ func TestToolWithUnstructuredContentOutput_Handler_HappyPath(t *testing.T) {
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -152,7 +180,7 @@ func TestToolWithUnstructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
@@ -175,6 +203,14 @@ func TestToolWithUnstructuredContentOutput_Handler_TextContentOnly(t *testing.T)
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
 	expectedRichContent := tools.RichContent{
@@ -192,12 +228,22 @@ func TestToolWithUnstructuredContentOutput_Handler_TextContentOnly(t *testing.T)
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -206,7 +252,7 @@ func TestToolWithUnstructuredContentOutput_Handler_TextContentOnly(t *testing.T)
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
@@ -228,6 +274,14 @@ func TestToolWithUnstructuredContentOutput_Handler_ImageContentOnly(t *testing.T
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
 	expectedRichContent := tools.RichContent{
@@ -248,12 +302,22 @@ func TestToolWithUnstructuredContentOutput_Handler_ImageContentOnly(t *testing.T
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -262,7 +326,7 @@ func TestToolWithUnstructuredContentOutput_Handler_ImageContentOnly(t *testing.T
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
@@ -286,6 +350,14 @@ func TestToolWithUnstructuredContentOutput_Handler_NoContent(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
 	expectedRichContent := tools.RichContent{
@@ -304,12 +376,22 @@ func TestToolWithUnstructuredContentOutput_Handler_NoContent(t *testing.T) {
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -318,7 +400,7 @@ func TestToolWithUnstructuredContentOutput_Handler_NoContent(t *testing.T) {
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
@@ -327,10 +409,79 @@ func TestToolWithUnstructuredContentOutput_Handler_NoContent(t *testing.T) {
 	assert.Empty(t, result.Content, "Content should be empty")
 }
 
+func TestToolWithUnstructuredContentOutput_Handler_TelemetryFactoryError_StillInvokesTool(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
+	expectedSession := &mcp.ServerSession{}
+	expectedInput := TestUnstructuredInput{Query: "test query"}
+	expectedRichContent := tools.RichContent{TextContent: []string{"processed"}}
+	mockSessionLogger := testutils.NewInspectableLogger()
+	handlerCalled := false
+
+	handler := func(ctx context.Context, logger entities.Logger, input TestUnstructuredInput) (tools.RichContent, error) {
+		handlerCalled = true
+		return expectedRichContent, nil
+	}
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(expectedSession).
+		Return(mockSessionLogger, nil).
+		Once()
+
+	telemetryErr := messages.AnError
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(nil, telemetryErr).
+		Once()
+
+	tool := basetool.NewToolWithUnstructuredContent(
+		"test-tool",
+		"Test Tool",
+		"A test tool",
+		annotations.NewReadOnlyAnnotations(),
+		mockLoggerFactory,
+		mockTelemetryFactory,
+		handler,
+	)
+
+	req := &mcp.CallToolRequest{
+		Session: expectedSession,
+	}
+
+	// Act
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
+
+	// Assert
+	require.NoError(t, err, "Handler must succeed even when telemetry factory errors")
+	assert.True(t, handlerCalled, "Tool body must still run when telemetry factory errors")
+	assert.Nil(t, output, "Output should be nil for unstructured content")
+	require.NotNil(t, result, "Result should not be nil when telemetry factory errors")
+	require.Len(t, result.Content, 1, "Result should carry the handler's rich content")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content should be text content")
+	assert.Equal(t, expectedRichContent.TextContent[0], textContent.Text, "Text content should match handler return")
+	assert.Contains(t, mockSessionLogger.WarnLogs(), "Telemetry unavailable during tool invocation", "Warn should be recorded on telemetry init failure")
+}
+
 func TestToolWithUnstructuredContentOutput_Handler_UnstructuredHandlerError(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
@@ -346,12 +497,22 @@ func TestToolWithUnstructuredContentOutput_Handler_UnstructuredHandlerError(t *t
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -360,7 +521,7 @@ func TestToolWithUnstructuredContentOutput_Handler_UnstructuredHandlerError(t *t
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return the expected error")
@@ -372,6 +533,11 @@ func TestToolWithUnstructuredContentOutput_Handler_NewMCPSessionLoggerError(t *t
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
@@ -392,6 +558,7 @@ func TestToolWithUnstructuredContentOutput_Handler_NewMCPSessionLoggerError(t *t
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -400,7 +567,7 @@ func TestToolWithUnstructuredContentOutput_Handler_NewMCPSessionLoggerError(t *t
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return the expected error")
@@ -412,6 +579,14 @@ func TestToolWithUnstructuredContentOutput_Handler_ContextPropagation(t *testing
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestUnstructuredInput{Query: "test query"}
@@ -431,12 +606,22 @@ func TestToolWithUnstructuredContentOutput_Handler_ContextPropagation(t *testing
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithUnstructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -445,17 +630,20 @@ func TestToolWithUnstructuredContentOutput_Handler_ContextPropagation(t *testing
 	}
 
 	// Act
-	_, _, err := tool.Handler()(t.Context(), req, expectedInput)
+	_, _, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
-	assert.Equal(t, t.Context(), <-contextReceived, "Context should be propagated to handler")
+	assert.Equal(t, ctx, <-contextReceived, "Context should be propagated to handler")
 }
 
 func TestToolWithUnstructuredContent_Annotations(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	handler := func(ctx context.Context, logger entities.Logger, input TestUnstructuredInput) (tools.RichContent, error) {
 		return tools.RichContent{
@@ -472,6 +660,7 @@ func TestToolWithUnstructuredContent_Annotations(t *testing.T) {
 		"",
 		expectedAnnotations,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -483,6 +672,9 @@ func TestToolWithUnstructuredContentOutput_AddToServer_NilAnnotationInterface(t 
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	handler := func(ctx context.Context, logger entities.Logger, input TestUnstructuredInput) (tools.RichContent, error) {
 		return tools.RichContent{
@@ -496,6 +688,7 @@ func TestToolWithUnstructuredContentOutput_AddToServer_NilAnnotationInterface(t 
 		testUnstructuredToolDescription,
 		nil,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 

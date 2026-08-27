@@ -9,12 +9,14 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/basetool"
 	publictypes "github.com/matlab/matlab-mcp-server/internal/adaptors/sdk/publictypes"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/sdk/tools"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/testutils"
 	configmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/application/config"
 	definitionmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/application/definition"
 	basetoolmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/mcp/tools/basetool"
 	publictypesmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/sdk/publictypes"
 	toolsmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/sdk/tools"
+	telemetrymocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/telemetry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,8 +24,16 @@ import (
 
 func TestNewUnstructured_HappyPath(t *testing.T) {
 	// Arrange
+	ctx := t.Context()
+
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
@@ -48,6 +58,16 @@ func TestNewUnstructured_HappyPath(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	mockToolCallRequestFactory.EXPECT().
 		New(mockLogger.AsMockArg(), mockConfig, mockMessageCatalog).
 		Return(mockCallRequest).
@@ -64,14 +84,14 @@ func TestNewUnstructured_HappyPath(t *testing.T) {
 		},
 	)
 
-	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
+	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
 
 	mcpCallToolRequest := &mcp.CallToolRequest{
 		Session: expectedSession,
 	}
 
 	// Act
-	result, _, err := internalTool.Handler()(t.Context(), mcpCallToolRequest, expectedInput)
+	result, _, err := internalTool.Handler()(ctx, mcpCallToolRequest, expectedInput)
 
 	// Assert
 	require.NoError(t, err)
@@ -89,8 +109,16 @@ func TestNewUnstructured_HappyPath(t *testing.T) {
 
 func TestNewUnstructured_HandlerError(t *testing.T) {
 	// Arrange
+	ctx := t.Context()
+
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
@@ -114,6 +142,16 @@ func TestNewUnstructured_HandlerError(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	mockToolCallRequestFactory.EXPECT().
 		New(mockLogger.AsMockArg(), mockConfig, mockMessageCatalog).
 		Return(mockCallRequest).
@@ -126,14 +164,14 @@ func TestNewUnstructured_HandlerError(t *testing.T) {
 		},
 	)
 
-	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
+	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
 
 	mcpCallToolRequest := &mcp.CallToolRequest{
 		Session: expectedSession,
 	}
 
 	// Act
-	result, _, err := internalTool.Handler()(t.Context(), mcpCallToolRequest, toolInput{})
+	result, _, err := internalTool.Handler()(ctx, mcpCallToolRequest, toolInput{})
 
 	// Assert
 	require.ErrorIs(t, err, expectedError)
@@ -142,8 +180,16 @@ func TestNewUnstructured_HandlerError(t *testing.T) {
 
 func TestNewUnstructured_HandlerReceivesLogger(t *testing.T) {
 	// Arrange
+	ctx := t.Context()
+
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
@@ -170,6 +216,16 @@ func TestNewUnstructured_HandlerReceivesLogger(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	mockToolCallRequestFactory.EXPECT().
 		New(mockLogger.AsMockArg(), mockConfig, mockMessageCatalog).
 		Return(mockCallRequest).
@@ -193,14 +249,14 @@ func TestNewUnstructured_HandlerReceivesLogger(t *testing.T) {
 		},
 	)
 
-	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
+	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
 
 	mcpCallToolRequest := &mcp.CallToolRequest{
 		Session: expectedSession,
 	}
 
 	// Act
-	_, _, err := internalTool.Handler()(t.Context(), mcpCallToolRequest, toolInput{Query: "test"})
+	_, _, err := internalTool.Handler()(ctx, mcpCallToolRequest, toolInput{Query: "test"})
 
 	// Assert
 	require.NoError(t, err)
@@ -208,8 +264,16 @@ func TestNewUnstructured_HandlerReceivesLogger(t *testing.T) {
 
 func TestNewUnstructured_HandlerReceivesConfig(t *testing.T) {
 	// Arrange
+	ctx := t.Context()
+
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockConfig := &configmocks.MockGenericConfig{}
 	defer mockConfig.AssertExpectations(t)
@@ -237,6 +301,16 @@ func TestNewUnstructured_HandlerReceivesConfig(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	mockToolCallRequestFactory.EXPECT().
 		New(mockLogger.AsMockArg(), mockConfig, mockMessageCatalog).
 		Return(mockCallRequest).
@@ -262,14 +336,14 @@ func TestNewUnstructured_HandlerReceivesConfig(t *testing.T) {
 		},
 	)
 
-	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
+	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
 
 	mcpCallToolRequest := &mcp.CallToolRequest{
 		Session: expectedSession,
 	}
 
 	// Act
-	_, _, err := internalTool.Handler()(t.Context(), mcpCallToolRequest, toolInput{Query: "test"})
+	_, _, err := internalTool.Handler()(ctx, mcpCallToolRequest, toolInput{Query: "test"})
 
 	// Assert
 	require.NoError(t, err)
@@ -289,6 +363,9 @@ func TestNewUnstructured_DefinitionFieldsForwarded(t *testing.T) {
 	mockToolCallRequestFactory := &toolsmocks.MockToolCallRequestFactory{}
 	defer mockToolCallRequestFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	expectedName := "my-tool"
 	expectedTitle := "My Tool"
 	expectedDescription := "A tool that does things"
@@ -307,7 +384,7 @@ func TestNewUnstructured_DefinitionFieldsForwarded(t *testing.T) {
 	)
 
 	// Act
-	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
+	internalTool := tool.ToInternal(mockToolCallRequestFactory, mockLoggerFactory, mockTelemetryFactory, mockConfig, mockMessageCatalog).(basetool.ToolWithUnstructuredContentOutput[toolInput])
 
 	// Assert
 	require.Equal(t, expectedName, internalTool.Name())

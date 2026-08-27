@@ -16,6 +16,7 @@ import (
 	directorymocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/application/directory"
 	orchestratormocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/application/orchestrator"
 	toolsmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/mcp/tools"
+	basetoolmocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/mcp/tools/basetool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,6 +53,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	//Act
 	orchestratorInstance := orchestrator.New(
 		mockMessageCatalog,
@@ -61,6 +65,7 @@ func TestNew_HappyPath(t *testing.T) {
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -102,6 +107,9 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	ctx := t.Context()
 	expectedError := messages.AnError
 
@@ -118,6 +126,7 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -165,6 +174,9 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	ctx := t.Context()
 	expectedError := messages.AnError
 
@@ -186,6 +198,7 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -233,6 +246,9 @@ func TestOrchestrator_StartAndWaitForCompletion_CapOpenFilesLimitError(t *testin
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	expectedError := assert.AnError
@@ -260,6 +276,7 @@ func TestOrchestrator_StartAndWaitForCompletion_CapOpenFilesLimitError(t *testin
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -306,6 +323,9 @@ func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
 
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
@@ -364,6 +384,7 @@ func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -413,6 +434,9 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
@@ -481,6 +505,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -530,6 +555,9 @@ func TestOrchestrator_StartAndWaitForCompletion_DependenciesError(t *testing.T) 
 
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
@@ -604,6 +632,7 @@ func TestOrchestrator_StartAndWaitForCompletion_DependenciesError(t *testing.T) 
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -657,6 +686,9 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	interruptC := getInterruptChannel()
@@ -666,7 +698,7 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 
 	expectedDependencies := &struct{}{}
 	expectedDependenciesProviderResources := definition.NewDependenciesProviderResources(mockLogger, mockConfig, mockMessageCatalog, mockWatchdogClient)
-	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory)
+	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory, mockTelemetryFactory)
 	expectedTools := []tools.Tool{mockTool}
 	expectedVersion := "test-version"
 
@@ -762,6 +794,7 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -825,13 +858,16 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	interruptC := getInterruptChannel()
 	expectedError := assert.AnError
 	var expectedDependencies any
 	expectedDependenciesProviderResources := definition.NewDependenciesProviderResources(mockLogger, mockConfig, mockMessageCatalog, mockWatchdogClient)
-	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory)
+	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory, mockTelemetryFactory)
 	var expectedTools []tools.Tool
 
 	mockLoggerFactory.EXPECT().
@@ -917,6 +953,7 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -967,13 +1004,16 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	interruptC := getInterruptChannel()
 	expectedError := assert.AnError
 	var expectedDependencies any
 	expectedDependenciesProviderResources := definition.NewDependenciesProviderResources(mockLogger, mockConfig, mockMessageCatalog, mockWatchdogClient)
-	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory)
+	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory, mockTelemetryFactory)
 	var expectedTools []tools.Tool
 
 	mockLoggerFactory.EXPECT().
@@ -1059,6 +1099,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,
@@ -1127,12 +1168,15 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	ctx := t.Context()
 	interruptC := getInterruptChannel()
 	expectedError := assert.AnError
 	var expectedDependencies any
 	expectedDependenciesProviderResources := definition.NewDependenciesProviderResources(mockLogger, mockConfig, mockMessageCatalog, mockWatchdogClient)
-	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory)
+	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory, mockTelemetryFactory)
 	var expectedTools []tools.Tool
 
 	mockLoggerFactory.EXPECT().
@@ -1229,6 +1273,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 		mockServer,
 		mockWatchdogClient,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
 		mockResourceLimitManager,

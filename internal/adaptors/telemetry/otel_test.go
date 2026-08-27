@@ -3,6 +3,7 @@
 package telemetry_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
@@ -48,6 +49,11 @@ func TestNewOTELTelemetry_HappyPath(t *testing.T) {
 
 	mockInstrumentFactory.EXPECT().
 		NewInt64Counter(meter, "server.client_connections", "Number of times a client connected to a server", "{connection}").
+		Return(mockInt64Counter, nil).
+		Once()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
 		Return(mockInt64Counter, nil).
 		Once()
 
@@ -137,6 +143,57 @@ func TestNewOTELTelemetry_ClientConnectionCounterCreationFails(t *testing.T) {
 	require.Equal(t, expectedError, err)
 }
 
+func TestNewOTELTelemetry_ToolCallRequestCounterCreationFails(t *testing.T) {
+	// Arrange
+	mockInstrumentFactory := &telemetrymocks.MockInstrumentFactory{}
+	defer mockInstrumentFactory.AssertExpectations(t)
+
+	mockServerStartCounter := &instrumentsmocks.MockInt64Counter{}
+	defer mockServerStartCounter.AssertExpectations(t)
+
+	mockClientConnectionCounter := &instrumentsmocks.MockInt64Counter{}
+	defer mockClientConnectionCounter.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockOSLayer := &telemetrymocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockServerDefinition := &telemetrymocks.MockDefinition{}
+	defer mockServerDefinition.AssertExpectations(t)
+
+	mockOSVersionProvider := &telemetrymocks.MockOSVersionProvider{}
+	defer mockOSVersionProvider.AssertExpectations(t)
+
+	testLogger := testutils.NewInspectableLogger()
+	meter := noop.NewMeterProvider().Meter("test")
+	instrumentError := assert.AnError
+	expectedError := messages.New_StartupErrors_TelemetryInitializationFailed_Error()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "server.starts", "Number of times the server has started", "{start}").
+		Return(mockServerStartCounter, nil).
+		Once()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "server.client_connections", "Number of times a client connected to a server", "{connection}").
+		Return(mockClientConnectionCounter, nil).
+		Once()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
+		Return(nil, instrumentError).
+		Once()
+
+	// Act
+	result, err := telemetry.NewOTELTelemetryForTesting(testLogger, meter, mockInstrumentFactory, mockConfig, nil, mockOSLayer, mockOSVersionProvider, mockServerDefinition)
+
+	// Assert
+	require.Nil(t, result)
+	require.Equal(t, expectedError, err)
+}
+
 func TestOTELTelemetry_RecordServerStart_HappyPath(t *testing.T) {
 	// Arrange
 	mockInstrumentFactory := &telemetrymocks.MockInstrumentFactory{}
@@ -188,6 +245,11 @@ func TestOTELTelemetry_RecordServerStart_HappyPath(t *testing.T) {
 
 	mockInstrumentFactory.EXPECT().
 		NewInt64Counter(meter, "server.client_connections", "Number of times a client connected to a server", "{connection}").
+		Return(mockInt64Counter, nil).
+		Once()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
 		Return(mockInt64Counter, nil).
 		Once()
 
@@ -281,6 +343,11 @@ func TestOTELTelemetry_RecordServerStart_WatchdogModeSkips(t *testing.T) {
 		Return(mockInt64Counter, nil).
 		Once()
 
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
+		Return(mockInt64Counter, nil).
+		Once()
+
 	mockConfig.EXPECT().
 		WatchdogMode().
 		Return(true).
@@ -346,6 +413,11 @@ func TestOTELTelemetry_RecordServerStart_OSVersionError(t *testing.T) {
 
 	mockInstrumentFactory.EXPECT().
 		NewInt64Counter(meter, "server.client_connections", "Number of times a client connected to a server", "{connection}").
+		Return(mockInt64Counter, nil).
+		Once()
+
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
 		Return(mockInt64Counter, nil).
 		Once()
 
@@ -460,6 +532,11 @@ func TestOTELTelemetry_RecordClientConnection_HappyPath(t *testing.T) {
 		Return(mockClientConnectionCounter, nil).
 		Once()
 
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
+		Return(mockClientConnectionCounter, nil).
+		Once()
+
 	mockDirectory.EXPECT().
 		ID().
 		Return(expectedInstanceID).
@@ -539,6 +616,11 @@ func TestOTELTelemetry_RecordClientConnection_EmptyInfo(t *testing.T) {
 		Return(mockClientConnectionCounter, nil).
 		Once()
 
+	mockInstrumentFactory.EXPECT().
+		NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
+		Return(mockClientConnectionCounter, nil).
+		Once()
+
 	mockDirectory.EXPECT().
 		ID().
 		Return(expectedInstanceID).
@@ -558,4 +640,146 @@ func TestOTELTelemetry_RecordClientConnection_EmptyInfo(t *testing.T) {
 
 	// Assert
 	// Assertions are verified via deferred mock expectations.
+}
+
+func TestOTELTelemetry_RecordToolCallRequest_HappyPath(t *testing.T) {
+	cases := []struct {
+		name         string
+		source       telemetry.ToolSource
+		inputName    string
+		expectedName string
+	}{
+		{
+			name:         "builtin tool name is emitted verbatim",
+			source:       telemetry.ToolSourceBuiltin,
+			inputName:    "evalMATLABCode",
+			expectedName: "evalMATLABCode",
+		},
+		{
+			name:         "extension tool name is emitted as truncated SHA-256 hex",
+			source:       telemetry.ToolSourceExtension,
+			inputName:    "analyzeData",
+			expectedName: "1dcbd0dbb3165d43",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			mockInstrumentFactory := &telemetrymocks.MockInstrumentFactory{}
+			defer mockInstrumentFactory.AssertExpectations(t)
+
+			mockServerStartCounter := &instrumentsmocks.MockInt64Counter{}
+			defer mockServerStartCounter.AssertExpectations(t)
+
+			mockClientConnectionCounter := &instrumentsmocks.MockInt64Counter{}
+			defer mockClientConnectionCounter.AssertExpectations(t)
+
+			mockToolCallRequestCounter := &instrumentsmocks.MockInt64Counter{}
+			defer mockToolCallRequestCounter.AssertExpectations(t)
+
+			mockConfig := &configmocks.MockConfig{}
+			defer mockConfig.AssertExpectations(t)
+
+			mockOSLayer := &telemetrymocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
+
+			mockServerDefinition := &telemetrymocks.MockDefinition{}
+			defer mockServerDefinition.AssertExpectations(t)
+
+			mockOSVersionProvider := &telemetrymocks.MockOSVersionProvider{}
+			defer mockOSVersionProvider.AssertExpectations(t)
+
+			mockDirectory := &telemetrymocks.MockDirectory{}
+			defer mockDirectory.AssertExpectations(t)
+
+			testLogger := testutils.NewInspectableLogger()
+			meter := noop.NewMeterProvider().Meter("test")
+
+			expectedInstanceID := "test-instance-id"
+
+			expectedAttributes := []attribute.KeyValue{
+				attribute.String("server.instance_id", expectedInstanceID),
+				attribute.String("tool.name", tc.expectedName),
+			}
+
+			mockInstrumentFactory.EXPECT().
+				NewInt64Counter(meter, "server.starts", "Number of times the server has started", "{start}").
+				Return(mockServerStartCounter, nil).
+				Once()
+
+			mockInstrumentFactory.EXPECT().
+				NewInt64Counter(meter, "server.client_connections", "Number of times a client connected to a server", "{connection}").
+				Return(mockClientConnectionCounter, nil).
+				Once()
+
+			mockInstrumentFactory.EXPECT().
+				NewInt64Counter(meter, "tool.calls_request", "Number of tool invocations", "{call}").
+				Return(mockToolCallRequestCounter, nil).
+				Once()
+
+			mockDirectory.EXPECT().
+				ID().
+				Return(expectedInstanceID).
+				Once()
+
+			mockToolCallRequestCounter.EXPECT().
+				Add(mock.Anything, int64(1), expectedAttributes).
+				Once()
+
+			otelTelemetry, err := telemetry.NewOTELTelemetryForTesting(testLogger, meter, mockInstrumentFactory, mockConfig, mockDirectory, mockOSLayer, mockOSVersionProvider, mockServerDefinition)
+			require.NoError(t, err)
+
+			// Act
+			otelTelemetry.RecordToolCallRequest(t.Context(), tc.inputName, tc.source)
+
+			// Assert
+			// Assertions are verified via deferred mock expectations.
+		})
+	}
+}
+
+var hexPattern = regexp.MustCompile(`^[0-9a-f]{16}$`)
+
+func TestSHA256Prefix16_ReferenceHashMustNotChange(t *testing.T) {
+	got := telemetry.SHA256Prefix16ForTesting("analyzeData")
+
+	assert.Equal(t, "1dcbd0dbb3165d43", got, "reference vector must not drift")
+}
+
+func TestSHA256Prefix16_ReturnsSixteenLowercaseHexChars(t *testing.T) {
+	inputs := []string{
+		"",
+		"a",
+		"eval_matlab_code",
+		"Some Tool With Spaces",
+		"emoji_\U0001F389",
+		"very-long-name-with-lots-of-content-that-still-truncates-to-sixteen-hex",
+	}
+
+	for _, in := range inputs {
+		got := telemetry.SHA256Prefix16ForTesting(in)
+		assert.Regexp(t, hexPattern, got, "hash of %q must be 16 lowercase hex chars", in)
+	}
+}
+
+func TestSHA256Prefix16_IsDeterministic(t *testing.T) {
+	first := telemetry.SHA256Prefix16ForTesting("consistent")
+	second := telemetry.SHA256Prefix16ForTesting("consistent")
+
+	assert.Equal(t, first, second, "same input must produce same output")
+}
+
+func TestSHA256Prefix16_IsCaseSensitive(t *testing.T) {
+	lower := telemetry.SHA256Prefix16ForTesting("analyzeData")
+	upper := telemetry.SHA256Prefix16ForTesting("AnalyzeData")
+
+	assert.NotEqual(t, lower, upper, "case must be significant")
+}
+
+func TestSHA256Prefix16_TreatsUTF8AsIs(t *testing.T) {
+	nfc := telemetry.SHA256Prefix16ForTesting("café")
+	nfd := telemetry.SHA256Prefix16ForTesting("café")
+
+	assert.NotEqual(t, nfc, nfd, "different byte sequences must produce different hashes")
 }

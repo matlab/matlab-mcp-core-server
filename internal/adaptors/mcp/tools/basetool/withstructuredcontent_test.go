@@ -9,10 +9,12 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/annotations"
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/mcp/tools/basetool"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
 	"github.com/matlab/matlab-mcp-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/mcp/tools/basetool"
+	telemetrymocks "github.com/matlab/matlab-mcp-server/mocks/adaptors/telemetry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,6 +40,9 @@ func TestNewToolWithStructuredContent_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
@@ -49,6 +54,7 @@ func TestNewToolWithStructuredContent_HappyPath(t *testing.T) {
 		testToolDescription,
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -75,6 +81,9 @@ func TestToolWithStructuredContentOutput_AddToServer_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockAdder := &mocks.MockToolAdder[TestInput, TestOutput]{}
 	defer mockAdder.AssertExpectations(t)
 
@@ -90,6 +99,7 @@ func TestToolWithStructuredContentOutput_AddToServer_HappyPath(t *testing.T) {
 		testToolDescription,
 		expectedAnnotations,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -128,6 +138,14 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
 	expectedOutput := TestOutput{Result: "processed: test message"}
@@ -142,12 +160,22 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithStructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -156,7 +184,7 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
@@ -164,10 +192,75 @@ func TestToolWithStructuredContentOutput_Handler_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedOutput, output, "Output should match expected output")
 }
 
+func TestToolWithStructuredContentOutput_Handler_TelemetryFactoryError_StillInvokesTool(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
+
+	expectedSession := &mcp.ServerSession{}
+	expectedInput := TestInput{Message: "test message"}
+	expectedOutput := TestOutput{Result: "processed: test message"}
+	mockSessionLogger := testutils.NewInspectableLogger()
+	handlerCalled := false
+
+	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
+		handlerCalled = true
+		return TestOutput{Result: "processed: " + input.Message}, nil
+	}
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(expectedSession).
+		Return(mockSessionLogger, nil).
+		Once()
+
+	telemetryErr := messages.AnError
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(nil, telemetryErr).
+		Once()
+
+	tool := basetool.NewToolWithStructuredContent(
+		"test-tool",
+		"Test Tool",
+		"A test tool",
+		annotations.NewReadOnlyAnnotations(),
+		mockLoggerFactory,
+		mockTelemetryFactory,
+		handler,
+	)
+
+	req := &mcp.CallToolRequest{
+		Session: expectedSession,
+	}
+
+	// Act
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
+
+	// Assert
+	require.NoError(t, err, "Handler must succeed even when telemetry factory errors")
+	assert.True(t, handlerCalled, "Tool body must still run when telemetry factory errors")
+	assert.Nil(t, result, "Result should be nil for structured content output")
+	assert.Equal(t, expectedOutput, output, "Output should match handler return value")
+	assert.Contains(t, mockSessionLogger.WarnLogs(), "Telemetry unavailable during tool invocation", "Warn should be recorded on telemetry init failure")
+}
+
 func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
@@ -183,12 +276,22 @@ func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testi
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithStructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -197,7 +300,7 @@ func TestToolWithStructuredContentOutput_Handler_StructuredHandlerError(t *testi
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return an error")
@@ -209,6 +312,11 @@ func TestToolWithStructuredContentOutput_Handler_NewMCPSessionLoggerError(t *tes
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
@@ -229,6 +337,7 @@ func TestToolWithStructuredContentOutput_Handler_NewMCPSessionLoggerError(t *tes
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -237,7 +346,7 @@ func TestToolWithStructuredContentOutput_Handler_NewMCPSessionLoggerError(t *tes
 	}
 
 	// Act
-	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+	result, output, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "Handler should return the NewMCPSessionLogger error")
@@ -249,6 +358,14 @@ func TestToolWithStructuredContentOutput_Handler_ContextPropagation(t *testing.T
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	ctx := t.Context()
 
 	expectedSession := &mcp.ServerSession{}
 	expectedInput := TestInput{Message: "test message"}
@@ -266,12 +383,22 @@ func TestToolWithStructuredContentOutput_Handler_ContextPropagation(t *testing.T
 		Return(mockSessionLogger, nil).
 		Once()
 
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+	mockTelemetry.EXPECT().
+		RecordToolCallRequest(ctx, "test-tool", telemetry.ToolSourceBuiltin).
+		Return().
+		Once()
+
 	tool := basetool.NewToolWithStructuredContent(
 		"test-tool",
 		"Test Tool",
 		"A test tool",
 		annotations.NewReadOnlyAnnotations(),
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -280,17 +407,20 @@ func TestToolWithStructuredContentOutput_Handler_ContextPropagation(t *testing.T
 	}
 
 	// Act
-	_, _, err := tool.Handler()(t.Context(), req, expectedInput)
+	_, _, err := tool.Handler()(ctx, req, expectedInput)
 
 	// Assert
 	require.NoError(t, err, "Handler should not return an error")
-	assert.Equal(t, t.Context(), capturedContext, "Context should be propagated to handler")
+	assert.Equal(t, ctx, capturedContext, "Context should be propagated to handler")
 }
 
 func TestToolWithStructuredContent_Annotations(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
 
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
@@ -305,6 +435,7 @@ func TestToolWithStructuredContent_Annotations(t *testing.T) {
 		"",
 		expectedAnnotations,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 
@@ -317,6 +448,9 @@ func TestToolWithStructuredContentOutput_AddToServer_NilAnnotationInterface(t *t
 	mockLoggerFactory := &mocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &mocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
 		return TestOutput{Result: "success"}, nil
 	}
@@ -327,6 +461,7 @@ func TestToolWithStructuredContentOutput_AddToServer_NilAnnotationInterface(t *t
 		testToolDescription,
 		nil,
 		mockLoggerFactory,
+		mockTelemetryFactory,
 		handler,
 	)
 

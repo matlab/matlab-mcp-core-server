@@ -63,9 +63,28 @@ type ClientConnectionInfo struct {
 	CapabilitiesJSON string
 }
 
+type ToolSource int
+
+const (
+	ToolSourceBuiltin ToolSource = iota
+	ToolSourceExtension
+)
+
+func (s ToolSource) String() string {
+	switch s {
+	case ToolSourceBuiltin:
+		return "builtin"
+	case ToolSourceExtension:
+		return "extension"
+	default:
+		return "unknown"
+	}
+}
+
 type Telemetry interface {
 	RecordServerStart(ctx context.Context)
 	RecordClientConnection(ctx context.Context, info ClientConnectionInfo)
+	RecordToolCallRequest(ctx context.Context, toolName string, source ToolSource)
 }
 
 type Factory struct {

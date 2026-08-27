@@ -49,6 +49,9 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockBaseToolLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockBaseToolLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLoggerFactory.EXPECT().
 		New(mockInternalLogger).
 		Return(nil).
@@ -60,6 +63,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 		mockMessageCatalog,
 		&TestDependencies{Value: "test"},
 		mockBaseToolLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Act
@@ -86,6 +90,9 @@ func TestFactory_New_Logger(t *testing.T) {
 	mockBaseToolLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockBaseToolLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	expectedLogger := &publictypesmocks.MockLogger{}
 	defer expectedLogger.AssertExpectations(t)
 
@@ -100,6 +107,7 @@ func TestFactory_New_Logger(t *testing.T) {
 		mockMessageCatalog,
 		&TestDependencies{Value: "test"},
 		mockBaseToolLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Act
@@ -126,6 +134,9 @@ func TestFactory_New_Dependencies_HappyPath(t *testing.T) {
 	mockBaseToolLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockBaseToolLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	expectedDependencies := &TestDependencies{Value: "test"}
 
 	mockLoggerFactory.EXPECT().
@@ -139,6 +150,7 @@ func TestFactory_New_Dependencies_HappyPath(t *testing.T) {
 		mockMessageCatalog,
 		expectedDependencies,
 		mockBaseToolLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Act
@@ -165,6 +177,9 @@ func TestFactory_New_Dependencies_Nil(t *testing.T) {
 	mockBaseToolLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockBaseToolLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockLoggerFactory.EXPECT().
 		New(mockInternalLogger).
 		Return(nil).
@@ -176,6 +191,7 @@ func TestFactory_New_Dependencies_Nil(t *testing.T) {
 		mockMessageCatalog,
 		nil,
 		mockBaseToolLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Act
@@ -203,6 +219,9 @@ func TestFactory_New_Dependencies_CastFailure(t *testing.T) {
 	mockBaseToolLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockBaseToolLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockInternalLogger.EXPECT().
 		Error("Dependencies type cast failed, using zero value").
 		Return().
@@ -219,6 +238,7 @@ func TestFactory_New_Dependencies_CastFailure(t *testing.T) {
 		mockMessageCatalog,
 		"wrong type",
 		mockBaseToolLoggerFactory,
+		mockTelemetryFactory,
 	)
 
 	// Act

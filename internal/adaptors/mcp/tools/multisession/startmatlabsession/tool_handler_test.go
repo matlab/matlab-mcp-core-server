@@ -24,6 +24,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -31,7 +34,7 @@ func TestNew_HappyPath(t *testing.T) {
 	defer mockUsecase.AssertExpectations(t)
 
 	// Act
-	tool := startmatlabsession.New(mockLoggerFactory, mockConfigFactory, mockUsecase)
+	tool := startmatlabsession.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -237,6 +240,9 @@ func TestStartMATLABSession_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -246,7 +252,7 @@ func TestStartMATLABSession_Annotations(t *testing.T) {
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
 
 	// Act
-	tool := startmatlabsession.New(mockLoggerFactory, mockConfigFactory, mockUsecase)
+	tool := startmatlabsession.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have read-only annotations")

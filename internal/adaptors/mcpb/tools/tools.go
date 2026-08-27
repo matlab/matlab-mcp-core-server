@@ -16,11 +16,11 @@ type Definition struct {
 }
 
 func Definitions() []Definition {
-	checkCode := checkmatlabcode.New(nil, nil, nil)
-	detectToolboxes := detectmatlabtoolboxes.New(nil, nil, nil)
-	evalCode := evalmatlabcode.New(nil, nil, nil, nil)
-	runFile := runmatlabfile.New(nil, nil, nil, nil)
-	runTestFile := runmatlabtestfile.New(nil, nil, nil)
+	checkCode := checkmatlabcode.New(nil, nil, nil, nil)
+	detectToolboxes := detectmatlabtoolboxes.New(nil, nil, nil, nil)
+	evalCode := evalmatlabcode.New(nil, nil, nil, nil, nil)
+	runFile := runmatlabfile.New(nil, nil, nil, nil, nil)
+	runTestFile := runmatlabtestfile.New(nil, nil, nil, nil)
 
 	return []Definition{
 		{Name: checkCode.Name(), Description: checkCode.Description()},

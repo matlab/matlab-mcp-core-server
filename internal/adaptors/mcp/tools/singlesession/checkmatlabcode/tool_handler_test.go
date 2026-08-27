@@ -21,6 +21,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &mocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
@@ -28,7 +31,7 @@ func TestNew_HappyPath(t *testing.T) {
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
 	// Act
-	tool := checkmatlabcode.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)
+	tool := checkmatlabcode.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase, mockGlobalMATLAB)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -226,6 +229,9 @@ func TestCheckMATLABCode_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockGlobalMATLAB := &entitiesmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
@@ -235,7 +241,7 @@ func TestCheckMATLABCode_Annotations(t *testing.T) {
 	expectedAnnotations := annotations.NewReadOnlyAnnotations()
 
 	// Act
-	tool := checkmatlabcode.New(mockLoggerFactory, mockUsecase, mockGlobalMATLAB)
+	tool := checkmatlabcode.New(mockLoggerFactory, mockTelemetryFactory, mockUsecase, mockGlobalMATLAB)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have read-only annotations")

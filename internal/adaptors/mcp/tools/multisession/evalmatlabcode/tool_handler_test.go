@@ -24,6 +24,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -34,7 +37,7 @@ func TestNew_HappyPath(t *testing.T) {
 	defer mockMATLABManager.AssertExpectations(t)
 
 	// Act
-	tool := evalmatlabcode.New(mockLoggerFactory, mockConfigFactory, mockUsecase, mockMATLABManager)
+	tool := evalmatlabcode.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase, mockMATLABManager)
 
 	// Assert
 	assert.NotNil(t, tool)
@@ -341,6 +344,9 @@ func TestEvalInMATLABSession_Annotations(t *testing.T) {
 	mockLoggerFactory := &basetoolsmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolsmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockConfigFactory := &mocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
 
@@ -353,7 +359,7 @@ func TestEvalInMATLABSession_Annotations(t *testing.T) {
 	expectedAnnotations := annotations.NewDestructiveAnnotations()
 
 	// Act
-	tool := evalmatlabcode.New(mockLoggerFactory, mockConfigFactory, mockUsecase, mockMATLABManager)
+	tool := evalmatlabcode.New(mockLoggerFactory, mockTelemetryFactory, mockConfigFactory, mockUsecase, mockMATLABManager)
 
 	// Assert
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have destructive annotations")

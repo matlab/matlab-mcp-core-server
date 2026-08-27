@@ -24,6 +24,9 @@ func TestFactory_LoadTools_HappyPath(t *testing.T) {
 	mockLoggerFactory := &basetoolmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockTelemetryFactory := &basetoolmocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
 	mockUsecase := &custommocks.MockUsecase{}
 	defer mockUsecase.AssertExpectations(t)
 
@@ -64,7 +67,7 @@ func TestFactory_LoadTools_HappyPath(t *testing.T) {
 		Return(validatedTools, nil).
 		Once()
 
-	factory := custom.NewFactory(mockLoader, mockLoggerFactory, mockUsecase, mockGlobalMATLAB, mockConfigFactory)
+	factory := custom.NewFactory(mockLoader, mockLoggerFactory, mockTelemetryFactory, mockUsecase, mockGlobalMATLAB, mockConfigFactory)
 
 	// Act
 	tools, err := factory.LoadTools(expectedFilePath)
@@ -88,7 +91,7 @@ func TestFactory_LoadTools_EmptyList(t *testing.T) {
 		Return([]definition.ValidatedTool{}, nil).
 		Once()
 
-	factory := custom.NewFactory(mockLoader, nil, nil, nil, nil)
+	factory := custom.NewFactory(mockLoader, nil, nil, nil, nil, nil)
 
 	// Act
 	tools, err := factory.LoadTools(expectedFilePath)
@@ -111,7 +114,7 @@ func TestFactory_LoadTools_LoaderError_ReturnsError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	factory := custom.NewFactory(mockLoader, nil, nil, nil, nil)
+	factory := custom.NewFactory(mockLoader, nil, nil, nil, nil, nil)
 
 	// Act
 	tools, err := factory.LoadTools(expectedFilePath)

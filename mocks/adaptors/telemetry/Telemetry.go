@@ -123,3 +123,55 @@ func (_c *MockTelemetry_RecordServerStart_Call) RunAndReturn(run func(ctx contex
 	_c.Run(run)
 	return _c
 }
+
+// RecordToolCallRequest provides a mock function for the type MockTelemetry
+func (_mock *MockTelemetry) RecordToolCallRequest(ctx context.Context, toolName string, source telemetry.ToolSource) {
+	_mock.Called(ctx, toolName, source)
+	return
+}
+
+// MockTelemetry_RecordToolCallRequest_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordToolCallRequest'
+type MockTelemetry_RecordToolCallRequest_Call struct {
+	*mock.Call
+}
+
+// RecordToolCallRequest is a helper method to define mock.On call
+//   - ctx context.Context
+//   - toolName string
+//   - source telemetry.ToolSource
+func (_e *MockTelemetry_Expecter) RecordToolCallRequest(ctx interface{}, toolName interface{}, source interface{}) *MockTelemetry_RecordToolCallRequest_Call {
+	return &MockTelemetry_RecordToolCallRequest_Call{Call: _e.mock.On("RecordToolCallRequest", ctx, toolName, source)}
+}
+
+func (_c *MockTelemetry_RecordToolCallRequest_Call) Run(run func(ctx context.Context, toolName string, source telemetry.ToolSource)) *MockTelemetry_RecordToolCallRequest_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 telemetry.ToolSource
+		if args[2] != nil {
+			arg2 = args[2].(telemetry.ToolSource)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTelemetry_RecordToolCallRequest_Call) Return() *MockTelemetry_RecordToolCallRequest_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockTelemetry_RecordToolCallRequest_Call) RunAndReturn(run func(ctx context.Context, toolName string, source telemetry.ToolSource)) *MockTelemetry_RecordToolCallRequest_Call {
+	_c.Run(run)
+	return _c
+}

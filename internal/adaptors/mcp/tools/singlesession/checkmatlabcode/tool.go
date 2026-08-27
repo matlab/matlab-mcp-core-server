@@ -21,11 +21,12 @@ type Tool struct {
 
 func New(
 	loggerFactory basetool.LoggerFactory,
+	telemetryFactory basetool.TelemetryFactory,
 	usecase Usecase,
 	globalMATLAB entities.GlobalMATLAB,
 ) *Tool {
 	return &Tool{
-		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewReadOnlyAnnotations(), loggerFactory, Handler(usecase, globalMATLAB)),
+		ToolWithStructuredContentOutput: basetool.NewToolWithStructuredContent(name, title, description, annotations.NewReadOnlyAnnotations(), loggerFactory, telemetryFactory, Handler(usecase, globalMATLAB)),
 	}
 }
 

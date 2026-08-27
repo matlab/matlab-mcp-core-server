@@ -388,11 +388,11 @@ func TestConfigurator_GetToolsToAdd_SingleMATLABSession_CustomToolNameConflict(t
 	startMATLABSessionTool := &startmatlabsession.Tool{}
 	stopMATLABSessionTool := &stopmatlabsession.Tool{}
 	evalInMATLABSessionTool := &evalmatlabmultisession.Tool{}
-	evalInGlobalMATLABSessionTool := evalmatlabsinglesession.New(nil, nil, nil, nil)
-	checkMATLABCodeInGlobalMATLABSession := checkmatlabcode.New(nil, nil, nil)
-	detectMATLABToolboxesInSingleSessionTool := detectmatlabtoolboxes.New(nil, nil, nil)
-	runMATLABFileInGlobalMATLABSessionTool := runmatlabfile.New(nil, nil, nil, nil)
-	runMATLABTestFileInGlobalMATLABSessionTool := runmatlabtestfile.New(nil, nil, nil)
+	evalInGlobalMATLABSessionTool := evalmatlabsinglesession.New(nil, nil, nil, nil, nil)
+	checkMATLABCodeInGlobalMATLABSession := checkmatlabcode.New(nil, nil, nil, nil)
+	detectMATLABToolboxesInSingleSessionTool := detectmatlabtoolboxes.New(nil, nil, nil, nil)
+	runMATLABFileInGlobalMATLABSessionTool := runmatlabfile.New(nil, nil, nil, nil, nil)
+	runMATLABTestFileInGlobalMATLABSessionTool := runmatlabtestfile.New(nil, nil, nil, nil)
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 

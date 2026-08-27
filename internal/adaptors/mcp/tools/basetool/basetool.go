@@ -4,6 +4,7 @@ package basetool
 
 import (
 	"github.com/google/jsonschema-go/jsonschema"
+	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-server/internal/entities"
 	"github.com/matlab/matlab-mcp-server/internal/messages"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -11,7 +12,6 @@ import (
 
 const UnexpectedErrorPrefixForLLM = "unexpected error occurred: "
 
-// AnnotationProvider provides tool annotation metadata.
 type AnnotationProvider interface {
 	ToToolAnnotations() *mcp.ToolAnnotations
 }
@@ -20,17 +20,22 @@ type LoggerFactory interface {
 	NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logger, messages.Error)
 }
 
+type TelemetryFactory interface {
+	Telemetry() (telemetry.Telemetry, messages.Error)
+}
+
 type ToolAdder[ToolInput, ToolOutput any] interface {
 	AddTool(server *mcp.Server, tool *mcp.Tool, handler mcp.ToolHandlerFor[ToolInput, ToolOutput])
 }
 
 type tool[ToolInput any, ToolOutput any] struct {
-	name          string
-	title         string
-	description   string
-	annotations   AnnotationProvider
-	loggerFactory LoggerFactory
-	toolAdder     ToolAdder[ToolInput, ToolOutput]
+	name             string
+	title            string
+	description      string
+	annotations      AnnotationProvider
+	loggerFactory    LoggerFactory
+	telemetryFactory TelemetryFactory
+	toolAdder        ToolAdder[ToolInput, ToolOutput]
 }
 
 func (t tool[_, _]) Name() string {
