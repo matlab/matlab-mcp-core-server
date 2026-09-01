@@ -1,0 +1,96 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Publish to MCP Registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Skip the final publish step (render + validate only)'
+        type: boolean
+        default: true
+  # TODO: switch to automatic on release once manual runs are verified
+  # release:
+  #   types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: publish-registry-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # Pinned for reproducibility. Bump deliberately when upstream
+      # tooling changes; see https://github.com/modelcontextprotocol/registry/releases.
+      MCP_PUBLISHER_VERSION: v1.8.0
+      MCP_PUBLISHER_LINUX_AMD64_SHA256: 1370446bbe74d562608e8005a6ccce02d146a661fbd78674e11cc70b9618d6cf
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Read release metadata
+        id: release
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" != "tag" || ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::workflow must run against a vN.N.N tag, got $GITHUB_REF_TYPE/$GITHUB_REF_NAME"
+            exit 1
+          fi
+          mcpb_filename=$(make --silent print-mcpb-filename)
+          if [[ ! "$mcpb_filename" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::invalid MCPB filename: $mcpb_filename"
+            exit 1
+          fi
+          {
+            echo "VERSION=${GITHUB_REF_NAME#v}"
+            echo "MCPB_FILENAME=$mcpb_filename"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compute MCPB SHA-256
+        id: sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MCPB_FILENAME: ${{ steps.release.outputs.MCPB_FILENAME }}
+        run: |
+          set -euo pipefail
+          gh release download "$GITHUB_REF_NAME" \
+            --pattern "$MCPB_FILENAME" \
+            --output "$MCPB_FILENAME"
+          file_sha256=$(sha256sum "$MCPB_FILENAME" | awk '{print $1}')
+          echo "FILE_SHA256=$file_sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Render server.json
+        env:
+          VERSION: ${{ steps.release.outputs.VERSION }}
+          FILE_SHA256: ${{ steps.sha.outputs.FILE_SHA256 }}
+          MCPB_FILENAME: ${{ steps.release.outputs.MCPB_FILENAME }}
+        run: make ci-render-registry
+
+      - name: Show rendered server.json
+        run: cat .registry/server.json
+
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          curl -fsSL -o publisher.tar.gz \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          echo "${MCP_PUBLISHER_LINUX_AMD64_SHA256}  publisher.tar.gz" | sha256sum -c -
+          tar xzf publisher.tar.gz mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        id: login
+        if: >-
+          github.repository == 'matlab/matlab-mcp-server' &&
+          !inputs.dry_run
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        if: steps.login.conclusion == 'success'
+        run: ./mcp-publisher publish .registry/server.json

@@ -2,6 +2,7 @@
 /cover.out
 /vendor
 /.env
+/.registry/server.json
 AGENTS.md
 CLAUDE.md
 .agents

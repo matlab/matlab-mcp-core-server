@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.matlab/matlab-mcp-server",
+  "title": "MATLAB MCP Server",
+  "description": "Connect AI coding agents to MATLAB. Run code, tests, and analysis via MCP.",
+  "version": "{{.Version}}",
+  "repository": {
+    "url": "https://github.com/matlab/matlab-mcp-server",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "registryBaseUrl": "https://github.com",
+      "identifier": "matlab/matlab-mcp-server/releases/download/v{{.Version}}/{{.MCPBFilename}}",
+      "fileSha256": "{{.FileSHA256}}",
+      "version": "{{.Version}}",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

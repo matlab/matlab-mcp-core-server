@@ -69,6 +69,7 @@ MATLAB_MCP_SERVER_MLTBX_DIR ?= $(EMBEDDED_MLTBX_DIR)
 TOOLS_BIN_DIR := $(MATLAB_MCP_SERVER_BUILD_DIR)/tools
 SOURCEHASH_BIN := $(TOOLS_BIN_DIR)/sourcehash$(EXE_SUFFIX)
 MCPB_GEN_BIN := $(TOOLS_BIN_DIR)/mcpb-gen$(EXE_SUFFIX)
+REGISTRY_VALIDATE_BIN := $(TOOLS_BIN_DIR)/registry-validate$(EXE_SUFFIX)
 
 WIN64_BIN_DIR := $(MATLAB_MCP_SERVER_BUILD_DIR)/win64
 GLNXA64_BIN_DIR := $(MATLAB_MCP_SERVER_BUILD_DIR)/glnxa64
@@ -82,6 +83,9 @@ MATLAB_TOOLBOX_DIR := $(CURDIR)/matlab/matlab_mcp_toolbox
 
 MCPB_STAGING_DIR := $(MATLAB_MCP_SERVER_BUILD_DIR)/mcpb
 MCPB_FILENAME := matlab-mcp-server.mcpb
+registry-render: export VERSION := $(value VERSION)
+registry-render: export FILE_SHA256 := $(value FILE_SHA256)
+registry-render: export MCPB_FILENAME := $(value MCPB_FILENAME)
 
 # --- Resource paths ---
 
@@ -166,7 +170,11 @@ ci-build-matlab-addon: build-matlab-addon
 
 ci-build: build
 
-ci-build-mcpb: build-mcpb-bundle mcpb-validate
+ci-build-mcpb: build-mcpb-bundle mcpb-validate ci-validate-registry
+
+ci-validate-registry: registry-validate
+
+ci-render-registry: registry-render
 
 ci-integration-tests: matlab-integration-tests
 	go test $(RACE_FLAG) -json -count=1 $(INTEGRATION_TEST_PKGS)
@@ -291,7 +299,7 @@ build-all:
 	@$(call CP,$(MACI64_BIN_DIR)/matlab-mcp-server,$(ALL_BIN_DIR)/matlab-mcp-server-macos-x64)
 	@$(call CP,$(WIN64_BIN_DIR)/matlab-mcp-server.exe,$(ALL_BIN_DIR)/matlab-mcp-server-windows-x64.exe)
 
-build-tools: build-sourcehash build-mcpb-gen
+build-tools: build-sourcehash build-mcpb-gen build-registry-validate
 
 build-sourcehash:
 	@$(call MK_DIR,$(TOOLS_BIN_DIR))
@@ -300,6 +308,13 @@ build-sourcehash:
 build-mcpb-gen:
 	@$(call MK_DIR,$(TOOLS_BIN_DIR))
 	go build -o "$(MCPB_GEN_BIN)" ./cmd/mcpb-gen
+
+build-registry-validate:
+	@$(call MK_DIR,$(TOOLS_BIN_DIR))
+	go build -o "$(REGISTRY_VALIDATE_BIN)" ./cmd/registry-validate
+
+print-mcpb-filename:
+	@echo "$(MCPB_FILENAME)"
 
 build-matlab-addon: sync-matlab-mcp
 ifeq ($(OS),Windows_NT)
@@ -427,6 +442,20 @@ ifeq ($(OS),Windows_NT)
 else
 	cd "$(MCPB_STAGING_DIR)"; \
 	npm run mcpb-validate
+endif
+
+registry-validate: build-registry-validate
+ifeq ($(OS),Windows_NT)
+	& "$(REGISTRY_VALIDATE_BIN)" .registry/server.template.json
+else
+	"$(REGISTRY_VALIDATE_BIN)" .registry/server.template.json
+endif
+
+registry-render: build-registry-validate
+ifeq ($(OS),Windows_NT)
+	& "$(REGISTRY_VALIDATE_BIN)" --render .registry/server.json --version "$$env:VERSION" --file-sha256 "$$env:FILE_SHA256" --mcpb-filename "$$env:MCPB_FILENAME" .registry/server.template.json
+else
+	"$(REGISTRY_VALIDATE_BIN)" --render .registry/server.json --version "$${VERSION}" --file-sha256 "$${FILE_SHA256}" --mcpb-filename "$${MCPB_FILENAME}" .registry/server.template.json
 endif
 
 # =============================================================================
