@@ -6,13 +6,17 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/matlab/matlab-mcp-server/tests/testutils/logs"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpclient"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mockmatlab"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mockmatlab/mockruntime"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/pathcontrol"
+	"github.com/stretchr/testify/assert"
 )
+
+const instanceEventsPollInterval = 100 * time.Millisecond
 
 type MockMATLABSession struct {
 	*mcpclient.LoggedSession
@@ -93,4 +97,27 @@ func (s *MockMATLABTestSuite) CreateSession(cfg mockmatlab.Config, extraEnv []st
 func (s *MockMATLABTestSuite) CleanupSession(session *MockMATLABSession, assertNoErrorLogs bool) {
 	s.T().Helper()
 	s.MockMATLABBaseSuite.CleanupSession(session.LoggedSession, assertNoErrorLogs)
+}
+
+// --- Polling Helpers ---
+
+func (s *MockMATLABTestSuite) WaitForInstanceEvents(
+	session *MockMATLABSession,
+	timeout time.Duration,
+	cond func([]mockruntime.InstanceEvents) bool,
+	msgAndArgs ...any,
+) []mockruntime.InstanceEvents {
+	s.T().Helper()
+
+	var instanceEvents []mockruntime.InstanceEvents
+	s.Require().EventuallyWithT(func(c *assert.CollectT) {
+		got, err := session.ReadInstanceEvents()
+		if !assert.NoError(c, err, "failed to read mock MATLAB instance events") {
+			return
+		}
+		instanceEvents = got
+		assert.True(c, cond(got), "mock MATLAB instance events did not satisfy the expected condition")
+	}, timeout, instanceEventsPollInterval, msgAndArgs...)
+
+	return instanceEvents
 }

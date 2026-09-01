@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const expectedConnectTitleEvals = 3
+
 type LazyLoadTestSuite struct {
 	MockMATLABTestSuite
 }
@@ -38,8 +40,12 @@ func (s *LazyLoadTestSuite) TestLazyLoad_MATLABStartsOnFirstToolCall() {
 	s.Require().NoError(err, "first tool call should trigger MATLAB start")
 	s.Contains(output, "disp('hello')")
 
-	instanceEvents, err = session.ReadInstanceEvents()
-	s.Require().NoError(err)
+	instanceEvents = s.WaitForInstanceEvents(session, 30*time.Second,
+		func(events []mockruntime.InstanceEvents) bool {
+			return len(events) == 1 && countTitleEvals(events[0]) == expectedConnectTitleEvals
+		},
+		"desktop connect should check the release to pick the title API, then read the title and write it back once each")
+
 	s.Require().Len(instanceEvents, 1, "MATLAB should have started after first tool call")
 	s.Equal("happy", instanceEvents[0].StartedMode())
 	s.Equal(1, instanceEvents[0].CountEvent(mockruntime.EventStarted), "should have exactly one started event")
@@ -50,7 +56,7 @@ func (s *LazyLoadTestSuite) TestLazyLoad_MATLABStartsOnFirstToolCall() {
 		eventTypesExcludingTitle(instanceEvents[0]),
 		"excluding the desktop connection-title evals, should have exactly: started, greeting feval, cd() eval, user eval",
 	)
-	s.Equal(3, countTitleEvals(instanceEvents[0]),
+	s.Equal(expectedConnectTitleEvals, countTitleEvals(instanceEvents[0]),
 		"desktop connect should check the release to pick the title API, then read the title and write it back once each")
 }
 
@@ -59,20 +65,12 @@ func (s *LazyLoadTestSuite) TestEagerLoad_MATLABStartsOnSessionCreation() {
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, true)
 
-	s.Require().Eventually(func() bool {
-		instanceEvents, err := session.ReadInstanceEvents()
-		if err != nil {
-			return false
-		}
-		if len(instanceEvents) != 1 {
-			return false
-		}
-		return instanceEvents[0].HasEvent(mockruntime.EventStarted)
-	}, 30*time.Second, 500*time.Millisecond,
+	instanceEvents := s.WaitForInstanceEvents(session, 30*time.Second,
+		func(events []mockruntime.InstanceEvents) bool {
+			return len(events) == 1 && events[0].HasEvent(mockruntime.EventStarted)
+		},
 		"MATLAB should have started before any tool call")
 
-	instanceEvents, err := session.ReadInstanceEvents()
-	s.Require().NoError(err)
 	s.Equal("happy", instanceEvents[0].StartedMode())
 	s.False(instanceEvents[0].HasEvalMatching(isCdEval), "no cd() eval should have happened without a tool call")
 	s.Zero(instanceEvents[0].CountEvent(mockruntime.EventEval),
